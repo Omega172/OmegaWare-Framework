@@ -1,5 +1,6 @@
 #pragma once
 #include "pch.h"
+#if FRAMEWORK_RENDER_D3D11
 
 #include <D3D11.h>
 #include <DXGI.h>
@@ -86,3 +87,4 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT 
 
 	return oPresent(pSwapChain, SyncInterval, Flags);
 }
+#endif

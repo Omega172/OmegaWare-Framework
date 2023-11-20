@@ -1,5 +1,6 @@
 #pragma once
 #include "pch.h"
+#if FRAMEWORK_RENDER_D3D12
 
 #include <DXGI.h>
 #include <D3D12.h>
@@ -216,3 +217,4 @@ void D3D12Release()
 
 	oWndProc = (WNDPROC)SetWindowLongPtrA(Window, GWLP_WNDPROC, (LONG_PTR)oWndProc);
 }
+#endif
