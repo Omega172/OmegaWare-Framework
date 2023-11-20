@@ -4,11 +4,20 @@
 // However, files listed here are ALL re-compiled if any one of them is updated between builds.
 // Do not add files here that you will be updating frequently as this negates the performance advantage.
 
+#define FRAMEWORK_VERSION 1.0.0
+#define FRAMEWORK_MAJOR_VERSION 1
+#define FRAMEWORK_MINOR_VERSION 0
+#define FRAMEWORK_REWORK_VERSION 0
+
+#define FRAMEWORK_CODENAME "OmegaWare"
+#define FRAMEWORK_TARGET_GAME ""
+static_assert(FRAMEWORK_TARGET_GAME != ""); // Make sure the target game is set
+
 #define FRAMEWORK_UNREAL 0
 
 #define FRAMEWORK_RENDER_D3D11 1
 #define FRAMEWORK_RENDER_D3D12 0
-static_assert(FRAMEWORK_RENDER_D3D11 != FRAMEWORK_RENDER_D3D12);
+static_assert(FRAMEWORK_RENDER_D3D11 != FRAMEWORK_RENDER_D3D12); // Don't allow both rendering frameworks
 
 #if FRAMEWORK_RENDER_D3D11
 #define KIERO_INCLUDE_D3D11  1
@@ -65,8 +74,9 @@ static_assert(FRAMEWORK_RENDER_D3D11 != FRAMEWORK_RENDER_D3D12);
 
 namespace Cheat
 {
-	static const std::string Framework = "OmegaWare";
-	static const std::string Game = "Game Name";
+	static const std::string Framework = FRAMEWORK_CODENAME;
+	static const std::string Game = FRAMEWORK_TARGET_GAME;
+
 	static const std::string Title = Framework + " (" + Game + ")";
 
 	static bool bShouldRun = true;
