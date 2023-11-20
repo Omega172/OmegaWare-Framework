@@ -172,6 +172,7 @@
     <ClInclude Include="ImGUI\imstb_textedit.h" />
     <ClInclude Include="ImGUI\imstb_truetype.h" />
     <ClInclude Include="ImGUI\Styles.h" />
+    <ClInclude Include="Interfaces\Unreal.h" />
     <ClInclude Include="Kiero\kiero.h" />
     <ClInclude Include="Kiero\minhook\include\MinHook.h" />
     <ClInclude Include="pch.h" />
