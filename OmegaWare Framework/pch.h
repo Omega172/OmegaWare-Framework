@@ -11,6 +11,7 @@
 
 #define FRAMEWORK_CODENAME "OmegaWare"
 #define FRAMEWORK_TARGET_GAME ""
+#pragma warning(disable : 5056)
 static_assert(FRAMEWORK_TARGET_GAME != ""); // Make sure the target game is set
 
 #define FRAMEWORK_UNREAL 0
@@ -59,6 +60,7 @@ static_assert(FRAMEWORK_RENDER_D3D11 != FRAMEWORK_RENDER_D3D12); // Don't allow 
 #endif
 
 #define IMGUI_DEFINE_MATH_OPERATORS
+#pragma warning(disable : 4244)
 #include "ImGUI/imgui.h"
 #include "ImGui/imgui_impl_win32.h"
 

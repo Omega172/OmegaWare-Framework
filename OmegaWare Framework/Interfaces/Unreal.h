@@ -106,7 +106,6 @@ public:
 
 		return PlayerController->AcknowledgedPawn;
 	}
-	static CG::ANCharacter* GetWOTHPlayer() { return reinterpret_cast<CG::ANCharacter*>(GetAcknowledgedPawn()); }
 
 	static CG::APlayerCameraManager* GetPlayerCameraManager()
 	{
