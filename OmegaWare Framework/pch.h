@@ -36,6 +36,11 @@ static_assert(FRAMEWORK_RENDER_D3D11 != FRAMEWORK_RENDER_D3D12); // Don't allow 
 
 #if FRAMEWORK_UNREAL
 #include "SDK.h"
+
+// Remember to incude these files in the project
+// BasicTypes_Package.cpp
+// CoreUObject_Package.cpp
+// Engine_Package.cpp
 #endif
 
 #include <thread>
