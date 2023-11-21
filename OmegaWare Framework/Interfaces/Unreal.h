@@ -119,7 +119,11 @@ public:
 	static CG::FVector2D W2S(CG::FVector in, bool relitive = false)
 	{
 		CG::FVector2D out = { 0, 0 };
-		GetPlayerController()->ProjectWorldLocationToScreen(in, &out, false);
+		CG::APlayerController* PlayerController = GetPlayerController();
+		if (!PlayerController)
+			return out;
+
+		PlayerController->ProjectWorldLocationToScreen(in, &out, false);
 
 		return out;
 	}

@@ -10,7 +10,7 @@
 #define FRAMEWORK_REWORK_VERSION 0
 
 #define FRAMEWORK_CODENAME "OmegaWare"
-#define FRAMEWORK_TARGET_GAME ""
+#define FRAMEWORK_TARGET_GAME " "
 #pragma warning(disable : 5056)
 static_assert(FRAMEWORK_TARGET_GAME != ""); // Make sure the target game is set
 
