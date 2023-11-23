@@ -3,6 +3,7 @@
 
 inline ImFont* defaultFont;
 inline ImFont* tahomaFont;
+inline ImFont* tahomaFontESP;
 
 inline void SetupStyle()
 {
@@ -101,4 +102,8 @@ inline void ImportFonts()
 	ImGuiIO& io = ImGui::GetIO();
 	defaultFont = io.Fonts->AddFontDefault();
 	tahomaFont = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\Tahoma.ttf", 14.0f);
+
+	ImFontConfig Config;
+	Config.GlyphExtraSpacing.x = 1.f;
+	tahomaFontESP = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\Tahoma.ttf", 14.0f, &Config);
 }

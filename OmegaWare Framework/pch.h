@@ -62,15 +62,17 @@ static_assert(FRAMEWORK_RENDER_D3D11 != FRAMEWORK_RENDER_D3D12); // Don't allow 
 #define IMGUI_DEFINE_MATH_OPERATORS
 #pragma warning(disable : 4244)
 #include "ImGUI/imgui.h"
-#include "ImGui/imgui_impl_win32.h"
+#include "ImGUI/imgui_impl_win32.h"
 
 #if FRAMEWORK_RENDER_D3D11
-#include "ImGui/imgui_impl_dx11.h"
+#include "ImGUI/imgui_impl_dx11.h"
 #endif
 
 #if FRAMEWORK_RENDER_D3D12
-#include "ImGui/imgui_impl_dx12.h"
+#include "ImGUI/imgui_impl_dx12.h"
 #endif
+
+#include "ImGUI/Styles.h"
 
 #include "GUI/Custom.h"
 #include "GUI/GUI.h"

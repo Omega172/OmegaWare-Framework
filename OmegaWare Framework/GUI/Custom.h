@@ -24,7 +24,7 @@ public:
 
         return ImGui::IsKeyPressed(key, repeat);
     }
-    
+
     bool IsDown() const noexcept
     {
         if (!IsSet())
@@ -32,7 +32,7 @@ public:
 
         return ImGui::IsKeyDown(key);
     }
-    
+
     bool IsSet() const noexcept { return key != ImGuiKey_None; }
 
     void Set(ImGuiKey _key) { key = _key; }
@@ -64,7 +64,7 @@ private:
 
 inline void KeyBindToggle::HandleToggle() noexcept
 {
-    if (IsPressed())
+    if (IsDown())
         toggledOn = !toggledOn;
 }
 
@@ -95,5 +95,17 @@ namespace ImGui
         }
 
         ImGui::PopID();
+    }
+
+    inline void OutlinedText(ImVec2 Pos, ImU32 Color, std::string Text)
+    {
+        auto* pDL = ImGui::GetBackgroundDrawList();
+
+        pDL->AddText(tahomaFontESP, tahomaFontESP->FontSize, Pos + ImVec2(-1, -1), Black, Text.c_str());
+        pDL->AddText(tahomaFontESP, tahomaFontESP->FontSize, Pos + ImVec2(1, -1), Black, Text.c_str());
+        pDL->AddText(tahomaFontESP, tahomaFontESP->FontSize, Pos + ImVec2(-1, 1), Black, Text.c_str());
+        pDL->AddText(tahomaFontESP, tahomaFontESP->FontSize, Pos + ImVec2(1, 1), Black, Text.c_str());
+
+        pDL->AddText(tahomaFontESP, tahomaFontESP->FontSize, Pos, Color, Text.c_str());
     }
 }
