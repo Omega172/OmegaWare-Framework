@@ -13,7 +13,7 @@ namespace Cheat
 {
 	bool Init()
 	{
-		#if FRAMEWORK_RENDER_D3D11
+	#if FRAMEWORK_RENDER_D3D11
 		if (kiero::init(kiero::RenderType::D3D11) == kiero::Status::Success)
 		{
 			if (kiero::bind(8, reinterpret_cast<void**>(&oPresent), hkPresent) != kiero::Status::Success)
@@ -21,9 +21,20 @@ namespace Cheat
 		}
 		else
 			return false;
-		#endif
+	#endif
 
-		#if FRAMEWORK_RENDER_D3D12
+	#if FRAMEWORK_UNREAL
+		if (!CG::InitSdk())
+			return false;
+
+		if (!(*CG::UWorld::GWorld))
+			std::cout << "Waiting for GWorld to initalize\n";
+
+		while (!(*CG::UWorld::GWorld))
+			continue;
+	#endif
+
+	#if FRAMEWORK_RENDER_D3D12
 		if (kiero::init(kiero::RenderType::D3D12) == kiero::Status::Success)
 		{
 			if (kiero::bind(54, (void**)&oExecuteCommandLists, hkExecuteCommandLists) != kiero::Status::Success)
@@ -43,17 +54,6 @@ namespace Cheat
 		}
 		else
 			return false;
-		#endif
-
-	#if FRAMEWORK_UNREAL
-		if (!CG::InitSdk())
-			return false;
-
-		if (!(*CG::UWorld::GWorld))
-			std::cout << "Waiting for GWorld to initalize\n";
-
-		while (!(*CG::UWorld::GWorld))
-			continue;
 	#endif
 
 		Utils::LogDebug(Utils::GetLocation(CurrentLoc), "Initalizing Globals");
