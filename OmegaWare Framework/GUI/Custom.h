@@ -99,6 +99,7 @@ namespace ImGui
 
     inline void OutlinedText(ImVec2 Pos, ImU32 Color, std::string Text)
     {
+        ImU32 Black = ImGui::ColorConvertFloat4ToU32({ 0.f, 0.f, 0.f, 1.f });
         auto* pDL = ImGui::GetBackgroundDrawList();
 
         pDL->AddText(tahomaFontESP, tahomaFontESP->FontSize, Pos + ImVec2(-1, -1), Black, Text.c_str());
