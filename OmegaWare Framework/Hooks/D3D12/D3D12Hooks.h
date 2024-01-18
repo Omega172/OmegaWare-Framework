@@ -212,7 +212,7 @@ void D3D12Release()
 	d3d12DescriptorHeapBackBuffers->Release();
 	d3d12DescriptorHeapImGuiRender->Release();
 	d3d12CommandList->Release();
-	d3d12Fence->Release();
+	//d3d12Fence->Release();
 	d3d12CommandQueue->Release();
 
 	oWndProc = (WNDPROC)SetWindowLongPtrA(Window, GWLP_WNDPROC, (LONG_PTR)oWndProc);
