@@ -26,8 +26,6 @@ ID3D12Device* d3d12Device = nullptr;
 ID3D12DescriptorHeap* d3d12DescriptorHeapBackBuffers = nullptr;
 ID3D12DescriptorHeap* d3d12DescriptorHeapImGuiRender = nullptr;
 ID3D12GraphicsCommandList* d3d12CommandList = nullptr;
-ID3D12Fence* d3d12Fence = nullptr;
-UINT64 d3d12FenceValue = 0;
 ID3D12CommandQueue* d3d12CommandQueue = nullptr;
 
 struct __declspec(uuid("189819f1-1db6-4b57-be54-1821339b85f7")) ID3D12Device;
@@ -178,16 +176,6 @@ extern long __fastcall hkPresent(IDXGISwapChain3* pSwapChain, UINT SyncInterval,
 	return oPresent(pSwapChain, SyncInterval, Flags);
 }
 
-void __fastcall hkDrawInstanced(ID3D12GraphicsCommandList* dCommandList, UINT VertexCountPerInstance, UINT InstanceCount, UINT StartVertexLocation, UINT StartInstanceLocation)
-{
-	return oDrawInstanced(dCommandList, VertexCountPerInstance, InstanceCount, StartVertexLocation, StartInstanceLocation);
-}
-
-void __fastcall hkDrawIndexedInstanced(ID3D12GraphicsCommandList* dCommandList, UINT IndexCount, UINT InstanceCount, UINT StartIndex, INT BaseVertex)
-{
-	return oDrawIndexedInstanced(dCommandList, IndexCount, InstanceCount, StartIndex, BaseVertex);
-}
-
 void hkExecuteCommandLists(ID3D12CommandQueue* queue, UINT NumCommandLists, ID3D12CommandList* ppCommandLists)
 {
 	if (!d3d12CommandQueue)
@@ -196,23 +184,12 @@ void hkExecuteCommandLists(ID3D12CommandQueue* queue, UINT NumCommandLists, ID3D
 	oExecuteCommandLists(queue, NumCommandLists, ppCommandLists);
 }
 
-HRESULT hkSignal(ID3D12CommandQueue* queue, ID3D12Fence* fence, UINT64 value)
-{
-	if (d3d12CommandQueue != nullptr && queue == d3d12CommandQueue) {
-		d3d12Fence = fence;
-		d3d12FenceValue = value;
-	}
-
-	return oSignal(queue, fence, value);
-}
-
 void D3D12Release()
 {
 	d3d12Device->Release();
 	d3d12DescriptorHeapBackBuffers->Release();
 	d3d12DescriptorHeapImGuiRender->Release();
 	d3d12CommandList->Release();
-	//d3d12Fence->Release();
 	d3d12CommandQueue->Release();
 
 	oWndProc = (WNDPROC)SetWindowLongPtrA(Window, GWLP_WNDPROC, (LONG_PTR)oWndProc);

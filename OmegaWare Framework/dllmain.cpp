@@ -40,17 +40,8 @@ namespace Cheat
 			if (kiero::bind(54, (void**)&oExecuteCommandLists, hkExecuteCommandLists) != kiero::Status::Success)
 				return false;
 
-			//if (kiero::bind(58, (void**)&oSignal, hkSignal) != kiero::Status::Success)
-				//return false;
-
 			if (kiero::bind(140, (void**)&oPresent, hkPresent) != kiero::Status::Success)
 				return false;
-			
-			//if (kiero::bind(84, (void**)&oDrawInstanced, hkDrawInstanced) != kiero::Status::Success)
-				//return false;
-
-			//if (kiero::bind(85, (void**)&oDrawIndexedInstanced, hkDrawIndexedInstanced) != kiero::Status::Success)
-				//return false;
 		}
 		else
 			return false;
