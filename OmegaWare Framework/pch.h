@@ -4,10 +4,10 @@
 // However, files listed here are ALL re-compiled if any one of them is updated between builds.
 // Do not add files here that you will be updating frequently as this negates the performance advantage.
 
-#define FRAMEWORK_VERSION 1.0.0
+#define FRAMEWORK_VERSION 1.0.1
 #define FRAMEWORK_MAJOR_VERSION 1
 #define FRAMEWORK_MINOR_VERSION 0
-#define FRAMEWORK_REWORK_VERSION 0
+#define FRAMEWORK_REWORK_VERSION 1
 
 #define FRAMEWORK_CODENAME "OmegaWare"
 #define FRAMEWORK_TARGET_GAME ""
