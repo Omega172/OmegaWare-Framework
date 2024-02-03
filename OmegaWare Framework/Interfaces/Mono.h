@@ -1,5 +1,7 @@
 #pragma once
 #include "pch.h"
+
+// This is where the magic happens, for unity games running mono anyway.
 #if FRAMEWORK_UNITY
 
 #include "..\mono\metadata\threads.h"
@@ -8,6 +10,7 @@
 // https://github.com/mono/mono/
 // https://learn.microsoft.com/en-us/dotnet/standard/native-interop/type-marshalling
 
+// Define function pointer types for various Mono functions
 typedef MonoThread* (*t_mono_thread_attach)(MonoDomain* domain);
 typedef MonoDomain* (*t_mono_get_root_domain)();
 typedef MonoAssembly* (*t_mono_domain_assembly_open)(MonoDomain* doamin, const char* name);
@@ -80,7 +83,7 @@ private:
 	}
 
 public:
-	static Mono& Instance()
+	static Mono& Instance() // Singleton time!
 	{
 		static Mono _instance;
 
