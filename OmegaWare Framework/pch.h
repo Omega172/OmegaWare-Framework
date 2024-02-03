@@ -89,8 +89,14 @@ static_assert(FRAMEWORK_RENDER_D3D11 != FRAMEWORK_RENDER_D3D12, "Cannot use no o
 
 #include "Utils/Utils.h" // Include the Utils.h file that contains various utility functions for the framework
 
+#include "Interfaces/EasyHook.h"
+
 #if FRAMEWORK_UNREAL // If the framework set is Unreal include the Unreal.h file that contains the Unreal interface class that is used to interact with the Unreal Engine
 #include "Interfaces/Unreal.h"
+#endif
+
+#if FRAMEWORK_UNITY
+#include "Interfaces/Mono.h"
 #endif
 
 // Include ImGui and the ImGui implementation for Win32
@@ -135,6 +141,10 @@ namespace Cheat
 
 	#if FRAMEWORK_UNREAL // If the framework set is Unreal create a unique pointer to the Unreal interface class
 	inline std::unique_ptr<Unreal> unreal = std::make_unique<Unreal>();
+	#endif
+
+	#if FRAMEWORK_UNITY // If the framework set is Unity create a unique pointer to the Mono interface class
+	inline Mono mono = Mono::Instance(); // I would use a unique pointer but the class is already setup as a singlton and I need to call the destructor to clean up the mono domain
 	#endif
 }
 

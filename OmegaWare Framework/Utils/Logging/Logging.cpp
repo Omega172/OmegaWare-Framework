@@ -7,6 +7,20 @@ Utils::Location Utils::GetLocation(std::source_location stLocation)
 	return { std::filesystem::path(stLocation.file_name()).filename().string(), stLocation.function_name(), stLocation.line(), stLocation.column() };
 }
 
+void Utils::LogHook(Location stLocation, std::string sHookName, std::string sReason, std::string sMessage)
+{
+#ifdef _DEBUG
+	// Hook[HookName]: Filename | Function() -> Ln: 1 Col: 1 | Reason: Message
+	std::cout << colors::cyan << "Hook[" << sHookName << "]" << colors::white << ": ";
+
+	std::cout << colors::green << stLocation.m_sFilename << colors::white << " | " << colors::green << stLocation.m_sFunction << colors::white;
+
+	std::cout << " -> Ln: " << colors::magenta << stLocation.m_iLine << colors::white << " Col: " << colors::magenta << stLocation.m_iColumn << colors::white;
+
+	std::cout << " | " << colors::yellow << sReason << colors::white << ": " << sMessage << std::endl;
+#endif
+}
+
 void Utils::LogError(Location stLocation, int iErrorCode)
 {
 #ifdef _DEBUG

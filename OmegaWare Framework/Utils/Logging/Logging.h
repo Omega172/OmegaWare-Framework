@@ -17,6 +17,8 @@ namespace Utils
 	Location GetLocation(std::source_location stLocation); // Convert the source location to a location struct
 
 	// Various logging functions for different types of messages
+	void LogHook(Location stLocation, std::string sHookName, std::string sReason, std::string sMessage);
+
 	void LogError(Location stLocation, int iErrorCode);
 	void LogError(Location stLocation, std::string sErrorMessage);
 
