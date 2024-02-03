@@ -2,10 +2,10 @@
  And empty version of my cheat framework
 
 You can see this framework being used in these places:
-[Satisfactory Cheat](https://github.com/Omega172/Satisfactory-Cheat)
-[Dead Island 2 Cheat](https://github.com/Omega172/Dead-Island-2-Cheat) (In progress)
-[Palworld Cheat](https://github.com/Omega172/Palworld-Cheat) (In progress not published) <-- Priority
-ARK Survival Ascended (In progress not published)
+- [Satisfactory Cheat](https://github.com/Omega172/Satisfactory-Cheat)
+- [Dead Island 2 Cheat](https://github.com/Omega172/Dead-Island-2-Cheat) (In progress)
+- [Palworld Cheat](https://github.com/Omega172/Palworld-Cheat) (In progress not published) <-- Priority
+- ARK Survival Ascended (In progress not published)
 
 Getting moved over SOON TM:<br>
 <a href="https://github.com/Omega172/Crush-Crush-Cheat">Crush Crush Cheat<br>
