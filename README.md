@@ -8,8 +8,8 @@ You can see this framework being used in these places:
 ARK Survival Ascended (In progress not published)
 
 Getting moved over SOON TM:
-<a href="https://github.com/Omega172/Crush-Crush-Cheat">Crush Crush Cheat
-<a href="https://github.com/Omega172/Blush-Blush-Cheat">Blush Blush Cheat
+<a href="https://github.com/Omega172/Crush-Crush-Cheat">Crush Crush Cheat<br>
+<a href="https://github.com/Omega172/Blush-Blush-Cheat">Blush Blush Cheat<br>
 
 
 And my older cheats like:
