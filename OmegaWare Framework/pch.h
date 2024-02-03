@@ -84,6 +84,9 @@ static_assert(FRAMEWORK_RENDER_D3D11 != FRAMEWORK_RENDER_D3D12, "Cannot use no o
 #include <format>
 #include <string>
 #include <cmath>
+#include <sstream>
+#include <cstdio>
+#include <vector>
 #include <eh.h> // I dont remember what this was for, but I think it was for a scuffed try catch block to stop crashes on memory access violations
 
 #define _USE_MATH_DEFINES // Define math constants for things like M_PI and M_SQRT2
