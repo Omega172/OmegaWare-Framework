@@ -125,6 +125,8 @@ namespace Cheat
 				Features[i].get()->Run();
 			}
 
+// If the thread sleep is enabled sleep for the specified amount of time
+// This is used to reduce the CPU usage of the module, I would recommend keeping this enabled but added the option to disable it if needed for testing and when messing with less CPU intensive games
 #if DO_THREAD_SLEEP
 			std::this_thread::sleep_for(std::chrono::milliseconds(THREAD_SLEEP_TIME));
 #endif
