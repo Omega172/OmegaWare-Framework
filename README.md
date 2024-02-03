@@ -7,11 +7,10 @@ You can see this framework being used in these places:
 - [Palworld Cheat](https://github.com/Omega172/Palworld-Cheat) (In progress not published) <-- Priority
 - ARK Survival Ascended (In progress not published)
 
-Getting moved over SOON TM:<br>
-<a href="https://github.com/Omega172/Crush-Crush-Cheat">Crush Crush Cheat<br>
-<a href="https://github.com/Omega172/Blush-Blush-Cheat">Blush Blush Cheat<br>
+Getting moved over SOON TM:
+- [Crush Crush Cheat](https://github.com/Omega172/Crush-Crush-Cheat)
+- [Blush Blush Cheat](https://github.com/Omega172/Blush-Blush-Cheat)
 
-And my older cheats like:
-Borderlands 3
-Deep Rock Galactic
-Way Of The Hunter (Unpublished)
+- [Borderlands 3 Cheat](https://github.com/Omega172/Borderlands-3-Cheat)
+- [Deep Rock Galactic](https://github.com/Omega172/Deep-Rock-Galactic-Cheat)
+- Way Of The Hunter (Unpublished)
