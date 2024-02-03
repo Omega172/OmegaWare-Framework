@@ -1,7 +1,6 @@
 #include "pch.h"
 
-// Include kiero  and the respective rendering API hooks
-#include "Kiero/kiero.h"
+// Include the respective rendering API hooks
 #if FRAMEWORK_RENDER_D3D11
 #include "Hooks/D3D11/D3D11Hooks.h"
 #endif

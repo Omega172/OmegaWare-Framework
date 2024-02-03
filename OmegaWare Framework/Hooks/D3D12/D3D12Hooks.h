@@ -19,6 +19,8 @@ typedef long(__fastcall* PresentD3D12) (IDXGISwapChain* pSwapChain, UINT SyncInt
 typedef void(__fastcall* DrawInstancedD3D12)(ID3D12GraphicsCommandList* dCommandList, UINT VertexCountPerInstance, UINT InstanceCount, UINT StartVertexLocation, UINT StartInstanceLocation);
 typedef void(__fastcall* DrawIndexedInstancedD3D12)(ID3D12GraphicsCommandList* dCommandList, UINT IndexCount, UINT InstanceCount, UINT StartIndex, INT BaseVertex);
 
+void(*oExecuteCommandLists)(ID3D12CommandQueue*, UINT, ID3D12CommandList*);
+
 // Original function pointers
 PresentD3D12 oPresent;
 DrawInstancedD3D12 oDrawInstanced;

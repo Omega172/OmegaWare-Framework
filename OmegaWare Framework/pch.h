@@ -58,6 +58,8 @@ static_assert(FRAMEWORK_RENDER_D3D11 != FRAMEWORK_RENDER_D3D12, "Cannot use no o
 #define KIERO_INCLUDE_D3D12  1
 #endif
 
+#include "Kiero/kiero.h"
+
 // A macro to get the current source location to be used with Utils::GetLocation
 #include <source_location>
 #define CurrentLoc std::source_location::current()
