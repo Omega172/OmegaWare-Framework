@@ -1,0 +1,14 @@
+{
+    "files.associations": {
+        "source_location": "cpp",
+        "vector": "cpp",
+        "array": "cpp",
+        "chrono": "cpp",
+        "filesystem": "cpp",
+        "format": "cpp",
+        "forward_list": "cpp",
+        "initializer_list": "cpp",
+        "xstring": "cpp",
+        "xutility": "cpp"
+    }
+}

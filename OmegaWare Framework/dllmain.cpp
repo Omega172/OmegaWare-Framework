@@ -1,5 +1,6 @@
 #include "pch.h"
 
+// Include kiero  and the respective rendering API hooks
 #include "Kiero/kiero.h"
 #if FRAMEWORK_RENDER_D3D11
 #include "Hooks/D3D11/D3D11Hooks.h"
@@ -8,6 +9,9 @@
 #if FRAMEWORK_RENDER_D3D12
 #include "Hooks/D3D12/D3D12Hooks.h"
 #endif
+
+#define DO_THREAD_SLEEP 1
+#define THREAD_SLEEP_TIME 100
 
 namespace Cheat
 {
@@ -23,7 +27,7 @@ namespace Cheat
 			return false;
 	#endif
 
-	#if FRAMEWORK_UNREAL
+	#if FRAMEWORK_UNREAL // If the framework is Unreal initalize the SDK assuming the SDK was generated with CheatGeat by Cormm
 		if (!CG::InitSdk())
 			return false;
 
@@ -47,27 +51,29 @@ namespace Cheat
 			return false;
 	#endif
 
-		Utils::LogDebug(Utils::GetLocation(CurrentLoc), "Initalizing Globals");
+		Utils::LogDebug(Utils::GetLocation(CurrentLoc), "Initalizing Globals, this can take a bit"); // Log that the globals are being initalized
 
-	#if FRAMEWORK_UNREAL
+	#if FRAMEWORK_UNREAL // If using the Unreal framework print the pointer to the Unreal class to make sure it was initalized
 		Utils::LogDebug(Utils::GetLocation(CurrentLoc), (std::stringstream() << "Unreal: 0x" << unreal.get()).str());
 	#endif
 
-		Utils::LogDebug(Utils::GetLocation(CurrentLoc), "Globals Initalized");
+		// Add other globals that need to be initalized here
+
+		Utils::LogDebug(Utils::GetLocation(CurrentLoc), "Globals Initalized"); // Log that the globals have been initalized
 
 		// https://stackoverflow.com/questions/16711697/is-there-any-use-for-unique-ptr-with-array
 		// Features
 		//Features.push_back(std::make_unique<ESP>());
 
-		for (size_t i = 0; i < Features.size(); i++)
+		for (size_t i = 0; i < Features.size(); i++) // A loop to grap the feature pointers and call their respective setup functions
 		{
 			Features[i].get()->Setup();
 		}
 
-		return true;
+		return true; // Return true if the initalization was successful
 	}
 
-	void HandleKeys()
+	void HandleKeys() // A function to handle the keys of both the menu and the features
 	{
 		if (GetAsyncKeyState(dwMenuKey) & 0x1)
 		{
@@ -87,27 +93,30 @@ namespace Cheat
 
 		for (size_t i = 0; i < Features.size(); i++)
 		{
-			Features[i].get()->HandleKeys();
+			Features[i].get()->HandleKeys(); // Call the handle keys function for each feature
+
+			// This is mostly outdated but is still useful for some things, using the ImGui::Hotkey function is better which is located in GUI/Custom.h
 		}
 	}
 
 	DWORD __stdcall CheatThread(LPVOID lpParam)
 	{
-		hModule = reinterpret_cast<HMODULE>(lpParam);
+		hModule = reinterpret_cast<HMODULE>(lpParam); // Store the module handle which is used for unloading the module
 
 #ifdef _DEBUG
-		console.get()->SetVisibility(true);
+		console.get()->SetVisibility(true); // Set the console to be visible if the framework is in debug mode
 #endif
 
 		if (!Init())
 		{
+			// If the initalization failed log an error and set the boolean to false to stop the cheat from running
 			Utils::LogError(Utils::GetLocation(CurrentLoc), Cheat::Title + ": Failed to initalize");
 			bShouldRun = false;
 		}
-		else
+		else // If the initalization was successful log that the cheat was initalized
 			Utils::LogDebug(Utils::GetLocation(CurrentLoc), Cheat::Title + ": Initalized");
 
-		while (bShouldRun)
+		while (bShouldRun) // the main process loop used to asynchonously run the features and handle the keys independently from the game
 		{
 			HandleKeys();
 
@@ -116,35 +125,39 @@ namespace Cheat
 				Features[i].get()->Run();
 			}
 
-			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+#if DO_THREAD_SLEEP
+			std::this_thread::sleep_for(std::chrono::milliseconds(THREAD_SLEEP_TIME));
+#endif
 		}
 
-		console.get()->SetVisibility(true);
-		Utils::LogDebug(Utils::GetLocation(CurrentLoc), Cheat::Title + ": Unloading...");
+		console.get()->SetVisibility(true); // Set the console to be visible when the cheat is unloading
+		Utils::LogDebug(Utils::GetLocation(CurrentLoc), Cheat::Title + ": Unloading..."); // Log that the cheat is unloading
 
-		#if FRAMEWORK_RENDER_D3D12
+		#if FRAMEWORK_RENDER_D3D12 // If the framework is using D3D12 unbind the hooks and shutdown kiero, we do this here because the game might crash if we do it in the D3D12Hooks.cpp file like we do with D3D11
 		D3D12Release();
 		kiero::shutdown();
 		#endif
 
 		// Destroy features
-		for (size_t i = 0; i < Features.size(); i++)
+		for (size_t i = 0; i < Features.size(); i++) // A loop to grab the feature pointers and call their respective destroy functions to clean up any resources that were used and restore any settings that were changed
 		{
 			Features[i].get()->Destroy();
 		}
 
-		console.get()->Destroy();
+		console.get()->Destroy(); // Destroy/Free the console because if we don't the console window will stay open after the cheat is unloaded and can also cause a crash in rare cases
 
-		std::this_thread::sleep_for(std::chrono::seconds(3));
+		std::this_thread::sleep_for(std::chrono::seconds(3)); // Sleep for 3 seconds to make sure the console is destroyed and that the hooks are released before unloading the module
 
-		FreeLibraryAndExitThread(hModule, EXIT_SUCCESS);
-		return TRUE;
+		FreeLibraryAndExitThread(hModule, EXIT_SUCCESS); // Unload the module and exit the thread
+		return TRUE; // Return true not sure if this is needed at all TBH but it's here
 	}
 }
 
+// Simple and barebones DllMain to initalize the main thread
+// Really the only thing that should be in DllMain is the thread creation
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ulReasonForCall, LPVOID lpReserved)
 {
-	DisableThreadLibraryCalls(hModule);
+	DisableThreadLibraryCalls(hModule); // Disable unwanted and unneeded thread calls
 
 	if (ulReasonForCall != DLL_PROCESS_ATTACH)
 		return TRUE;

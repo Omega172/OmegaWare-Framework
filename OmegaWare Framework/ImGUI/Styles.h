@@ -1,9 +1,9 @@
 #pragma once
 #include "imgui.h"
 
-inline ImFont* defaultFont;
+inline ImFont* defaultFont; // The default font is this even needed?
 inline ImFont* tahomaFont;
-inline ImFont* tahomaFontESP;
+inline ImFont* tahomaFontESP; // A font with extra spacing for ESP
 
 inline void SetupStyle()
 {

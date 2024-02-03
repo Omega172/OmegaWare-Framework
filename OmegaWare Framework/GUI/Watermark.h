@@ -1,6 +1,9 @@
 #pragma once
 #include "pch.h"
 
+// This function is scuffed and doesn't work properly when the mouse is over the watermark
+// If someone could fix it that would be great I'll give you a cookie and 5 schmeckles
+
 inline void showWatermark(bool showFPS, const char* text, ImVec4 color, ImVec4 hoverColor)
 {
 	bool open = true;

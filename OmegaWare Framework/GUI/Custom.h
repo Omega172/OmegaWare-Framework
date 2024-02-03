@@ -7,6 +7,7 @@
 #include <array>
 #include <string_view>
 
+// I have no clue where I got this from but I fixed it up a bit to work with newer changes to the ImGui API, and cleaned it up a bit
 class KeyBind
 {
 private:

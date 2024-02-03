@@ -1,9 +1,5 @@
 #include "pch.h"
-
 #include "Watermark.h"
-
-#include <eh.h>
-#include <cmath>
 
 bool bWatermark = true;
 bool bWatermarkFPS = true;
@@ -57,9 +53,6 @@ void GUI::Render()
 	for (size_t i = 0; i < Features.size(); i++)
 	{
 		Features[i].get()->Render();
-
-		//std::thread thread(&Feature::Render, Features[i].get());
-		//thread.detach();
 	}
 
 	//

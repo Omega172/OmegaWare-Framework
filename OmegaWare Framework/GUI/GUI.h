@@ -1,6 +1,7 @@
 #pragma once
 #include "pch.h"
 
+// Colors for ImGui
 inline ImU32 Black = ImGui::ColorConvertFloat4ToU32({ 0.f, 0.f, 0.f, 1.f });
 inline ImU32 White = ImGui::ColorConvertFloat4ToU32({ 1.f, 1.f, 1.f, 1.f });
 
