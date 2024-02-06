@@ -31,7 +31,7 @@ namespace Cheat
 			return false;
 
 		if (!(*CG::UWorld::GWorld))
-			std::cout << "Waiting for GWorld to initalize\n";
+			Utils::LogError(Utils::GetLocation(CurrentLoc), "Waiting for GWorld to initalize");
 
 		while (!(*CG::UWorld::GWorld))
 			continue;

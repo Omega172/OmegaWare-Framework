@@ -1,4 +1,7 @@
 #pragma once
+#pragma warning(disable : 4311)
+#pragma warning(disable : 4302)
+#pragma warning(disable : 4312)
 #include "pch.h"
 
 // This is where the magic happens, for unity games running mono anyway.
@@ -234,10 +237,10 @@ public:
 		if (pField == nullptr)
 			return nullptr;
 
-		DWORD addr = (DWORD)GetStaticFieldData(pKlass);
+		DWORD addr = reinterpret_cast<DWORD>(GetStaticFieldData(pKlass));
 		uint32_t offset = GetFieldOffset(pField);
 
-		void* value = (void*)(addr + offset);
+		void* value = reinterpret_cast<void*>(addr + offset);
 		
 		return value;
 	}

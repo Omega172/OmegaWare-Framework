@@ -23,6 +23,8 @@ static_assert(FRAMEWORK_TARGET_GAME != "", "Target game not set."); // Make sure
 #define FRAMEWORK_UNREAL 0
 #define FRAMEWORK_UNITY 0
 
+#define IGNORE_32BIT_WARNING 1
+
 // Make sure a framework is selected and only one framework is selected
 #if !FRAMEWORK_OTHER && !FRAMEWORK_UNREAL && !FRAMEWORK_UNITY
 #error "No framework selected"
@@ -133,6 +135,12 @@ namespace Cheat
 	static const std::string Game = FRAMEWORK_TARGET_GAME; // Set the game name to the target game
 
 	static const std::string Title = Framework + " (" + Game + ")"; // Set the title to the framework name and the game name
+
+	#ifdef _WIN64
+	static constexpr bool bIs64Bit = true;
+	#else
+	static constexpr bool bIs64Bit = true;
+	#endif
 
 	static bool bShouldRun = true; // A boolean to check if the cheat should run or exit
 	static DWORD dwThreadID = NULL; // A DWORD to store the thread ID of the cheat thread

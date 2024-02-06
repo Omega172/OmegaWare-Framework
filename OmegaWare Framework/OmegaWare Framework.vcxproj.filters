@@ -18,7 +18,6 @@
     <ClCompile Include="ImGUI\imgui_impl_dx12.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="pch.h" />
     <ClInclude Include="Utils\Console\Console.h" />
     <ClInclude Include="Utils\Logging\Colors.hpp" />
     <ClInclude Include="Utils\Logging\Logging.h" />
@@ -42,5 +41,6 @@
     <ClInclude Include="ImGUI\imgui_impl_dx12.h" />
     <ClInclude Include="Hooks\D3D12\D3D12Hooks.h" />
     <ClInclude Include="Interfaces\Unreal.h" />
+    <ClInclude Include="pch.h" />
   </ItemGroup>
 </Project>
