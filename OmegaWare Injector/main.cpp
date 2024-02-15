@@ -6,6 +6,9 @@
 #include "Utils/Utils.h"
 #include "Inject/Inject.h"
 
+// This injector is made to be used with the OmegaWare Framework it does not support taking in a process name as an argument,
+// it assumes you have the process name hardcoded in the FRAMEWORK_TARGET_PROCESS macro in pch.h
+
 enum ERROR_CODES
 {
 	DLL_NOT_FOUND = 1,
@@ -20,6 +23,7 @@ int main(int argc, char** argv, char** envp)
 
 	if (argc < 2 || ArgParser.FindValue("--help").bFound || ArgParser.FindValue("-h").bFound)
 	{
+		printf("TARGET PROCESS: %s\n", FRAMEWORK_TARGET_PROCESS);
 		printf("Usage: %s DLL [options]\n", argv[0]);
 		printf("Options:\n");
 		printf("  -llib <dll>       LoadLibrary\n");
