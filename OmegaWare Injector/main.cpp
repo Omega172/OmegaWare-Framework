@@ -18,7 +18,7 @@ int main(int argc, char** argv, char** envp)
 	SetConsoleTitleA(Cheat::Title.c_str());
 	Parse ArgParser(argc, argv);
 
-	if (ArgParser.FindValue("--help").bFound || ArgParser.FindValue("-h").bFound)
+	if (argc < 2 || ArgParser.FindValue("--help").bFound || ArgParser.FindValue("-h").bFound)
 	{
 		printf("Usage: %s DLL [options]\n", argv[0]);
 		printf("Options:\n");
