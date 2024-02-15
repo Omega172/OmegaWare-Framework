@@ -9,15 +9,19 @@
 // I use Pascal case for almost everything, if you don't like it 1v1 me in the parking lot :smile:
 
 // Framework defines
-#define FRAMEWORK_VERSION 1.0.0
-#define FRAMEWORK_MAJOR_VERSION 1
+#define FRAMEWORK_VERSION 2.0.0
+#define FRAMEWORK_MAJOR_VERSION 2
 #define FRAMEWORK_MINOR_VERSION 0
 #define FRAMEWORK_REWORK_VERSION 0
 
 #define FRAMEWORK_CODENAME "OmegaWare"
 #define FRAMEWORK_TARGET_GAME ""
+#define FRAMEWORK_TARGET_PROCESS ""
 #pragma warning(disable : 5056)
 static_assert(FRAMEWORK_TARGET_GAME != "", "Target game not set."); // Make sure the target game title is set
+static_assert(FRAMEWORK_TARGET_PROCESS != "", "Target process name not set."); // Make sure the target process name is set
+
+#ifndef FRAMEWORK_INJECTOR
 
 #define FRAMEWORK_OTHER 1
 #define FRAMEWORK_UNREAL 0
@@ -66,9 +70,13 @@ static_assert(FRAMEWORK_RENDER_D3D11 != FRAMEWORK_RENDER_D3D12, "Cannot use no o
 #include <source_location>
 #define CurrentLoc std::source_location::current()
 
+#endif
+
 // Start the precompiled headers
 #ifndef PCH_H
 #define PCH_H
+
+#ifndef FRAMEWORK_INJECTOR
 
 #if FRAMEWORK_UNREAL // If the framework set is Unreal include the SDK.h file that includes all the SDK headers made by an SDK generator
 #include "SDK.h"
@@ -77,6 +85,8 @@ static_assert(FRAMEWORK_RENDER_D3D11 != FRAMEWORK_RENDER_D3D12, "Cannot use no o
 // BasicTypes_Package.cpp
 // CoreUObject_Package.cpp
 // Engine_Package.cpp
+#endif
+
 #endif
 
 // Include standard libraries that are used in the project
@@ -90,6 +100,8 @@ static_assert(FRAMEWORK_RENDER_D3D11 != FRAMEWORK_RENDER_D3D12, "Cannot use no o
 #include <cstdio>
 #include <vector>
 #include <eh.h> // I dont remember what this was for, but I think it was for a scuffed try catch block to stop crashes on memory access violations
+
+#ifndef FRAMEWORK_INJECTOR
 
 #define _USE_MATH_DEFINES // Define math constants for things like M_PI and M_SQRT2
 #include <math.h>
@@ -129,12 +141,16 @@ static_assert(FRAMEWORK_RENDER_D3D11 != FRAMEWORK_RENDER_D3D12, "Cannot use no o
 #define DEG2RAD(deg) deg * M_PI / 180 // A macro to convert degrees to radians
 #define RAD2DEG(rad) rad * 180.0 / M_PI; // A macro to convert radians to degrees
 
+#endif
+
 namespace Cheat
 {
 	static const std::string Framework = FRAMEWORK_CODENAME; // Set the framework name to the codename
 	static const std::string Game = FRAMEWORK_TARGET_GAME; // Set the game name to the target game
 
 	static const std::string Title = Framework + " (" + Game + ")"; // Set the title to the framework name and the game name
+
+#ifndef FRAMEWORK_INJECTOR
 
 	#ifdef _WIN64
 	static constexpr bool bIs64Bit = true;
@@ -150,6 +166,8 @@ namespace Cheat
 	static constexpr DWORD dwUnloadKey = VK_END; // A DWORD to store the key that unloads the cheat
 	static constexpr DWORD dwConsoleKey = VK_HOME; // A DWORD to store the key that opens and closes the console
 
+
+
 	inline std::unique_ptr<Console> console = std::make_unique<Console>(false, Title);  // A unique pointer to the console class that is used to create the console for the framework
 
 	#if FRAMEWORK_UNREAL // If the framework set is Unreal create a unique pointer to the Unreal interface class
@@ -159,11 +177,17 @@ namespace Cheat
 	#if FRAMEWORK_UNITY // If the framework set is Unity create a unique pointer to the Mono interface class
 	inline Mono mono = Mono::Instance(); // I would use a unique pointer but the class is already setup as a singlton and I need to call the destructor to clean up the mono domain
 	#endif
+
+#endif
 }
+
+#ifndef FRAMEWORK_INJECTOR
 
 #include "Features/Feature.h" // Include the Feature.h file that contains the Feature class that is used to create the features for the framework
 
 // https://stackoverflow.com/questions/13048301/pointer-to-array-of-base-class-populate-with-derived-class
 inline std::vector<std::unique_ptr<Feature>> Features; // A vector of unique pointers to the Feature class that is used to store the features for the framework
+
+#endif
 
 #endif //PCH_H
