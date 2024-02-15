@@ -72,22 +72,22 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\Output\</OutDir>
+    <OutDir>$(SolutionDir)Build\$(Platform)\$(Configuration)\Output\</OutDir>
     <IntDir>Build\$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\Output\</OutDir>
+    <OutDir>$(SolutionDir)Build\$(Platform)\$(Configuration)\Output\</OutDir>
     <IntDir>Build\$(Platform)\$(Configuration)\</IntDir>
     <TargetName>DEBUG_$(ProjectName)</TargetName>
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\Output\</OutDir>
+    <OutDir>$(SolutionDir)Build\$(Platform)\$(Configuration)\Output\</OutDir>
     <IntDir>Build\$(Platform)\$(Configuration)\</IntDir>
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\Output\</OutDir>
+    <OutDir>$(SolutionDir)Build\$(Platform)\$(Configuration)\Output\</OutDir>
     <IntDir>Build\$(Platform)\$(Configuration)\</IntDir>
     <TargetName>DEBUG_$(ProjectName)</TargetName>
     <LinkIncremental>false</LinkIncremental>
