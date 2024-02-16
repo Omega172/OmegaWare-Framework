@@ -12,7 +12,7 @@
 #define FRAMEWORK_VERSION 2.0.0
 #define FRAMEWORK_MAJOR_VERSION 2
 #define FRAMEWORK_MINOR_VERSION 0
-#define FRAMEWORK_REWORK_VERSION 0
+#define FRAMEWORK_REWORK_VERSION 1
 
 #define FRAMEWORK_CODENAME "OmegaWare"
 #define FRAMEWORK_TARGET_GAME ""
@@ -23,35 +23,18 @@ static_assert(FRAMEWORK_TARGET_PROCESS != "", "Target process name not set."); /
 
 #ifndef FRAMEWORK_INJECTOR
 
+#define IGNORE_32BIT_WARNING 1 // Ignore the 32 bit warning for the framework because Dx12 will complain when using x86
+
 #define FRAMEWORK_OTHER 1
 #define FRAMEWORK_UNREAL 0
 #define FRAMEWORK_UNITY 0
 
-#define IGNORE_32BIT_WARNING 1
-
-// Make sure a framework is selected and only one framework is selected
-#if !FRAMEWORK_OTHER && !FRAMEWORK_UNREAL && !FRAMEWORK_UNITY
-#error "No framework selected"
-#else
-
-#if FRAMEWORK_OTHER && (FRAMEWORK_UNREAL || FRAMEWORK_UNITY)
-#error "Multiple frameworks selected"
-#endif
-
-#if FRAMEWORK_UNREAL && (FRAMEWORK_OTHER || FRAMEWORK_UNITY)
-#error "Multiple frameworks selected"
-#endif
-
-#if FRAMEWORK_UNITY && (FRAMEWORK_OTHER || FRAMEWORK_UNREAL)
-#error "Multiple frameworks selected"
-#endif
-
-#endif
+static_assert((FRAMEWORK_OTHER + FRAMEWORK_UNREAL + FRAMEWORK_UNITY) == 1, "Must use exactly one framework type"); // Don't allow both frameworks to be used)
 
 // Make sure a rendering API is selected and only one rendering API is selected
 #define FRAMEWORK_RENDER_D3D11 1
 #define FRAMEWORK_RENDER_D3D12 0
-static_assert(FRAMEWORK_RENDER_D3D11 != FRAMEWORK_RENDER_D3D12, "Cannot use no or both rendering API(s)"); // Don't allow both rendering API's to be used
+static_assert((FRAMEWORK_RENDER_D3D11 + FRAMEWORK_RENDER_D3D12) == 1, "Must use exactly one rendering API"); // Don't allow both rendering API's to be used
 
 // Set the rendering API to be used with kiero
 #if FRAMEWORK_RENDER_D3D11
@@ -165,8 +148,6 @@ namespace Cheat
 	static constexpr DWORD dwMenuKey = VK_INSERT; // A DWORD to store the key that opens and closes the menu
 	static constexpr DWORD dwUnloadKey = VK_END; // A DWORD to store the key that unloads the cheat
 	static constexpr DWORD dwConsoleKey = VK_HOME; // A DWORD to store the key that opens and closes the console
-
-
 
 	inline std::unique_ptr<Console> console = std::make_unique<Console>(false, Title);  // A unique pointer to the console class that is used to create the console for the framework
 

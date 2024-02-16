@@ -42,5 +42,7 @@
     <ClInclude Include="Hooks\D3D12\D3D12Hooks.h" />
     <ClInclude Include="Interfaces\Unreal.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="Interfaces\Mono.h" />
+    <ClInclude Include="Interfaces\EasyHook.h" />
   </ItemGroup>
 </Project>

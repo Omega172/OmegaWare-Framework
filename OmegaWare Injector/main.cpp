@@ -26,8 +26,8 @@ int main(int argc, char** argv, char** envp)
 		printf("TARGET PROCESS: %s\n", FRAMEWORK_TARGET_PROCESS);
 		printf("Usage: %s DLL [options]\n", argv[0]);
 		printf("Options:\n");
-		printf("  -llib <dll>       LoadLibrary\n");
-		printf("  -mm <dll>         ManualMap\n");
+		printf("  -llib             LoadLibrary\n");
+		printf("  -mm               ManualMap\n");
 		printf("  -bypass           Bypass VAC\n");
 		return 0;
 	}
