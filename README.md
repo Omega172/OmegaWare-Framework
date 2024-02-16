@@ -10,7 +10,6 @@ You can see this framework being used in these places:
 
 Getting moved over SOON TM:
 - [Blush Blush Cheat](https://github.com/Omega172/Blush-Blush-Cheat)
-
 - [Borderlands 3 Cheat](https://github.com/Omega172/Borderlands-3-Cheat)
 - [Deep Rock Galactic](https://github.com/Omega172/Deep-Rock-Galactic-Cheat)
 - Way Of The Hunter (Unpublished)
