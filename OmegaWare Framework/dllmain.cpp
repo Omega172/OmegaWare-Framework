@@ -69,6 +69,8 @@ namespace Cheat
 			Features[i].get()->Setup();
 		}
 
+		config = std::make_unique<Config>(); // Initalize the config class
+
 		return true; // Return true if the initalization was successful
 	}
 

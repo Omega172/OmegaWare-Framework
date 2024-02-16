@@ -15,8 +15,8 @@
 #define FRAMEWORK_REWORK_VERSION 1
 
 #define FRAMEWORK_CODENAME "OmegaWare"
-#define FRAMEWORK_TARGET_GAME ""
-#define FRAMEWORK_TARGET_PROCESS ""
+#define FRAMEWORK_TARGET_GAME "a"
+#define FRAMEWORK_TARGET_PROCESS "a"
 #pragma warning(disable : 5056)
 static_assert(FRAMEWORK_TARGET_GAME != "", "Target game not set."); // Make sure the target game title is set
 static_assert(FRAMEWORK_TARGET_PROCESS != "", "Target process name not set."); // Make sure the target process name is set
@@ -124,6 +124,8 @@ static_assert((FRAMEWORK_RENDER_D3D11 + FRAMEWORK_RENDER_D3D12) == 1, "Must use 
 #define DEG2RAD(deg) deg * M_PI / 180 // A macro to convert degrees to radians
 #define RAD2DEG(rad) rad * 180.0 / M_PI; // A macro to convert radians to degrees
 
+#include "Config/Config.h"
+
 #endif
 
 namespace Cheat
@@ -159,6 +161,16 @@ namespace Cheat
 	inline Mono mono = Mono::Instance(); // I would use a unique pointer but the class is already setup as a singlton and I need to call the destructor to clean up the mono domain
 	#endif
 
+	inline bool bWatermark = true;
+	inline bool bWatermarkFPS = true;
+
+	inline std::vector<ConfigEntry> DefaultConfig = {
+		{ "Watermark", "bool", "true" },
+		{ "WatermarkFPS", "bool", "true" }
+	};
+
+	inline std::unique_ptr<Config> config;
+	static std::vector<ConfigEntry> Entries;
 #endif
 }
 

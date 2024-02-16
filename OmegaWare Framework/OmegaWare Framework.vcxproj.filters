@@ -16,6 +16,7 @@
     <ClCompile Include="ImGUI\imgui_widgets.cpp" />
     <ClCompile Include="Kiero\kiero.cpp" />
     <ClCompile Include="ImGUI\imgui_impl_dx12.cpp" />
+    <ClCompile Include="Config\Config.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Utils\Console\Console.h" />
@@ -44,5 +45,9 @@
     <ClInclude Include="pch.h" />
     <ClInclude Include="Interfaces\Mono.h" />
     <ClInclude Include="Interfaces\EasyHook.h" />
+    <ClInclude Include="Config\Config.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

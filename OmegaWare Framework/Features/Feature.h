@@ -26,4 +26,10 @@ public:
 
 	// This should be run in the feature loop, used to run any acutal feature code like setting a value for godmode
 	virtual void Run() = 0;
+
+	// Save the feature's config to the config file
+	virtual void SaveConfig() = 0;
+
+	// Load the feature's config from the config file
+	virtual void LoadConfig() = 0;
 };

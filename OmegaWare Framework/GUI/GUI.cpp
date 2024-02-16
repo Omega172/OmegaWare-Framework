@@ -1,13 +1,10 @@
 #include "pch.h"
 #include "Watermark.h"
 
-bool bWatermark = true;
-bool bWatermarkFPS = true;
-
 void GUI::Render()
 {
-	if (bWatermark)
-		showWatermark(bWatermarkFPS, Cheat::Title.c_str(), ImVec4(255, 255, 255, 255), ImVec4(255, 255, 255, 0));
+	if (Cheat::bWatermark)
+		showWatermark(Cheat::bWatermarkFPS, Cheat::Title.c_str(), ImVec4(255, 255, 255, 255), ImVec4(255, 255, 255, 0));
 
 	if (bMenuOpen)
 	{
@@ -27,9 +24,17 @@ void GUI::Render()
 
 			//ImGui::Checkbox("Extra Debug Info", &bExtraDebug);
 
-			ImGui::Checkbox("Watermark", &bWatermark);
-			if (bWatermark)
-				ImGui::Checkbox("Watermark FPS", &bWatermarkFPS);
+			ImGui::Checkbox("Watermark", &Cheat::bWatermark);
+			if (Cheat::bWatermark)
+				ImGui::Checkbox("Watermark FPS", &Cheat::bWatermarkFPS);
+
+			if (ImGui::Button("Save Config"))
+				Cheat::config.get()->SaveConfig();
+
+			ImGui::SameLine();
+
+			if (ImGui::Button("Load Config"))
+				Cheat::config.get()->LoadConfig();
 		}
 		ImGui::EndChild();
 
