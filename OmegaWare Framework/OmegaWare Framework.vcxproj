@@ -181,6 +181,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Config\Config.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="GUI\GUI.cpp" />
     <ClCompile Include="ImGUI\imgui.cpp" />
