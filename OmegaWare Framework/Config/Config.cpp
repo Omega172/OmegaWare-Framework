@@ -43,7 +43,7 @@ bool Config::SaveConfig()
 
 	for (size_t i = 0; i < Features.size(); i++)
 	{
-		Features[i].get()->SaveConfig();
+		Features[i]->SaveConfig();
 	}
 
 	for (ConfigEntry Entry : Cheat::Entries)
@@ -88,7 +88,7 @@ bool Config::LoadConfig()
 
 	for (size_t i = 0; i < Features.size(); i++)
 	{
-		Features[i].get()->LoadConfig();
+		Features[i]->LoadConfig();
 	}
 
 	return true;

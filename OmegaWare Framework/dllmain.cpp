@@ -61,7 +61,7 @@ namespace Cheat
 		Utils::LogDebug(Utils::GetLocation(CurrentLoc), "Globals Initalized"); // Log that the globals have been initalized
 
 		localization = std::make_unique<Localization>();
-		if (!localization.get()->IsInitialized())
+		if (!localization->IsInitialized())
 			return false;
 
 		// https://stackoverflow.com/questions/16711697/is-there-any-use-for-unique-ptr-with-array
@@ -70,7 +70,7 @@ namespace Cheat
 
 		for (size_t i = 0; i < Features.size(); i++) // A loop to grap the feature pointers and call their respective setup functions
 		{
-			bool bResult = Features[i].get()->Setup();
+			bool bResult = Features[i]->Setup();
 			if (!bResult)
 			{
 				Utils::LogError(Utils::GetLocation(CurrentLoc), "Failed to setup feature: " + std::to_string(i));
@@ -96,14 +96,14 @@ namespace Cheat
 		}
 
 		if (GetAsyncKeyState(dwConsoleKey) & 0x1)
-			console.get()->ToggleVisibility();
+			console->ToggleVisibility();
 
 		if (GetAsyncKeyState(dwUnloadKey))
 			bShouldRun = false;
 
 		for (size_t i = 0; i < Features.size(); i++)
 		{
-			Features[i].get()->HandleKeys(); // Call the handle keys function for each feature
+			Features[i]->HandleKeys(); // Call the handle keys function for each feature
 
 			// This is mostly outdated but is still useful for some things, using the ImGui::Hotkey function is better which is located in GUI/Custom.h
 		}
@@ -114,7 +114,7 @@ namespace Cheat
 		hModule = reinterpret_cast<HMODULE>(lpParam); // Store the module handle which is used for unloading the module
 
 #ifdef _DEBUG
-		console.get()->SetVisibility(true); // Set the console to be visible if the framework is in debug mode
+		console->SetVisibility(true); // Set the console to be visible if the framework is in debug mode
 #endif
 
 		if (!Init())
@@ -132,7 +132,7 @@ namespace Cheat
 
 			for (size_t i = 0; i < Features.size(); i++)
 			{
-				Features[i].get()->Run();
+				Features[i]->Run();
 			}
 
 // If the thread sleep is enabled sleep for the specified amount of time
@@ -142,7 +142,7 @@ namespace Cheat
 #endif
 		}
 
-		console.get()->SetVisibility(true); // Set the console to be visible when the cheat is unloading
+		console->SetVisibility(true); // Set the console to be visible when the cheat is unloading
 		Utils::LogDebug(Utils::GetLocation(CurrentLoc), Cheat::Title + ": Unloading..."); // Log that the cheat is unloading
 
 		#if FRAMEWORK_RENDER_D3D12 // If the framework is using D3D12 unbind the hooks and shutdown kiero, we do this here because the game might crash if we do it in the D3D12Hooks.cpp file like we do with D3D11
@@ -153,12 +153,12 @@ namespace Cheat
 		// Destroy features
 		for (size_t i = 0; i < Features.size(); i++) // A loop to grab the feature pointers and call their respective destroy functions to clean up any resources that were used and restore any settings that were changed
 		{
-			Features[i].get()->Destroy();
+			Features[i]->Destroy();
 		}
 
 		std::this_thread::sleep_for(std::chrono::seconds(3)); // Sleep for 3 seconds to make sure the console is destroyed and that the hooks are released before unloading the module
 
-		console.get()->Destroy(); // Destroy/Free the console because if we don't the console window will stay open after the cheat is unloaded and can also cause a crash in rare cases
+		console->Destroy(); // Destroy/Free the console because if we don't the console window will stay open after the cheat is unloaded and can also cause a crash in rare cases
 
 		FreeLibraryAndExitThread(hModule, EXIT_SUCCESS); // Unload the module and exit the thread
 		return TRUE; // Return true not sure if this is needed at all TBH but it's here

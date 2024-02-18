@@ -19,8 +19,8 @@ void GUI::Render()
 			if (ImGui::Button("Unload"))
 				Cheat::bShouldRun = false;
 			ImGui::SameLine();
-			if (ImGui::Button(Cheat::console.get()->GetVisibility() ? "Hide Console" : "Show Console"))
-				Cheat::console.get()->ToggleVisibility();
+			if (ImGui::Button(Cheat::console->GetVisibility() ? "Hide Console" : "Show Console"))
+				Cheat::console->ToggleVisibility();
 
 			//ImGui::Checkbox("Extra Debug Info", &bExtraDebug);
 
@@ -29,18 +29,18 @@ void GUI::Render()
 				ImGui::Checkbox("Watermark FPS", &Cheat::bWatermarkFPS);
 
 			if (ImGui::Button("Save Config"))
-				Cheat::config.get()->SaveConfig();
+				Cheat::config->SaveConfig();
 
 			ImGui::SameLine();
 
 			if (ImGui::Button("Load Config"))
-				Cheat::config.get()->LoadConfig();
+				Cheat::config->LoadConfig();
 		}
 		ImGui::EndChild();
 
 		for (size_t i = 0; i < Features.size(); i++)
 		{
-			Features[i].get()->DrawMenuItems();
+			Features[i]->DrawMenuItems();
 		}
 
 		ImGui::End();
@@ -57,7 +57,7 @@ void GUI::Render()
 
 	for (size_t i = 0; i < Features.size(); i++)
 	{
-		Features[i].get()->Render();
+		Features[i]->Render();
 	}
 
 	//
