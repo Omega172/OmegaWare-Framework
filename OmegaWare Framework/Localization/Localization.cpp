@@ -19,7 +19,7 @@ bool Localization::IsInitialized() { return bInitialized; }
 
 std::string Localization::Get(std::string Key)
 {
-	size_t KeyHash = std::hash<std::string>{}(Key);
+	size_t KeyHash = HASH(Key);
 	for (LocaleData Entry : Cheat::CurrentLocale.Locals)
 	{
 		if (Entry.Key == KeyHash)
@@ -33,7 +33,7 @@ void Localization::LoadLocale(LocalizationData Locale) { Cheat::Locales.push_bac
 
 bool Localization::SetLocale(std::string LocalCode)
 {
-	size_t LocaleCodeHash = std::hash<std::string>{}(LocalCode);
+	size_t LocaleCodeHash = HASH(LocalCode);
 	for (LocalizationData Locale : Cheat::Locales)
 	{
 		if (Locale.LocalCode == LocaleCodeHash)
@@ -53,10 +53,10 @@ bool Localization::AddToLocale(std::string LocalCode, std::string Key, std::stri
 {
 	for (LocalizationData& Locale : Cheat::Locales)
 	{
-		size_t LocaleCodeHash = std::hash<std::string>{}(LocalCode);
+		size_t LocaleCodeHash = HASH(LocalCode);
 		if (Locale.LocalCode == LocaleCodeHash)
 		{
-			Locale.Locals.push_back({ std::hash<std::string>{}(Key), Value });
+			Locale.Locals.push_back({ HASH(Key), Value });
 			return true;
 		}
 	}

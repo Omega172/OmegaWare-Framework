@@ -3,6 +3,8 @@
 #include <vector>
 #include <functional>
 
+#define HASH(str) std::hash<std::string>{}(str)
+
 struct LocaleData
 {
 	size_t Key;
