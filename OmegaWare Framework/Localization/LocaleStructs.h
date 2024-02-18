@@ -1,17 +1,18 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <functional>
 
 struct LocaleData
 {
-	std::string Key;
+	size_t Key;
 	std::string Value;
 };
 
 struct LocalizationData
 {
 	std::string Name;
-	std::string LocalCode;
+	size_t LocalCode;
 
 	std::vector<LocaleData> Locals;
 };
