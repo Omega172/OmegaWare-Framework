@@ -2,7 +2,7 @@
 #include "../LocaleStructs.h"
 
 std::vector<LocaleData> EnglishLocales = {
-	{HASH("CHEAT_BTN"), "Cheat"},
+	{HASH("CHEAT"), "Cheat"},
 	{HASH("UNLOAD_BTN"), "Unload"},
 	{HASH("CONSOLE_SHOW"), "Show Console"},
 	{HASH("CONSOLE_HIDE"), "Hide Console"},
