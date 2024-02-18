@@ -171,8 +171,8 @@ public:
 			CG::FVector ActorBLocation = ActorB->K2_GetActorLocation();
 			CG::FVector PawnLocation = Pawn->K2_GetActorLocation();
 
-			float ActorADistance = (ActorALocation - PawnLocation).Size();
-			float ActorBDistance = (ActorBLocation - PawnLocation).Size();
+			float ActorADistance = ActorALocation.DistanceMeter(PawnLocation);
+			float ActorBDistance = ActorBLocation.DistanceMeter(PawnLocation);
 
 			return ActorADistance < ActorBDistance;
 		});
