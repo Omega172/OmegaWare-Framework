@@ -60,13 +60,22 @@ namespace Cheat
 
 		Utils::LogDebug(Utils::GetLocation(CurrentLoc), "Globals Initalized"); // Log that the globals have been initalized
 
+		localization = std::make_unique<Localization>();
+		if (!localization.get()->IsInitialized())
+			return false;
+
 		// https://stackoverflow.com/questions/16711697/is-there-any-use-for-unique-ptr-with-array
 		// Features
-		//Features.push_back(std::make_unique<ESP>());
+		Features.push_back(std::make_unique<ExampleFeature>());
 
 		for (size_t i = 0; i < Features.size(); i++) // A loop to grap the feature pointers and call their respective setup functions
 		{
-			Features[i].get()->Setup();
+			bool bResult = Features[i].get()->Setup();
+			if (!bResult)
+			{
+				Utils::LogError(Utils::GetLocation(CurrentLoc), "Failed to setup feature: " + std::to_string(i));
+				return false;
+			}
 		}
 
 		config = std::make_unique<Config>(); // Initalize the config class
@@ -147,9 +156,9 @@ namespace Cheat
 			Features[i].get()->Destroy();
 		}
 
-		console.get()->Destroy(); // Destroy/Free the console because if we don't the console window will stay open after the cheat is unloaded and can also cause a crash in rare cases
-
 		std::this_thread::sleep_for(std::chrono::seconds(3)); // Sleep for 3 seconds to make sure the console is destroyed and that the hooks are released before unloading the module
+
+		console.get()->Destroy(); // Destroy/Free the console because if we don't the console window will stay open after the cheat is unloaded and can also cause a crash in rare cases
 
 		FreeLibraryAndExitThread(hModule, EXIT_SUCCESS); // Unload the module and exit the thread
 		return TRUE; // Return true not sure if this is needed at all TBH but it's here

@@ -125,6 +125,7 @@ static_assert((FRAMEWORK_RENDER_D3D11 + FRAMEWORK_RENDER_D3D12) == 1, "Must use 
 #define RAD2DEG(rad) rad * 180.0 / M_PI; // A macro to convert radians to degrees
 
 #include "Config/Config.h"
+#include "Localization/Localization.h"
 
 #endif
 
@@ -171,12 +172,17 @@ namespace Cheat
 
 	inline std::unique_ptr<Config> config;
 	static std::vector<ConfigEntry> Entries;
+
+	static std::vector<LocalizationData> Locales;
+	static LocalizationData CurrentLocale;
+	inline std::unique_ptr<Localization> localization;
 #endif
 }
 
 #ifndef FRAMEWORK_INJECTOR
 
 #include "Features/Feature.h" // Include the Feature.h file that contains the Feature class that is used to create the features for the framework
+#include "Features/ExampleFeature/ExampleFeature.h"
 
 // https://stackoverflow.com/questions/13048301/pointer-to-array-of-base-class-populate-with-derived-class
 inline std::vector<std::unique_ptr<Feature>> Features; // A vector of unique pointers to the Feature class that is used to store the features for the framework

@@ -186,6 +186,7 @@
   <ItemGroup>
     <ClCompile Include="Config\Config.cpp" />
     <ClCompile Include="dllmain.cpp" />
+    <ClCompile Include="Features\ExampleFeature\ExampleFeature.cpp" />
     <ClCompile Include="GUI\GUI.cpp" />
     <ClCompile Include="ImGUI\imgui.cpp" />
     <ClCompile Include="ImGUI\imgui_demo.cpp" />
@@ -196,6 +197,7 @@
     <ClCompile Include="ImGUI\imgui_tables.cpp" />
     <ClCompile Include="ImGUI\imgui_widgets.cpp" />
     <ClCompile Include="Kiero\kiero.cpp" />
+    <ClCompile Include="Localization\Localization.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
@@ -210,6 +212,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Config\Config.h" />
+    <ClInclude Include="Features\ExampleFeature\ExampleFeature.h" />
     <ClInclude Include="Features\Feature.h" />
     <ClInclude Include="GUI\Custom.h" />
     <ClInclude Include="GUI\GUI.h" />
@@ -231,6 +234,9 @@
     <ClInclude Include="Interfaces\Unreal.h" />
     <ClInclude Include="Kiero\kiero.h" />
     <ClInclude Include="Kiero\minhook\include\MinHook.h" />
+    <ClInclude Include="Localization\LocaleStructs.h" />
+    <ClInclude Include="Localization\Locales\English.h" />
+    <ClInclude Include="Localization\Localization.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Utils\Console\Console.h" />
     <ClInclude Include="Utils\Logging\Colors.hpp" />

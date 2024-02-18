@@ -17,6 +17,8 @@
     <ClCompile Include="Kiero\kiero.cpp" />
     <ClCompile Include="ImGUI\imgui_impl_dx12.cpp" />
     <ClCompile Include="Config\Config.cpp" />
+    <ClCompile Include="Localization\Localization.cpp" />
+    <ClCompile Include="Features\ExampleFeature\ExampleFeature.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Utils\Console\Console.h" />
@@ -46,6 +48,10 @@
     <ClInclude Include="Interfaces\Mono.h" />
     <ClInclude Include="Interfaces\EasyHook.h" />
     <ClInclude Include="Config\Config.h" />
+    <ClInclude Include="Localization\Localization.h" />
+    <ClInclude Include="Features\ExampleFeature\ExampleFeature.h" />
+    <ClInclude Include="Localization\Locales\English.h" />
+    <ClInclude Include="Localization\LocaleStructs.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
