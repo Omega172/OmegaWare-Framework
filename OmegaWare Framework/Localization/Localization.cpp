@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "Localization.h""
+#include "Localization.h"
 #include "Locales/English.h"
 
 Localization::Localization()
