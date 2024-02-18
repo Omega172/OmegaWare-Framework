@@ -7,7 +7,11 @@ Console::Console(bool bVisibility, std::string sConsoleTitle)
 
 	if (!AllocConsole())
 	{
-		Utils::LogError(Utils::GetLocation(CurrentLoc), GetLastError());
+		std::stringstream SS("Failed to allocate console! Error: ");
+		SS << GetLastError();
+		
+		MessageBoxA(NULL, SS.str().c_str(), "Error", MB_ICONERROR);
+		Utils::LogError(Utils::GetLocation(CurrentLoc), GetLastError()); // This code is here only to log the error, if another console is already attached
 		this->bInitalized = false;
 		return;
 	}
