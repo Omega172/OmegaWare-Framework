@@ -7,4 +7,6 @@ namespace Utils
 	// Functions to check if memory is readable
 	bool IsReadableMemory(void* ptr, size_t byteCount);
 	bool IsReadableMemory(const void* ptr, size_t byteCount); 
+
+	std::string GetDocumentsFolder();
 }
