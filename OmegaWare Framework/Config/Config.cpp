@@ -39,7 +39,9 @@ bool Config::SaveConfig()
 	ConfigJson["Config"] = nlohmann::json::array();
 
 	Cheat::Entries.clear();
-	Cheat::Entries = Cheat::DefaultConfig;
+	
+	PushEntry("Watermark", "bool", std::to_string(Cheat::bWatermark));
+	PushEntry("WatermarkFPS", "bool", std::to_string(Cheat::bWatermarkFPS));
 
 	for (size_t i = 0; i < Features.size(); i++)
 	{
@@ -85,6 +87,14 @@ bool Config::LoadConfig()
 
 		PushEntry(Name, Type, Value);
 	}
+
+	ConfigEntry WatermarkEntry = Cheat::config->GetEntryByName("Watermark");
+	if (WatermarkEntry.Name == "Watermark")
+		Cheat::bWatermark = std::stoi(WatermarkEntry.Value);
+
+	ConfigEntry WatermarkFPSEntry = Cheat::config->GetEntryByName("WatermarkFPS");
+	if (WatermarkFPSEntry.Name == "WatermarkFPS")
+		Cheat::bWatermarkFPS = std::stoi(WatermarkFPSEntry.Value);
 
 	for (size_t i = 0; i < Features.size(); i++)
 	{
