@@ -17,6 +17,9 @@ public:
 
 	inline void RefreshActorList() // A function to refresh the actor list
 	{
+		if (CG::UWorld::GWorld == nullptr)
+			return;
+
 		if (!(*CG::UWorld::GWorld))
 			return;
 		
