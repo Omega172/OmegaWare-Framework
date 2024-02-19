@@ -164,11 +164,6 @@ namespace Cheat
 	inline bool bWatermark = true;
 	inline bool bWatermarkFPS = true;
 
-	inline std::vector<ConfigEntry> DefaultConfig = {
-		{ "Watermark", "bool", "1" },
-		{ "WatermarkFPS", "bool", "1" }
-	};
-
 	inline std::unique_ptr<Config> config;
 	inline std::vector<ConfigEntry> Entries;
 

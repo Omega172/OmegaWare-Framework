@@ -14,8 +14,6 @@ Config::Config()
 
 	Utils::LogDebug(Utils::GetLocation(CurrentLoc), "Config Path: " + ConfigPath.string());
 
-	Cheat::Entries = Cheat::DefaultConfig;
-
 	if (!std::filesystem::exists(ConfigPath))
 	{
 		SaveConfig();
