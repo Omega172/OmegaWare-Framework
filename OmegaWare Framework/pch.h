@@ -15,8 +15,8 @@
 #define FRAMEWORK_REWORK_VERSION 1
 
 #define FRAMEWORK_CODENAME "OmegaWare"
-#define FRAMEWORK_TARGET_GAME ""
-#define FRAMEWORK_TARGET_PROCESS ""
+#define FRAMEWORK_TARGET_GAME "a"
+#define FRAMEWORK_TARGET_PROCESS "a"
 #pragma warning(disable : 5056)
 static_assert(FRAMEWORK_TARGET_GAME != "", "Target game not set."); // Make sure the target game title is set
 static_assert(FRAMEWORK_TARGET_PROCESS != "", "Target process name not set."); // Make sure the target process name is set
@@ -131,26 +131,25 @@ static_assert((FRAMEWORK_RENDER_D3D11 + FRAMEWORK_RENDER_D3D12) == 1, "Must use 
 
 namespace Cheat
 {
-	static const std::string Framework = FRAMEWORK_CODENAME; // Set the framework name to the codename
-	static const std::string Game = FRAMEWORK_TARGET_GAME; // Set the game name to the target game
-
-	static const std::string Title = Framework + " (" + Game + ")"; // Set the title to the framework name and the game name
+	inline const std::string Framework = FRAMEWORK_CODENAME; // Set the framework name to the codename
+	inline const std::string Game = FRAMEWORK_TARGET_GAME; // Set the game name to the target game
+	inline const std::string Title = Framework + " (" + Game + ")"; // Set the title to the framework name and the game name
 
 #ifndef FRAMEWORK_INJECTOR
 
 	#ifdef _WIN64
-	static constexpr bool bIs64Bit = true;
+	constexpr bool bIs64Bit = true;
 	#else
-	static constexpr bool bIs64Bit = true;
+	constexpr bool bIs64Bit = true;
 	#endif
 
-	static bool bShouldRun = true; // A boolean to check if the cheat should run or exit
-	static DWORD dwThreadID = NULL; // A DWORD to store the thread ID of the cheat thread
-	static HMODULE hModule = NULL; // A HMODULE to store the module handle of the cheat used for unloading the module
+	inline bool bShouldRun = true; // A boolean to check if the cheat should run or exit
+	inline DWORD dwThreadID = NULL; // A DWORD to store the thread ID of the cheat thread
+	inline HMODULE hModule = NULL; // A HMODULE to store the module handle of the cheat used for unloading the module
 
-	static constexpr DWORD dwMenuKey = VK_INSERT; // A DWORD to store the key that opens and closes the menu
-	static constexpr DWORD dwUnloadKey = VK_END; // A DWORD to store the key that unloads the cheat
-	static constexpr DWORD dwConsoleKey = VK_HOME; // A DWORD to store the key that opens and closes the console
+	constexpr DWORD dwMenuKey = VK_INSERT; // A DWORD to store the key that opens and closes the menu
+	constexpr DWORD dwUnloadKey = VK_END; // A DWORD to store the key that unloads the cheat
+	constexpr DWORD dwConsoleKey = VK_HOME; // A DWORD to store the key that opens and closes the console
 
 	inline std::unique_ptr<Console> console = std::make_unique<Console>(false, Title);  // A unique pointer to the console class that is used to create the console for the framework
 
@@ -171,10 +170,10 @@ namespace Cheat
 	};
 
 	inline std::unique_ptr<Config> config;
-	static std::vector<ConfigEntry> Entries;
+	inline std::vector<ConfigEntry> Entries;
 
-	static std::vector<LocalizationData> Locales;
-	static LocalizationData CurrentLocale;
+	inline std::vector<LocalizationData> Locales;
+	inline LocalizationData CurrentLocale;
 	inline std::unique_ptr<Localization> localization;
 #endif
 }
