@@ -174,7 +174,9 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ulReasonForCall, LPVOID lpReserved)
 	if (ulReasonForCall != DLL_PROCESS_ATTACH)
 		return TRUE;
 
-	CloseHandle(CreateThread(nullptr, NULL, Cheat::CheatThread, hModule, NULL, &Cheat::dwThreadID));
+	HANDLE hThread = CreateThread(nullptr, NULL, Cheat::CheatThread, hModule, NULL, &Cheat::dwThreadID);
+	if (hThread)
+		CloseHandle(hThread);
 
 	return TRUE;
 }
