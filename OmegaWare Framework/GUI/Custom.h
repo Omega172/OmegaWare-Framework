@@ -10,10 +10,9 @@
 // I have no clue where I got this from but I fixed it up a bit to work with newer changes to the ImGui API, and cleaned it up a bit
 class KeyBind
 {
-private:
+public:
     ImGuiKey key;
 
-public:
     explicit KeyBind(ImGuiKey _key = ImGuiKey_None) noexcept : key{ _key } {};
 
     const char* ToString() const noexcept { return ImGui::GetKeyName(key); };
