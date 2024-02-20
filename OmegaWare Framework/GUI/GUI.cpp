@@ -36,6 +36,7 @@ void GUI::Render()
 						ImGui::SetItemDefaultFocus();
 				}
 			}
+			ImGui::EndCombo();
 
 			ImGui::Checkbox(Cheat::localization->Get("WATER_MARK").c_str(), &Cheat::bWatermark);
 			if (Cheat::bWatermark)
