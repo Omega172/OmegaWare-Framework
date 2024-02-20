@@ -72,6 +72,131 @@ bool Utils::IsReadableMemory(const void* lpAddress, size_t dwLength)
 	return true;
 }
 
+size_t Utils::Strlen(char* lpAddress, size_t dwMaxSize) {
+	static constexpr size_t dwTypeSize = sizeof(char);
+
+	MEMORY_BASIC_INFORMATION MemInfo;
+	if (VirtualQuery(lpAddress, &MemInfo, sizeof(MEMORY_BASIC_INFORMATION)) == NULL)
+	{
+#ifdef EXCEPT_ON_VQUERY_ERR
+		throw std::runtime_error(std::system_category().message(GetLastError()));
+#endif
+		return 0;
+	}
+
+	if (MemInfo.State != MEM_COMMIT)
+	{
+#ifdef EXCEPT_ON_MEM_ERR
+		throw std::runtime_error("State != MEM_COMMIT");
+#endif
+		return 0;
+	}
+
+	if (MemInfo.Protect == PAGE_NOACCESS || MemInfo.Protect == PAGE_EXECUTE)
+	{
+#ifdef EXCEPT_ON_MEM_ERR
+		throw std::runtime_error("Protect is not Readable");
+#endif
+		return 0;
+	}
+
+	size_t dwRemainingRegionSize = MemInfo.RegionSize + lpAddress - static_cast<char*>(MemInfo.AllocationBase);
+	size_t dwSize = 0;
+	while (1) {
+		if (dwRemainingRegionSize + dwSize * dwTypeSize < dwTypeSize)
+			break;
+
+		if (!lpAddress[dwSize])
+			return dwSize;
+
+		++dwSize;
+
+#ifdef FAIL_ON_MAX_STRLEN
+		if (dwSize > dwMaxSize)
+			return 0;
+	}
+
+	if (dwMaxSize - dwSize <= 1)
+		return 0;
+
+	size_t dwSizeNext = Strlen(lpAddress + dwSize * dwTypeSize, dwMaxSize - dwSize);
+	if (!dwSizeNext)
+		return 0;
+
+	return dwSize + dwSizeNext;
+#else
+		if (dwSize > dwMaxSize)
+			return dwMaxSize;
+	}
+
+	return dwSize + strlen(lpAddress + dwSize * dwTypeSize, dwMaxSize - dwSize);
+#endif
+}
+
+size_t Utils::Wcslen(wchar_t* lpAddress, size_t dwMaxSize) {
+	static constexpr size_t dwTypeSize = sizeof(wchar_t);
+
+	MEMORY_BASIC_INFORMATION MemInfo;
+	if (VirtualQuery(lpAddress, &MemInfo, sizeof(MEMORY_BASIC_INFORMATION)) == NULL)
+	{
+#ifdef EXCEPT_ON_VQUERY_ERR
+		Utils::LogError(Utils::GetLocation(CurrentLoc), GetLastError());
+		throw std::runtime_error(std::system_category().message(GetLastError()));
+#endif
+		return 0;
+	}
+
+	if (MemInfo.State != MEM_COMMIT)
+	{
+#ifdef EXCEPT_ON_MEM_ERR
+		Utils::LogError(Utils::GetLocation(CurrentLoc), GetLastError());
+		throw std::runtime_error("State != MEM_COMMIT");
+#endif
+		return 0;
+	}
+
+	if (MemInfo.Protect == PAGE_NOACCESS || MemInfo.Protect == PAGE_EXECUTE)
+	{
+#ifdef EXCEPT_ON_MEM_ERR
+		Utils::LogError(Utils::GetLocation(CurrentLoc), GetLastError());
+		throw std::runtime_error("Protect is not Readable");
+#endif
+		return 0;
+	}
+
+	size_t dwRemainingRegionSize = MemInfo.RegionSize + lpAddress - static_cast<wchar_t*>(MemInfo.AllocationBase);
+	size_t dwSize = 0;
+	while (1) {
+		if (dwRemainingRegionSize + dwSize * dwTypeSize < dwTypeSize)
+			break;
+
+		if (!lpAddress[dwSize])
+			return dwSize;
+
+		++dwSize;
+
+#ifdef FAIL_ON_MAX_STRLEN
+		if (dwSize > dwMaxSize)
+			return 0;
+	}
+
+	if (dwMaxSize - dwSize <= 1)
+		return 0;
+
+	size_t dwSizeNext = Wcslen(lpAddress + dwSize * dwTypeSize, dwMaxSize - dwSize);
+	if (!dwSizeNext)
+		return 0;
+
+	return dwSize + dwSizeNext;
+#else
+		if (dwSize > dwMaxSize)
+			return dwMaxSize;
+	}
+
+	return dwSize + wcslen(lpAddress + dwSize * dwTypeSize, dwMaxSize - dwSize);
+#endif
+}
+
 std::string Utils::GetDocumentsFolder()
 {
 	char Folder[MAX_PATH];

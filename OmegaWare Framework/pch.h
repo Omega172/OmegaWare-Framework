@@ -89,6 +89,7 @@ static_assert((FRAMEWORK_RENDER_D3D11 + FRAMEWORK_RENDER_D3D12) == 1, "Must use 
 #define _USE_MATH_DEFINES // Define math constants for things like M_PI and M_SQRT2
 #include <math.h>
 
+#define FAIL_ON_MAX_STRLEN // Prevent overreading strings
 #include "Utils/Utils.h" // Include the Utils.h file that contains various utility functions for the framework
 
 #include "Interfaces/EasyHook.h"

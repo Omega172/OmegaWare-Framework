@@ -68,14 +68,19 @@ namespace Cheat
 		// Features
 		Features.push_back(std::make_unique<ExampleFeature>());
 
-		for (size_t i = 0; i < Features.size(); i++) // A loop to grap the feature pointers and call their respective setup functions
-		{
-			bool bResult = Features[i]->Setup();
-			if (!bResult)
+		try {
+			for (size_t i = 0; i < Features.size(); i++) // A loop to grap the feature pointers and call their respective setup functions
 			{
-				Utils::LogError(Utils::GetLocation(CurrentLoc), "Failed to setup feature: " + std::to_string(i));
-				return false;
+				bool bResult = Features[i]->Setup();
+				if (!bResult)
+				{
+					Utils::LogError(Utils::GetLocation(CurrentLoc), "Failed to setup feature: " + std::to_string(i));
+					return false;
+				}
 			}
+		}
+		catch (char* e) {
+			Utils::LogDebug(Utils::GetLocation(CurrentLoc), std::string(e));
 		}
 
 		config = std::make_unique<Config>(); // Initalize the config class
