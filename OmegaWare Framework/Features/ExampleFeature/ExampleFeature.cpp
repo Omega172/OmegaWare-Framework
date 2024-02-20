@@ -7,7 +7,13 @@ bool ExampleFeature::Setup()
 	if (!Cheat::localization->AddToLocale("ENG", "EXAMPLE_FEATURE", "Example Feature"))
 		return false;
 
+	if (!Cheat::localization->AddToLocale("GER", "EXAMPLE_FEATURE", "Beispielfunktion"))
+		return false;
+
 	if (!Cheat::localization->AddToLocale("ENG", "EXAMPLE_FEATURE_HW", "Hello, World!"))
+		return false;
+
+	if (!Cheat::localization->AddToLocale("GER", "EXAMPLE_FEATURE_HW", "Hallo Welt!"))
 		return false;
 
 	Cheat::localization->UpdateLocale();
