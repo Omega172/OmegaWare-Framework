@@ -4,7 +4,7 @@
 class Feature
 {
 private:
-	bool Initalized = false;
+	bool Initialized = false;
 
 public:
 	Feature() {};

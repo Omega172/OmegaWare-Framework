@@ -21,14 +21,20 @@ bool Localization::IsInitialized() { return bInitialized; }
 
 std::string Localization::Get(std::string Key)
 {
-	size_t KeyHash = HASH(Key);
 	for (LocaleData Entry : Cheat::CurrentLocale.Locales)
 	{
-		if (Entry.Key == KeyHash)
+		if (Entry.Key == HASH(Key))
 			return Entry.Value;
 	}
 
-	return "NOT_FOUND";
+	// If not foun in the current locale, try to find it in the default locale
+	for (LocaleData Entry : Cheat::CurrentLocale.Locales)
+	{
+		if (Entry.Key == HASH("ENG"))
+			return Entry.Value;
+	}
+
+	return "NOT_FOUND"; // If not found in any locale, return NOT_FOUND
 }
 
 void Localization::LoadLocale(LocalizationData Locale) { Cheat::Locales.push_back(Locale); }
@@ -72,6 +78,22 @@ bool Localization::AddToLocale(std::string LocaleCode, std::string Key, std::str
 		if (Locale.LocaleCode == LocaleCodeHash)
 		{
 			Locale.Locales.push_back({ HASH(Key), Value });
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool Localization::AddToLocale(std::string LocaleCode, std::vector<LocaleData> arrLocaleData)
+{
+	for (LocalizationData& Locale : Cheat::Locales)
+	{
+		if (Locale.LocaleCode == HASH(LocaleCode))
+		{
+			for (LocaleData LocaleData : arrLocaleData)
+				Locale.Locales.push_back(LocaleData);
+
 			return true;
 		}
 	}

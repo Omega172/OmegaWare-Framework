@@ -9,6 +9,8 @@
 // I use Pascal case for almost everything, if you don't like it 1v1 me in the parking lot :smile:
 
 // Framework defines
+#pragma execution_character_set("utf-8")
+
 #define FRAMEWORK_VERSION 3.0.0
 #define FRAMEWORK_MAJOR_VERSION 3
 #define FRAMEWORK_MINOR_VERSION 0

@@ -4,31 +4,31 @@ ExampleFeature::ExampleFeature() {};
 
 bool ExampleFeature::Setup()
 {
-	if (!Cheat::localization->AddToLocale("ENG", "EXAMPLE_FEATURE", "Example Feature"))
-		return false;
+	std::vector<LocaleData> EnglishLocale = {
+		{ HASH("EXAMPLE_FEATURE"), "Example Feature" },
+		{ HASH("EXAMPLE_FEATURE_HW"), "Hello, World!" }
+	};
+	Cheat::localization->AddToLocale("ENG", EnglishLocale);
 
-	if (!Cheat::localization->AddToLocale("GER", "EXAMPLE_FEATURE", "Beispielfunktion"))
-		return false;
-
-	if (!Cheat::localization->AddToLocale("ENG", "EXAMPLE_FEATURE_HW", "Hello, World!"))
-		return false;
-
-	if (!Cheat::localization->AddToLocale("GER", "EXAMPLE_FEATURE_HW", "Hallo Welt!"))
-		return false;
+	std::vector<LocaleData> GermanLocale = {
+		{ HASH("EXAMPLE_FEATURE"), "Beispielfunktion" },
+		{ HASH("EXAMPLE_FEATURE_HW"), "Hallo Welt!" }
+	};
+	Cheat::localization->AddToLocale("GER", GermanLocale);
 
 	Cheat::localization->UpdateLocale();
 
-	Initalized = true;
-	return Initalized;
+	Initialized = true;
+	return Initialized;
 }
 
-void ExampleFeature::Destroy() { Initalized = false; }
+void ExampleFeature::Destroy() { Initialized = false; }
 
 void ExampleFeature::HandleKeys() {}
 
 void ExampleFeature::DrawMenuItems()
 {
-	if (!Initalized)
+	if (!Initialized)
 		return;
 
 	ImGui::SameLine();

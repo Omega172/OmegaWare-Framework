@@ -4,7 +4,7 @@
 class ExampleFeature : public Feature
 {
 private:
-	bool Initalized = false;
+	bool Initialized = false;
 	bool bExampleFeature = false;
 
 public:

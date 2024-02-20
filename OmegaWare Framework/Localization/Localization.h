@@ -21,6 +21,7 @@ public:
 	std::vector<LocalizationData> GetLocales();
 
 	bool AddToLocale(std::string LocaleCode, std::string Key, std::string Value);
+	bool AddToLocale(std::string LocaleCode, std::vector<LocaleData> arrLocaleData);
 
 	bool UpdateLocale();
 };
