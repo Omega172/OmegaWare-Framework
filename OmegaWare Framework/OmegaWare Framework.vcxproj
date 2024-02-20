@@ -236,6 +236,7 @@
     <ClInclude Include="Kiero\minhook\include\MinHook.h" />
     <ClInclude Include="Localization\LocaleStructs.h" />
     <ClInclude Include="Localization\Locales\English.h" />
+    <ClInclude Include="Localization\Locales\German.h" />
     <ClInclude Include="Localization\Localization.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Utils\Console\Console.h" />

@@ -10,5 +10,6 @@ std::vector<LocaleData> EnglishLocales = {
 	{HASH("WATER_MARK_FPS"), "Watermark FPS"},
 	{HASH("SAVE_CONFIG"), "Save Config"},
 	{HASH("LOAD_CONFIG"), "Load Config"},
+	{HASH("LANGUAGE"), "Language"}
 };
 LocalizationData English{ "English", HASH("ENG"), EnglishLocales };

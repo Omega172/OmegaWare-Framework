@@ -22,7 +22,20 @@ void GUI::Render()
 			if (ImGui::Button(Cheat::console->GetVisibility() ? Cheat::localization->Get("CONSOLE_HIDE").c_str() : Cheat::localization->Get("CONSOLE_SHOW").c_str()))
 				Cheat::console->ToggleVisibility();
 
-			//ImGui::Checkbox("Extra Debug Info", &bExtraDebug);
+			if (ImGui::BeginCombo(Cheat::localization->Get("LANGUAGE").c_str(), Cheat::CurrentLocale.Name.c_str()))
+			{
+				for (LocalizationData Locale : Cheat::Locales)
+				{
+					bool bSelected = Cheat::CurrentLocale.LocaleCode == Locale.LocaleCode;
+					if (ImGui::Selectable(Locale.Name.c_str(), bSelected))
+					{
+						Cheat::CurrentLocale = Locale;
+						Cheat::localization->SetLocale(Locale.LocaleCode);
+					}
+					if (bSelected)
+						ImGui::SetItemDefaultFocus();
+				}
+			}
 
 			ImGui::Checkbox(Cheat::localization->Get("WATER_MARK").c_str(), &Cheat::bWatermark);
 			if (Cheat::bWatermark)

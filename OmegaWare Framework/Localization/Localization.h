@@ -15,9 +15,12 @@ public:
 
 	void LoadLocale(LocalizationData Locale);
 
-	bool SetLocale(std::string LocalCode);
+	bool SetLocale(std::string LocaleCode);
+	bool SetLocale(size_t LocaleCodeHash);
 
 	std::vector<LocalizationData> GetLocales();
 
-	bool AddToLocale(std::string LocalCode, std::string Key, std::string Value);
+	bool AddToLocale(std::string LocaleCode, std::string Key, std::string Value);
+
+	bool UpdateLocale();
 };

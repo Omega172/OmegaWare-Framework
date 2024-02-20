@@ -14,7 +14,7 @@ struct LocaleData
 struct LocalizationData
 {
 	std::string Name;
-	size_t LocalCode;
+	size_t LocaleCode;
 
-	std::vector<LocaleData> Locals;
+	std::vector<LocaleData> Locales;
 };

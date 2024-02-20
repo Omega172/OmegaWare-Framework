@@ -10,11 +10,7 @@ bool ExampleFeature::Setup()
 	if (!Cheat::localization->AddToLocale("ENG", "EXAMPLE_FEATURE_HW", "Hello, World!"))
 		return false;
 
-	if (!Cheat::localization->SetLocale("ENG"))
-	{
-		Utils::LogError(Utils::GetLocation(CurrentLoc), "Failed to update locale ENG");
-		return false;
-	}
+	Cheat::localization->UpdateLocale();
 
 	Initalized = true;
 	return Initalized;

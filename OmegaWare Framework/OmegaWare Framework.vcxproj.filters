@@ -52,6 +52,7 @@
     <ClInclude Include="Features\ExampleFeature\ExampleFeature.h" />
     <ClInclude Include="Localization\Locales\English.h" />
     <ClInclude Include="Localization\LocaleStructs.h" />
+    <ClInclude Include="Localization\Locales\German.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
