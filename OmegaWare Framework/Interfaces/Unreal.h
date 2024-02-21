@@ -126,14 +126,14 @@ public:
 	}
 
 	// I made this function so I would have to type less to get the screen position of a world position
-	static CG::FVector2D W2S(CG::FVector in, bool relitive = false)
+	static CG::FVector2D W2S(CG::FVector in, bool relative = false)
 	{
 		CG::FVector2D out = { 0, 0 };
 		CG::APlayerController* PlayerController = GetPlayerController();
 		if (!PlayerController)
 			return out;
 
-		PlayerController->ProjectWorldLocationToScreen(in, &out, false);
+		PlayerController->ProjectWorldLocationToScreen(in, &out, relative);
 
 		return out;
 	}
