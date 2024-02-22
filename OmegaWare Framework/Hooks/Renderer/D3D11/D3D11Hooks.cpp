@@ -124,6 +124,9 @@ bool D3D11Setup()
 
 void D3D11Destroy()
 {
+	MH_DisableHook(MH_ALL_HOOKS);
+
+	std::this_thread::sleep_for(std::chrono::seconds(3)); // Disable hooks and wait a bit for all threads to finish
 
 	if (ImGui::GetCurrentContext()) {
 		ImGuiIO& io = ImGui::GetIO();
@@ -138,10 +141,6 @@ void D3D11Destroy()
 	}
 
 	CleanupDevice();
-
-	MH_DisableHook(MH_ALL_HOOKS);
-
-	// you need to MH_RemoveHook for each hook you have created, otherwise it will cause a crash
 }
 
 #endif
