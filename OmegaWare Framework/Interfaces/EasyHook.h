@@ -1,6 +1,6 @@
 #pragma once
 #include "pch.h"
-#include "../kiero/minhook/include/MinHook.h"
+#include "../MinHook/include/MinHook.h"
 
 #define CreateHook(a) \
 	CheckStatus(#a, MH_CreateHook(a, &h ## a, reinterpret_cast<LPVOID*>(&o ## a)), "Created");

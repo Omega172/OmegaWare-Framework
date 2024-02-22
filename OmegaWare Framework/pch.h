@@ -17,8 +17,8 @@
 #define FRAMEWORK_REWORK_VERSION 1
 
 #define FRAMEWORK_CODENAME "OmegaWare"
-#define FRAMEWORK_TARGET_GAME "Deep Rock Galactic"
-#define FRAMEWORK_TARGET_PROCESS "FSD-Win64-Shipping.exe"
+#define FRAMEWORK_TARGET_GAME ""
+#define FRAMEWORK_TARGET_PROCESS ""
 #pragma warning(disable : 5056)
 static_assert(FRAMEWORK_TARGET_GAME != "", "Target game not set."); // Make sure the target game title is set
 static_assert(FRAMEWORK_TARGET_PROCESS != "", "Target process name not set."); // Make sure the target process name is set
@@ -38,18 +38,7 @@ static_assert((FRAMEWORK_OTHER + FRAMEWORK_UNREAL + FRAMEWORK_UNITY) == 1, "Must
 #define FRAMEWORK_RENDER_D3D12 0
 static_assert((FRAMEWORK_RENDER_D3D11 + FRAMEWORK_RENDER_D3D12) == 1, "Must use exactly one rendering API"); // Don't allow both rendering API's to be used
 
-// Set the rendering API to be used with kiero
-#if FRAMEWORK_RENDER_D3D11
-#define KIERO_INCLUDE_D3D11  1
-#define KIERO_INCLUDE_D3D12  0
-#endif
-
-#if FRAMEWORK_RENDER_D3D12
-#define KIERO_INCLUDE_D3D11  0
-#define KIERO_INCLUDE_D3D12  1
-#endif
-
-#include "Kiero/kiero.h"
+#include "MinHook/include/MinHook.h"
 
 // A macro to get the current source location to be used with Utils::GetLocation
 #include <source_location>

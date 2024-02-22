@@ -14,7 +14,6 @@
     <ClCompile Include="ImGUI\imgui_impl_win32.cpp" />
     <ClCompile Include="ImGUI\imgui_tables.cpp" />
     <ClCompile Include="ImGUI\imgui_widgets.cpp" />
-    <ClCompile Include="Kiero\kiero.cpp" />
     <ClCompile Include="ImGUI\imgui_impl_dx12.cpp" />
     <ClCompile Include="Config\Config.cpp" />
     <ClCompile Include="Localization\Localization.cpp" />
@@ -41,8 +40,7 @@
     <ClInclude Include="ImGUI\imstb_textedit.h" />
     <ClInclude Include="ImGUI\imstb_truetype.h" />
     <ClInclude Include="ImGUI\Styles.h" />
-    <ClInclude Include="Kiero\minhook\include\MinHook.h" />
-    <ClInclude Include="Kiero\kiero.h" />
+    <ClInclude Include="MinHook\include\MinHook.h" />
     <ClInclude Include="ImGUI\imgui_impl_dx12.h" />
     <ClInclude Include="Hooks\Renderer\D3D12\D3D12Hooks.h" />
     <ClInclude Include="Interfaces\Unreal.h" />
