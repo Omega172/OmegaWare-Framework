@@ -1,6 +1,7 @@
 #include "pch.h"
+#if FRAMEWORK_RENDER_D3D11
 
-bool RendererHooks::Setup()
+bool D3D11Setup()
 {
 	if (!CreateDevice(Cheat::wndproc.get()->hwndWindow)) {
 		Utils::LogError(Utils::GetLocation(CurrentLoc), "Unable to create dx11 device!");
@@ -121,7 +122,7 @@ bool RendererHooks::Setup()
 	return true;
 }
 
-void RendererHooks::Destroy()
+void D3D11Destroy()
 {
 
 	if (ImGui::GetCurrentContext()) {
@@ -142,3 +143,5 @@ void RendererHooks::Destroy()
 
 	// you need to MH_RemoveHook for each hook you have created, otherwise it will cause a crash
 }
+
+#endif

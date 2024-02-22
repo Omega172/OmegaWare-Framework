@@ -16,7 +16,22 @@ private:
 
 public:
 
-	bool Setup();
+	bool Setup()
+	{
+#if FRAMEWORK_RENDER_D3D11
+		Initialized = D3D11Setup();
+		return Initialized;
+#endif
 
-	void Destroy();
+		return false;
+	}
+
+	void Destroy()
+	{
+#if FRAMEWORK_RENDER_D3D11
+		D3D11Destroy();
+#endif
+
+		return;
+	}
 };

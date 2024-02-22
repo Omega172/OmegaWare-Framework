@@ -48,11 +48,13 @@ static LRESULT hkWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         case WM_CHAR:
         case WM_SETCURSOR:
         case WM_DEVICECHANGE:
-            return 1;
+            return true;
         }
+
+        return true;
     }
 
-    return CallWindowProc(oWndProc, hWnd, uMsg, wParam, lParam);
+    return CallWindowProcA(oWndProc, hWnd, uMsg, wParam, lParam);
 }
 
 static BOOL CALLBACK EnumWindowsCallback(HWND handle, LPARAM lParam) {

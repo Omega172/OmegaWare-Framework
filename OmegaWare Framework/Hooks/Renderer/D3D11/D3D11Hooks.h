@@ -1,5 +1,4 @@
 #include "pch.h"
-#include "../../ImGUI/Styles.h"
 
 #if FRAMEWORK_RENDER_D3D11
 
@@ -196,5 +195,9 @@ static HRESULT WINAPI hkCreateSwapChainForComposition(IDXGIFactory* pFactory, IU
 
 	return oCreateSwapChainForComposition(pFactory, pDevice, pDesc, pRestrictToOutput, ppSwapChain);
 }
+
+bool D3D11Setup();
+
+void D3D11Destroy();
 
 #endif // FRAMEWORK_RENDER_D3D11
