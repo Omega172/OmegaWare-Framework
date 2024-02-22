@@ -220,8 +220,7 @@
     <ClInclude Include="GUI\Custom.h" />
     <ClInclude Include="GUI\GUI.h" />
     <ClInclude Include="GUI\Watermark.h" />
-    <ClInclude Include="Hooks\Renderer\D3D11\D3D11Hooks.h" />
-    <ClInclude Include="Hooks\Renderer\D3D12\D3D12Hooks.h" />
+    <ClInclude Include="Hooks\Renderer\D3D12\D3D12Hooks.cpp" />
     <ClInclude Include="Hooks\Renderer\RendererHooks.h" />
     <ClInclude Include="Hooks\WndProc\WndProcHooks.h" />
     <ClInclude Include="ImGUI\imconfig.h" />
