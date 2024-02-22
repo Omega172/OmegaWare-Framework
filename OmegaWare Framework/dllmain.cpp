@@ -1,14 +1,5 @@
 #include "pch.h"
 
-// Include the respective rendering API hooks
-#if FRAMEWORK_RENDER_D3D11
-#include "Hooks/D3D11/D3D11Hooks.h"
-#endif
-
-#if FRAMEWORK_RENDER_D3D12
-#include "Hooks/D3D12/D3D12Hooks.h"
-#endif
-
 #define DO_THREAD_SLEEP 1
 #define THREAD_SLEEP_TIME 100
 
@@ -16,17 +7,16 @@ namespace Cheat
 {
 	bool Init()
 	{
-	#if FRAMEWORK_RENDER_D3D11
-		if (kiero::init(kiero::RenderType::D3D11) == kiero::Status::Success)
-		{
-			if (kiero::bind(8, reinterpret_cast<void**>(&oPresent), hkPresent) != kiero::Status::Success)
-				return false;
-		}
-		else
+		if (MH_Initialize() != MH_STATUS::MH_OK)
 			return false;
-	#endif
 
-	#if FRAMEWORK_UNREAL // If the framework is Unreal initalize the SDK assuming the SDK was generated with CheatGeat by Cormm
+		if (!wndproc.get()->Setup())
+			return false;
+
+		if (!renderer.get()->Setup())
+			return false;
+
+#if FRAMEWORK_UNREAL // If the framework is Unreal initalize the SDK assuming the SDK was generated with CheatGeat by Cormm
 		if (!CG::InitSdk())
 			return false;
 
@@ -35,26 +25,13 @@ namespace Cheat
 
 		while (!(*CG::UWorld::GWorld))
 			continue;
-	#endif
-
-	#if FRAMEWORK_RENDER_D3D12
-		if (kiero::init(kiero::RenderType::D3D12) == kiero::Status::Success)
-		{
-			if (kiero::bind(54, (void**)&oExecuteCommandLists, hkExecuteCommandLists) != kiero::Status::Success)
-				return false;
-
-			if (kiero::bind(140, (void**)&oPresent, hkPresent) != kiero::Status::Success)
-				return false;
-		}
-		else
-			return false;
-	#endif
+#endif
 
 		Utils::LogDebug(Utils::GetLocation(CurrentLoc), "Initalizing Globals, this can take a bit"); // Log that the globals are being initalized
 
-	#if FRAMEWORK_UNREAL // If using the Unreal framework print the pointer to the Unreal class to make sure it was initalized
+#if FRAMEWORK_UNREAL // If using the Unreal framework print the pointer to the Unreal class to make sure it was initalized
 		Utils::LogDebug(Utils::GetLocation(CurrentLoc), (std::stringstream() << "Unreal: 0x" << unreal.get()).str());
-	#endif
+#endif
 
 		// Add other globals that need to be initalized here
 
@@ -85,6 +62,8 @@ namespace Cheat
 
 		config = std::make_unique<Config>(); // Initalize the config class
 
+		//Unreal::HookPostRender();
+
 		return true; // Return true if the initalization was successful
 	}
 
@@ -103,13 +82,12 @@ namespace Cheat
 		if (GetAsyncKeyState(dwConsoleKey) & 0x1)
 			console->ToggleVisibility();
 
-		if (GetAsyncKeyState(dwUnloadKey))
+		if (GetAsyncKeyState(dwUnloadKey1) || GetAsyncKeyState(dwUnloadKey2))
 			bShouldRun = false;
 
 		for (size_t i = 0; i < Features.size(); i++)
 		{
 			Features[i]->HandleKeys(); // Call the handle keys function for each feature
-
 			// This is mostly outdated but is still useful for some things, using the ImGui::Hotkey function is better which is located in GUI/Custom.h
 		}
 	}
@@ -135,13 +113,17 @@ namespace Cheat
 		{
 			HandleKeys();
 
+#if FRAMEWORK_UNREAL
+			Cheat::unreal.get()->RefreshActorList();
+#endif
+
 			for (size_t i = 0; i < Features.size(); i++)
 			{
 				Features[i]->Run();
 			}
 
-// If the thread sleep is enabled sleep for the specified amount of time
-// This is used to reduce the CPU usage of the module, I would recommend keeping this enabled but added the option to disable it if needed for testing and when messing with less CPU intensive games
+			// If the thread sleep is enabled sleep for the specified amount of time
+			// This is used to reduce the CPU usage of the module, I would recommend keeping this enabled but added the option to disable it if needed for testing and when messing with less CPU intensive games
 #if DO_THREAD_SLEEP
 			std::this_thread::sleep_for(std::chrono::milliseconds(THREAD_SLEEP_TIME));
 #endif
@@ -150,16 +132,20 @@ namespace Cheat
 		console->SetVisibility(true); // Set the console to be visible when the cheat is unloading
 		Utils::LogDebug(Utils::GetLocation(CurrentLoc), Cheat::Title + ": Unloading..."); // Log that the cheat is unloading
 
-		#if FRAMEWORK_RENDER_D3D12 // If the framework is using D3D12 unbind the hooks and shutdown kiero, we do this here because the game might crash if we do it in the D3D12Hooks.cpp file like we do with D3D11
-		D3D12Release();
-		kiero::shutdown();
-		#endif
+
+		renderer.get()->Destroy();
+		wndproc.get()->Destroy();
+
+		MH_Uninitialize();
+
 
 		// Destroy features
 		for (size_t i = 0; i < Features.size(); i++) // A loop to grab the feature pointers and call their respective destroy functions to clean up any resources that were used and restore any settings that were changed
 		{
 			Features[i]->Destroy();
 		}
+
+		//Unreal::RestorePostRender();
 
 		std::this_thread::sleep_for(std::chrono::seconds(3)); // Sleep for 3 seconds to make sure the console is destroyed and that the hooks are released before unloading the module
 

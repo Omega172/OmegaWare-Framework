@@ -190,6 +190,8 @@
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="Features\ExampleFeature\ExampleFeature.cpp" />
     <ClCompile Include="GUI\GUI.cpp" />
+    <ClCompile Include="Hooks\Renderer\D3D11\D3D11Hooks.cpp" />
+    <ClCompile Include="Hooks\WndProc\WndProcHooks.cpp" />
     <ClCompile Include="ImGUI\imgui.cpp" />
     <ClCompile Include="ImGUI\imgui_demo.cpp" />
     <ClCompile Include="ImGUI\imgui_draw.cpp" />
@@ -219,8 +221,10 @@
     <ClInclude Include="GUI\Custom.h" />
     <ClInclude Include="GUI\GUI.h" />
     <ClInclude Include="GUI\Watermark.h" />
-    <ClInclude Include="Hooks\D3D11\D3D11Hooks.h" />
-    <ClInclude Include="Hooks\D3D12\D3D12Hooks.h" />
+    <ClInclude Include="Hooks\Renderer\D3D11\D3D11Hooks.h" />
+    <ClInclude Include="Hooks\Renderer\D3D12\D3D12Hooks.h" />
+    <ClInclude Include="Hooks\Renderer\RendererHooks.h" />
+    <ClInclude Include="Hooks\WndProc\WndProcHooks.h" />
     <ClInclude Include="ImGUI\imconfig.h" />
     <ClInclude Include="ImGUI\imgui.h" />
     <ClInclude Include="ImGUI\imgui_impl_dx11.h" />

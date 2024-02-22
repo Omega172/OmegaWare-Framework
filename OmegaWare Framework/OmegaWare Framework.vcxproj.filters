@@ -19,6 +19,8 @@
     <ClCompile Include="Config\Config.cpp" />
     <ClCompile Include="Localization\Localization.cpp" />
     <ClCompile Include="Features\ExampleFeature\ExampleFeature.cpp" />
+    <ClCompile Include="Hooks\WndProc\WndProcHooks.cpp" />
+    <ClCompile Include="Hooks\Renderer\D3D11\D3D11Hooks.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Utils\Console\Console.h" />
@@ -29,7 +31,7 @@
     <ClInclude Include="GUI\Custom.h" />
     <ClInclude Include="GUI\GUI.h" />
     <ClInclude Include="GUI\Watermark.h" />
-    <ClInclude Include="Hooks\D3D11\D3D11Hooks.h" />
+    <ClInclude Include="Hooks\Renderer\D3D11\D3D11Hooks.h" />
     <ClInclude Include="ImGUI\imconfig.h" />
     <ClInclude Include="ImGUI\imgui.h" />
     <ClInclude Include="ImGUI\imgui_impl_dx11.h" />
@@ -42,7 +44,7 @@
     <ClInclude Include="Kiero\minhook\include\MinHook.h" />
     <ClInclude Include="Kiero\kiero.h" />
     <ClInclude Include="ImGUI\imgui_impl_dx12.h" />
-    <ClInclude Include="Hooks\D3D12\D3D12Hooks.h" />
+    <ClInclude Include="Hooks\Renderer\D3D12\D3D12Hooks.h" />
     <ClInclude Include="Interfaces\Unreal.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Interfaces\Mono.h" />
@@ -53,6 +55,8 @@
     <ClInclude Include="Localization\Locales\English.h" />
     <ClInclude Include="Localization\LocaleStructs.h" />
     <ClInclude Include="Localization\Locales\German.h" />
+    <ClInclude Include="Hooks\WndProc\WndProcHooks.h" />
+    <ClInclude Include="Hooks\Renderer\RendererHooks.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

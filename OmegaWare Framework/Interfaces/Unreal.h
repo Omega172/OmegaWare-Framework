@@ -2,12 +2,46 @@
 #include "pch.h"
 #if FRAMEWORK_UNREAL // Not sure if this is needed but it's here anyway
 
+static CG::UFont* pFont;
+static DWORD dwOldProtect;
+
+typedef void(__thiscall* PostRender) (CG::UObject* pViewportClient, CG::UCanvas* pCanvas);
+static PostRender oPostRender;
+
 class Unreal
 {
 public:
-	// A vector to store all the actors in the game which is refreshed every frame
-	// I should probably not update in the GUI thread but I'm not sure where to put it yet, maybe in the main loop?
+	static void HookPostRender()
+	{
+		pFont = CG::UObject::FindObject<CG::UFont>("Font Roboto.Roboto");
+		if (!IsValidObjectPtr(pFont))
+			return;
+
+		CG::UGameViewportClient* pViewportClient = GetViewportClient();
+		if (!IsValidObjectPtr(pViewportClient))
+			return;
+
+		void** VFTable = pViewportClient->VfTable;
+		VirtualProtect(&VFTable[POST_RENDER_INDEX], 8, PAGE_EXECUTE_READWRITE, &dwOldProtect);
+		oPostRender = reinterpret_cast<PostRender>(VFTable[POST_RENDER_INDEX]);
+		VFTable[POST_RENDER_INDEX] = &hkPostRender;
+		VirtualProtect(&VFTable[POST_RENDER_INDEX], 8, dwOldProtect, &dwOldProtect);
+	}
+
+	static void RestorePostRender()
+	{
+		CG::UGameViewportClient* pViewportClient = GetViewportClient();
+		if (!IsValidObjectPtr(pViewportClient))
+			return;
+
+		void** VFTable = pViewportClient->VfTable;
+		VirtualProtect(&VFTable[POST_RENDER_INDEX], 8, PAGE_EXECUTE_READWRITE, &dwOldProtect);
+		VFTable[POST_RENDER_INDEX] = oPostRender;
+		VirtualProtect(&VFTable[POST_RENDER_INDEX], 8, dwOldProtect, &dwOldProtect);
+	}
+
 	std::vector<CG::AActor*> Actors;
+	std::mutex ActorLock;
 
 	// Shortcut functions to get pointers to important classes used for many things
 	static CG::UKismetMathLibrary* GetMathLibrary() { return reinterpret_cast<CG::UKismetMathLibrary*>(CG::UKismetMathLibrary::StaticClass()); }
@@ -22,7 +56,8 @@ public:
 
 		if (!(*CG::UWorld::GWorld))
 			return;
-		
+
+		ActorLock.lock();
 		Actors.clear();
 
 		for (int i = 0; i < (**CG::UWorld::GWorld).Levels.Count(); i++)
@@ -44,6 +79,7 @@ public:
 				Actors.push_back(Actor);
 			}
 		}
+		ActorLock.unlock();
 	}
 
 	template <typename T>
@@ -51,17 +87,18 @@ public:
 	{
 		std::vector<T*> actors;
 
-		for (CG::AActor* actor : Actors)
+		CG::AGameStateBase* pGameState = GetGameStateBase();
+		CG::UClass* pComparisonClass = T::StaticClass();
+		if (!IsValidObjectPtr(pComparisonClass) || !pGameState || pGameState->ReplicatedWorldTimeSeconds <= 5.f)
+			return actors;
+
+		for (CG::AActor* pActor : Actors)
 		{
-			// I'm not sure if these are the best way to check if the actor is valid but it works for me
-			if (!actor || !actor->bCanBeDamaged) 
+			if (!IsValidObjectPtr(reinterpret_cast<T*>(pActor)))
 				continue;
 
-			if (!Utils::IsReadableMemory(actor, sizeof(actor)))
-				continue;
-
-			if (actor->IsA(T::StaticClass())) // Check if the actor is of the type we want
-				actors.push_back(reinterpret_cast<T*>(actor)); // If it is add it to the vector
+			if (pActor->IsA(pComparisonClass)) // Check if the actor is of the type we want
+				actors.push_back(reinterpret_cast<T*>(pActor)); // If it is add it to the vector
 		}
 
 		return actors; // Return the vector
@@ -73,56 +110,93 @@ public:
 		if (!(*CG::UWorld::GWorld))
 			return nullptr;
 
-		return (*CG::UWorld::GWorld)->GameState;
+		CG::AGameStateBase* pGameState = (*CG::UWorld::GWorld)->GameState;
+		if (!IsValidObjectPtr(pGameState))
+			return nullptr;
+
+		return pGameState;
 	}
 	static CG::UGameInstance* GetGameInstance()
 	{
 		if (!(*CG::UWorld::GWorld))
 			return nullptr;
 
-		return (*CG::UWorld::GWorld)->OwningGameInstance;
+		CG::UGameInstance* pGameInstance = (*CG::UWorld::GWorld)->OwningGameInstance;
+		if (!IsValidObjectPtr(pGameInstance))
+			return nullptr;
+
+		return pGameInstance;
 	}
 
 	static CG::ULocalPlayer* GetLocalPlayer(int index = 0)
 	{
-		CG::UGameInstance* GameInstance = GetGameInstance();
-		if (!GameInstance)
+		CG::UGameInstance* pGameInstance = GetGameInstance();
+		if (!IsValidObjectPtr(pGameInstance))
 			return nullptr;
 
-		return GameInstance->LocalPlayers[index];
+		CG::ULocalPlayer* pLocalPlayer = pGameInstance->LocalPlayers[index];
+		if (!IsValidObjectPtr(pLocalPlayer))
+			return nullptr;
+
+		return pLocalPlayer;
 	}
 	static CG::UGameViewportClient* GetViewportClient()
 	{
-		CG::ULocalPlayer* LocalPlayer = GetLocalPlayer();
-		if (!LocalPlayer)
+		CG::ULocalPlayer* pLocalPlayer = GetLocalPlayer();
+		if (!IsValidObjectPtr(pLocalPlayer))
 			return nullptr;
 
-		return LocalPlayer->ViewportClient;
+		CG::UGameViewportClient* pViewportClient = pLocalPlayer->ViewportClient;
+		if (!IsValidObjectPtr(pViewportClient))
+			return nullptr;
+
+		return pViewportClient;
 	}
 	static CG::APlayerController* GetPlayerController()
 	{
 		CG::ULocalPlayer* LocalPlayer = GetLocalPlayer();
-		if (!LocalPlayer)
+		if (!IsValidObjectPtr(LocalPlayer))
 			return nullptr;
 
-		return LocalPlayer->PlayerController;
+		CG::APlayerController* pPlayerController = LocalPlayer->PlayerController;
+		if (!IsValidObjectPtr(pPlayerController))
+			return nullptr;
+
+		return pPlayerController;
 	}
 	static CG::APawn* GetAcknowledgedPawn()
 	{
-		CG::APlayerController* PlayerController = GetPlayerController();
-		if (!PlayerController)
+		CG::APlayerController* pPlayerController = GetPlayerController();
+		if (!IsValidObjectPtr(pPlayerController))
 			return nullptr;
 
-		return PlayerController->AcknowledgedPawn;
+		CG::APawn* pAcknowledgedPawn = pPlayerController->AcknowledgedPawn;
+		if (!IsValidObjectPtr(pAcknowledgedPawn))
+			return nullptr;
+
+		return pAcknowledgedPawn;
 	}
 
 	static CG::APlayerCameraManager* GetPlayerCameraManager()
 	{
-		CG::APlayerController* PlayerController = GetPlayerController();
-		if (!PlayerController)
+		CG::APlayerController* pPlayerController = GetPlayerController();
+		if (!IsValidObjectPtr(pPlayerController))
 			return nullptr;
 
-		return PlayerController->PlayerCameraManager;
+		CG::APlayerCameraManager* pPlayerCameraManager = pPlayerController->PlayerCameraManager;
+		if (!IsValidObjectPtr(pPlayerCameraManager))
+			return nullptr;
+
+		return pPlayerCameraManager;
+	}
+
+	static bool WorldToScreen(CG::FVector in, CG::FVector2D& out, bool relative = false)
+	{
+		CG::APlayerController* pPlayerController = GetPlayerController();
+		if (!IsValidObjectPtr(pPlayerController))
+			return false;
+
+		return pPlayerController->ProjectWorldLocationToScreen(in, &out, relative);
 	}
 
 	// I made this function so I would have to type less to get the screen position of a world position
@@ -130,7 +204,7 @@ public:
 	{
 		CG::FVector2D out = { 0, 0 };
 		CG::APlayerController* PlayerController = GetPlayerController();
-		if (!PlayerController)
+		if (!IsValidObjectPtr(PlayerController))
 			return out;
 
 		PlayerController->ProjectWorldLocationToScreen(in, &out, relative);
@@ -138,49 +212,49 @@ public:
 		return out;
 	}
 
-	static bool IsActorValid(CG::AActor* actor)
+	template <typename T>
+	static std::vector<T> SortActorsByDistance(std::vector<T> actors)
 	{
-		if (!actor || !actor->bCanBeDamaged)
-			return false;
+		CG::APawn* pAcknowledgedPawn = GetAcknowledgedPawn();
+		if (!IsValidObjectPtr(pAcknowledgedPawn))
+			return actors;
 
-		if (!Utils::IsReadableMemory(actor, sizeof(actor)))
-			return false;
-
-		return true;
-	}
-
-	// Completely untested at the moment but I think it should work
-	static std::vector<CG::AActor*> SortActorsByDistance(std::vector<CG::AActor*> actors)
-	{
-		std::vector<CG::AActor*> SortedActors = actors;
+		std::vector<T> SortedActors = actors;
 
 		// Remove invalid actors
-		SortedActors.erase(std::remove_if(SortedActors.begin(), SortedActors.end(), [](CG::AActor* Actor)
-		{
-			return !IsActorValid(Actor);
-		}), SortedActors.end());
+		SortedActors.erase(std::remove_if(SortedActors.begin(), SortedActors.end(), [](T pActor) {
+			return !IsValidObjectPtr(pActor);
+			}), SortedActors.end());
 
-		std::sort(SortedActors.begin(), SortedActors.end(), [](CG::AActor* ActorA, CG::AActor* ActorB)
-		{
-			CG::APlayerController* PlayerController = GetPlayerController();
-			if (!PlayerController)
-				return false;
+		std::stable_sort(SortedActors.begin(), SortedActors.end(), [pAcknowledgedPawn](T ActorA, T ActorB) {
 
-			CG::APawn* Pawn = PlayerController->AcknowledgedPawn;
-			if (!Pawn)
-				return false;
+			float DistanceA = ActorA->GetDistanceTo(pAcknowledgedPawn);
+			float DistanceB = ActorB->GetDistanceTo(pAcknowledgedPawn);
+			if (DistanceA == DistanceB)
+				return ActorA->Name.ComparisonIndex < ActorB->Name.ComparisonIndex;
 
-			CG::FVector ActorALocation = ActorA->K2_GetActorLocation();
-			CG::FVector ActorBLocation = ActorB->K2_GetActorLocation();
-			CG::FVector PawnLocation = Pawn->K2_GetActorLocation();
-
-			float ActorADistance = ActorALocation.DistanceMeter(PawnLocation);
-			float ActorBDistance = ActorBLocation.DistanceMeter(PawnLocation);
-
-			return ActorADistance < ActorBDistance;
-		});
+			return DistanceA < DistanceB;
+			});
 
 		return SortedActors;
+	}
+
+	static void hkPostRender(CG::UObject* pViewportClient, CG::UCanvas* pCanvas)
+	{
+		CG::ULocalPlayer* pLocalPlayer = GetLocalPlayer();
+		if (!IsValidObjectPtr(pLocalPlayer))
+			return oPostRender(pViewportClient, pCanvas);
+
+		CG::FLinearColor Cyan = { 0.f, 1.f, 1.f, 1.f };
+		CG::FLinearColor Black = { 0.f, 0.f, 0.f, 1.f };
+
+		// The canvas reports its size as the current resolution but in my testing it is always 2048, 1280
+		CG::FVector2D TextSize = pCanvas->K2_TextSize(pFont, L"OmegaWare.xyz", { 1.f, 1.f });
+		//pCanvas->K2_DrawText(pFont, L"OmegaWare.xyz", { 1024.f - (TextSize.X / 2), 0.f }, { 1.f, 1.f }, Cyan, 1.f, Black, { 0.f, 0.f }, false, false, true, Black);
+
+		//pCanvas->K2_DrawLine({ 0.f, 0.f }, { 1024.f, 640.f }, 1.f, Cyan);
+
+		oPostRender(pViewportClient, pCanvas);
 	}
 };
 #endif

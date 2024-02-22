@@ -127,7 +127,7 @@ size_t Utils::Strlen(char* lpAddress, size_t dwMaxSize) {
 #else
 		if (dwSize > dwMaxSize)
 			return dwMaxSize;
-	}
+}
 
 	return dwSize + strlen(lpAddress + dwSize * dwTypeSize, dwMaxSize - dwSize);
 #endif
@@ -191,10 +191,23 @@ size_t Utils::Wcslen(wchar_t* lpAddress, size_t dwMaxSize) {
 #else
 		if (dwSize > dwMaxSize)
 			return dwMaxSize;
-	}
+}
 
 	return dwSize + wcslen(lpAddress + dwSize * dwTypeSize, dwMaxSize - dwSize);
 #endif
+}
+
+void* Utils::GetVirtualMethod(void* ptr, size_t index)
+{
+	if (!IsValidPtr(ptr))
+		return nullptr;
+
+	void** pMethodTable = *static_cast<void***>(ptr);
+	if (!IsValidPtr(pMethodTable))
+		return nullptr;
+
+	void* pMethod = pMethodTable[index];
+	return (IsValidPtr(pMethod)) ? pMethod : nullptr;
 }
 
 std::string Utils::GetDocumentsFolder()

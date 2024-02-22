@@ -11,7 +11,7 @@ void GUI::Render()
 		ImGui::SetNextWindowSize(ImVec2(WIDTH, HEIGHT));
 		ImGui::Begin(Cheat::Title.c_str(), NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoCollapse);
 
-		ImGui::BeginChild("Cheat", ImVec2(ImGui::GetContentRegionAvail().x / 3, ImGui::GetContentRegionAvail().y), true);
+		ImGui::BeginChild("Cheat", ImVec2(ImGui::GetContentRegionAvail().x / 3, ImGui::GetContentRegionAvail().y / 2), true);
 		{
 			ImGui::Text(Cheat::localization->Get("CHEAT").c_str());
 			ImGui::Spacing();
@@ -38,6 +38,8 @@ void GUI::Render()
 
 				ImGui::EndCombo();
 			}
+
+			//ImGui::Checkbox("Extra Debug Info", &bExtraDebug);
 
 			ImGui::Checkbox(Cheat::localization->Get("WATER_MARK").c_str(), &Cheat::bWatermark);
 			if (Cheat::bWatermark)
@@ -66,14 +68,13 @@ void GUI::Render()
 	//
 
 #if FRAMEWORK_UNREAL
-	auto pUnreal = Cheat::unreal.get();
-	pUnreal->RefreshActorList();
-#endif
-
+	Cheat::unreal->ActorLock.lock();
 	for (size_t i = 0; i < Features.size(); i++)
 	{
 		Features[i]->Render();
 	}
+	Cheat::unreal->ActorLock.unlock();
+#endif
 
 	//
 	// End Other Render Stuff

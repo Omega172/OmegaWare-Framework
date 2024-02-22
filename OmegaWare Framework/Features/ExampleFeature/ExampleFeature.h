@@ -5,6 +5,8 @@ class ExampleFeature : public Feature
 {
 private:
 	bool Initialized = false;
+	std::mutex Mutex;
+
 	bool bExampleFeature = false;
 
 public:

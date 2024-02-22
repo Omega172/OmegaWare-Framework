@@ -17,8 +17,8 @@
 #define FRAMEWORK_REWORK_VERSION 1
 
 #define FRAMEWORK_CODENAME "OmegaWare"
-#define FRAMEWORK_TARGET_GAME ""
-#define FRAMEWORK_TARGET_PROCESS ""
+#define FRAMEWORK_TARGET_GAME "Deep Rock Galactic"
+#define FRAMEWORK_TARGET_PROCESS "FSD-Win64-Shipping.exe"
 #pragma warning(disable : 5056)
 static_assert(FRAMEWORK_TARGET_GAME != "", "Target game not set."); // Make sure the target game title is set
 static_assert(FRAMEWORK_TARGET_PROCESS != "", "Target process name not set."); // Make sure the target process name is set
@@ -78,12 +78,14 @@ static_assert((FRAMEWORK_RENDER_D3D11 + FRAMEWORK_RENDER_D3D12) == 1, "Must use 
 #include <thread>
 #include <chrono>
 #include <memory>
+#include <mutex>
 #include <format>
 #include <string>
 #include <cmath>
 #include <sstream>
 #include <cstdio>
 #include <vector>
+#include <algorithm>
 #include <eh.h> // I dont remember what this was for, but I think it was for a scuffed try catch block to stop crashes on memory access violations
 
 #ifndef FRAMEWORK_INJECTOR
@@ -112,6 +114,9 @@ static_assert((FRAMEWORK_RENDER_D3D11 + FRAMEWORK_RENDER_D3D12) == 1, "Must use 
 
 // Include the ImGui implementation for the rendering API that is being used
 #if FRAMEWORK_RENDER_D3D11
+#pragma comment(lib, "d3d11.lib") // WHY DO I NEED THIS WTF
+#include <d3d11.h>
+#include <dxgi1_2.h>
 #include "ImGUI/imgui_impl_dx11.h"
 #endif
 
@@ -123,6 +128,9 @@ static_assert((FRAMEWORK_RENDER_D3D11 + FRAMEWORK_RENDER_D3D12) == 1, "Must use 
 
 #include "GUI/Custom.h" // Include the Custom.h file that contains the custom ImGui widgets for the framework
 #include "GUI/GUI.h" // Include the GUI.h file that contains the GUI class that is used to create the framework's menu
+
+#include "Hooks/WndProc/WndProcHooks.h"
+#include "Hooks/Renderer/RendererHooks.h"
 
 #define DEG2RAD(deg) deg * M_PI / 180 // A macro to convert degrees to radians
 #define RAD2DEG(rad) rad * 180.0 / M_PI; // A macro to convert radians to degrees
@@ -140,29 +148,33 @@ namespace Cheat
 
 #ifndef FRAMEWORK_INJECTOR
 
-	#ifdef _WIN64
+#ifdef _WIN64
 	constexpr bool bIs64Bit = true;
-	#else
+#else
 	constexpr bool bIs64Bit = true;
-	#endif
+#endif
 
 	inline bool bShouldRun = true; // A boolean to check if the cheat should run or exit
 	inline DWORD dwThreadID = NULL; // A DWORD to store the thread ID of the cheat thread
 	inline HMODULE hModule = NULL; // A HMODULE to store the module handle of the cheat used for unloading the module
 
 	constexpr DWORD dwMenuKey = VK_INSERT; // A DWORD to store the key that opens and closes the menu
-	constexpr DWORD dwUnloadKey = VK_END; // A DWORD to store the key that unloads the cheat
+	constexpr DWORD dwUnloadKey1 = VK_END; // A DWORD to store the key that unloads the cheat (Cool one)
+	constexpr DWORD dwUnloadKey2 = VK_DELETE; // A DWORD to store the key that unloads the cheat (Lame one)
 	constexpr DWORD dwConsoleKey = VK_HOME; // A DWORD to store the key that opens and closes the console
 
 	inline std::unique_ptr<Console> console = std::make_unique<Console>(false, Title);  // A unique pointer to the console class that is used to create the console for the framework
 
-	#if FRAMEWORK_UNREAL // If the framework set is Unreal create a unique pointer to the Unreal interface class
-	inline std::unique_ptr<Unreal> unreal = std::make_unique<Unreal>();
-	#endif
+	inline std::unique_ptr<WndProcHooks> wndproc = std::make_unique<WndProcHooks>();
+	inline std::unique_ptr<RendererHooks> renderer = std::make_unique<RendererHooks>();
 
-	#if FRAMEWORK_UNITY // If the framework set is Unity create a unique pointer to the Mono interface class
+#if FRAMEWORK_UNREAL // If the framework set is Unreal create a unique pointer to the Unreal interface class
+	inline std::unique_ptr<Unreal> unreal = std::make_unique<Unreal>();
+#endif
+
+#if FRAMEWORK_UNITY // If the framework set is Unity create a unique pointer to the Mono interface class
 	inline Mono mono = Mono::Instance(); // I would use a unique pointer but the class is already setup as a singlton and I need to call the destructor to clean up the mono domain
-	#endif
+#endif
 
 	inline bool bWatermark = true;
 	inline bool bWatermarkFPS = true;
