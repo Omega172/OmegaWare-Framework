@@ -12,4 +12,5 @@ std::vector<LocaleData> EnglishLocales = {
 	{HASH("LOAD_CONFIG"), "Load Config"},
 	{HASH("LANGUAGE"), "Language"}
 };
-LocalizationData English{ "English", HASH("ENG"), EnglishLocales };
+
+LocalizationData English{ "English", HASH("ENG"), DefaultRanges, EnglishLocales };

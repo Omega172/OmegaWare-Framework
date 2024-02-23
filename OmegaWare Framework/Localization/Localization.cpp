@@ -55,6 +55,7 @@ bool Localization::SetLocale(std::string LocaleCode)
 		if (Locale.LocaleCode == LocaleCodeHash)
 		{
 			Cheat::CurrentLocale = Locale;
+			ImportFonts(Locale.GlyphRanges);
 			return true;
 		}
 	}

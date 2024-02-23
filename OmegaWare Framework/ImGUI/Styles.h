@@ -1,5 +1,6 @@
 #pragma once
 #include "imgui.h"
+#include "pch.h"
 
 inline ImFont* defaultFont; // The default font is this even needed?
 inline ImFont* tahomaFont;
@@ -97,13 +98,16 @@ inline void SetupStyle()
 
 }
 
-inline void ImportFonts()
+inline void ImportFonts(const ImWchar* pGlyphRanges = NULL)
 {
 	ImGuiIO& io = ImGui::GetIO();
+	if (!pGlyphRanges)
+		pGlyphRanges = io.Fonts->GetGlyphRangesDefault();
+
 	defaultFont = io.Fonts->AddFontDefault();
-	tahomaFont = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\Tahoma.ttf", 14.0f);
+	tahomaFont = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\Tahoma.ttf", 14.0f, NULL, pGlyphRanges);
 
 	ImFontConfig Config;
 	Config.GlyphExtraSpacing.x = 1.f;
-	tahomaFontESP = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\Tahoma.ttf", 14.0f, &Config);
+	tahomaFontESP = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\Tahoma.ttf", 14.0f, &Config, pGlyphRanges);
 }

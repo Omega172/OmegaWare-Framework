@@ -12,4 +12,5 @@ std::vector<LocaleData> PolishLocales = {
 	{HASH("LOAD_CONFIG"), "Wczytaj Konfiguracje"},
 	{HASH("LANGUAGE"), "Język"}
 };
-LocalizationData Polish{ "Polski", HASH("POL"), PolishLocales };
+
+LocalizationData Polish{ "Polski", HASH("POL"), PolishRanges, PolishLocales };
