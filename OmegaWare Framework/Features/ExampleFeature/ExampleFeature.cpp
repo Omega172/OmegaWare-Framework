@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 
 ExampleFeature::ExampleFeature() {};
 
@@ -15,6 +15,12 @@ bool ExampleFeature::Setup()
 		{ HASH("EXAMPLE_FEATURE_HW"), "Hallo Welt!" }
 	};
 	Cheat::localization->AddToLocale("GER", GermanLocale);
+
+	std::vector<LocaleData> PolishLocale = {
+		{ HASH("EXAMPLE_FEATURE"), "Przykładowa Funkcja" },
+		{ HASH("EXAMPLE_FEATURE_HW"), "Cześć Świecie!" }
+	};
+	Cheat::localization->AddToLocale("PL", PolishLocale);
 
 	Cheat::localization->UpdateLocale();
 
