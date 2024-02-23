@@ -13,4 +13,4 @@ std::vector<LocaleData> PolishLocales = {
 	{HASH("LANGUAGE"), "Język"}
 };
 
-LocalizationData Polish{ "Polski", HASH("POL"), PolishLocales };
+LocalizationData Polish{ "Polski", HASH("POL"), &TahomaFontPolish, &TahomaFontPolishESP, PolishLocales };

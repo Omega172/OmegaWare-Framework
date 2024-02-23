@@ -18,6 +18,8 @@ struct LocalizationData
 {
 	std::string Name;
 	size_t LocaleCode;
+	ImFont** Font;
+	ImFont** FontESP;
 
 	std::vector<LocaleData> Locales;
 };

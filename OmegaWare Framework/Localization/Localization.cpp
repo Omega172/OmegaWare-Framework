@@ -55,17 +55,9 @@ bool Localization::SetLocale(std::string LocaleCode)
 		if (Locale.LocaleCode == LocaleCodeHash)
 		{
 			Cheat::CurrentLocale = Locale;
-			if (Locale.LocaleCode == HASH("ENG") || Locale.LocaleCode == HASH("GER"))
-			{
-				CurrentFont = TahomaFont;
-				CurrentFontESP = TahomaFontESP;
-			}
 
-			if (Locale.LocaleCode == HASH("POL"))
-			{
-				CurrentFont = TahomaFontPolish;
-				CurrentFontESP = TahomaFontPolishESP;
-			}
+			CurrentFont = *Locale.Font;
+			CurrentFontESP = *Locale.FontESP;
 
 			return true;
 		}
@@ -81,17 +73,10 @@ bool Localization::SetLocale(size_t LocaleCodeHash)
 		if (Locale.LocaleCode == LocaleCodeHash)
 		{
 			Cheat::CurrentLocale = Locale;
-			if (Locale.LocaleCode == HASH("ENG") || Locale.LocaleCode == HASH("GER"))
-			{
-				CurrentFont = TahomaFont;
-				CurrentFontESP = TahomaFontESP;
-			}
 
-			if (Locale.LocaleCode == HASH("POL"))
-			{
-				CurrentFont = TahomaFontPolish;
-				CurrentFontESP = TahomaFontPolishESP;
-			}
+			CurrentFont = *Locale.Font;
+			CurrentFontESP = *Locale.FontESP;
+
 			return true;
 		}
 	}
