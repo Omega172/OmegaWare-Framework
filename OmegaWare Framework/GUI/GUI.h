@@ -1,5 +1,6 @@
 #pragma once
 #include "pch.h"
+#include "Menu/Menu.h"
 
 // Colors for ImGui
 inline ImU32 Black = ImGui::ColorConvertFloat4ToU32({ 0.f, 0.f, 0.f, 1.f });
@@ -18,31 +19,12 @@ inline ImU32 Magenta = ImGui::ColorConvertFloat4ToU32({ 1.f, 0.f, 1.f, 1.f });
 namespace GUI
 {
 	inline bool bMenuOpen = false;
-	constexpr float WIDTH = 700;
+	constexpr float WIDTH = 900;
 	constexpr float HEIGHT = 400;
 
 	inline float sWIDTH = float(GetSystemMetrics(SM_CXSCREEN));
 	inline float sHEIGHT = float(GetSystemMetrics(SM_CYSCREEN));
 
-	inline void BeginRender()
-	{
-		#if FRAMEWORK_RENDER_D3D11
-		ImGui_ImplDX11_NewFrame();
-		#endif
-
-		#if FRAMEWORK_RENDER_D3D12
-		ImGui_ImplDX12_NewFrame();
-		#endif
-
-		ImGui_ImplWin32_NewFrame();
-		ImGui::NewFrame();
-	}
-
 	void Render();
 
-	inline void EndRender()
-	{
-		ImGui::EndFrame();
-		ImGui::Render();
-	}
 }

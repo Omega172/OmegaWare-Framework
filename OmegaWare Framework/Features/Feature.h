@@ -20,7 +20,7 @@ public:
 	virtual void HandleKeys() = 0;
 
 	// This should be run in the ImGUI draw loop, used to draw anything to the menu
-	virtual void DrawMenuItems() = 0;
+	virtual void PopulateMenu() = 0;
 
 	// This should be run at the top of the ImGUI draw loop, used to render things like ESP, Tracers, and Debug Info
 	virtual void Render() = 0;

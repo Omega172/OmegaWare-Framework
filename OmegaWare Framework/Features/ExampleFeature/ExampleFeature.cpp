@@ -26,22 +26,18 @@ void ExampleFeature::Destroy() { Initialized = false; }
 
 void ExampleFeature::HandleKeys() {}
 
-void ExampleFeature::DrawMenuItems()
+void ExampleFeature::PopulateMenu()
 {
 	if (!Initialized)
 		return;
 
 	ImGui::SameLine();
 
-	ImGui::BeginChild("ExampleFeature", ImVec2(ImGui::GetContentRegionAvail().x / 2, ImGui::GetContentRegionAvail().y / 2), ImGuiChildFlags_Border);
-	{
-		ImGui::Text(Cheat::localization->Get("EXAMPLE_FEATURE").c_str());
-
-		ImGui::Checkbox(Cheat::localization->Get("EXAMPLE_FEATURE").c_str(), &bExampleFeature);
-		if (bExampleFeature)
-			ImGui::Text(Cheat::localization->Get("EXAMPLE_FEATURE_HW").c_str());
-	}
-	ImGui::EndChild();
+	Child* ExampleFeature = new Child("ExampleFeature", []() { return ImVec2(ImGui::GetContentRegionAvail().x / 2, ImGui::GetContentRegionAvail().y / 2); }, ImGuiChildFlags_Border);
+	ExampleFeature->AddElement(new Text(Cheat::localization->Get("EXAMPLE_FEATURE")));
+	ExampleFeature->AddElement(new Checkbox(Cheat::localization->Get("EXAMPLE_FEATURE"), &bExampleFeature));
+	if (bExampleFeature)
+		ExampleFeature->AddElement(new Text(Cheat::localization->Get("EXAMPLE_FEATURE_HW")));
 }
 
 void ExampleFeature::Render() {}

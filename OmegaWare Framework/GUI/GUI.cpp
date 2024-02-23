@@ -8,59 +8,45 @@ void GUI::Render()
 
 	if (bMenuOpen)
 	{
-		ImGui::SetNextWindowSize(ImVec2(WIDTH, HEIGHT));
-		ImGui::Begin(Cheat::Title.c_str(), NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoCollapse);
-
-		ImGui::BeginChild("Cheat", ImVec2(ImGui::GetContentRegionAvail().x / 3, ImGui::GetContentRegionAvail().y / 2), true);
-		{
-			ImGui::Text(Cheat::localization->Get("CHEAT").c_str());
-			ImGui::Spacing();
-
-			if (ImGui::Button(Cheat::localization->Get("UNLOAD_BTN").c_str()))
-				Cheat::bShouldRun = false;
-			ImGui::SameLine();
-			if (ImGui::Button(Cheat::console->GetVisibility() ? Cheat::localization->Get("CONSOLE_HIDE").c_str() : Cheat::localization->Get("CONSOLE_SHOW").c_str()))
-				Cheat::console->ToggleVisibility();
-
-			if (ImGui::BeginCombo(Cheat::localization->Get("LANGUAGE").c_str(), Cheat::CurrentLocale.Name.c_str()))
+		Child* child = new Child("Cheat", []() { return ImVec2(ImGui::GetContentRegionAvail().x / 3, ImGui::GetContentRegionAvail().y / 2); }, ImGuiChildFlags_Border);
+		child->AddElement(new Text(Cheat::localization->Get("CHEAT")));
+		child->AddElement(new Spacing());
+		child->AddElement(new Button(Cheat::localization->Get("UNLOAD_BTN"), []() {
+			Cheat::bShouldRun = false;
+			}));
+		child->AddElement(new Button(Cheat::console->GetVisibility() ? Cheat::localization->Get("CONSOLE_HIDE") : Cheat::localization->Get("CONSOLE_SHOW"), []() {
+			Cheat::console->ToggleVisibility();
+			}), true);
+		child->AddElement(new Combo(Cheat::localization->Get("LANGUAGE"), Cheat::CurrentLocale.Name, NULL, []() {
+			for (LocalizationData Locale : Cheat::Locales)
 			{
-				for (LocalizationData Locale : Cheat::Locales)
+				bool bSelected = Cheat::CurrentLocale.LocaleCode == Locale.LocaleCode;
+				if (ImGui::Selectable(Locale.Name.c_str(), bSelected))
 				{
-					bool bSelected = Cheat::CurrentLocale.LocaleCode == Locale.LocaleCode;
-					if (ImGui::Selectable(Locale.Name.c_str(), bSelected))
-					{
-						Cheat::CurrentLocale = Locale;
-						Cheat::localization->SetLocale(Locale.LocaleCode);
-					}
-					if (bSelected)
-						ImGui::SetItemDefaultFocus();
+					Cheat::CurrentLocale = Locale;
+					Cheat::localization->SetLocale(Locale.LocaleCode);
 				}
-
-				ImGui::EndCombo();
+				if (bSelected)
+					ImGui::SetItemDefaultFocus();
 			}
-
-			//ImGui::Checkbox("Extra Debug Info", &bExtraDebug);
-
-			ImGui::Checkbox(Cheat::localization->Get("WATER_MARK").c_str(), &Cheat::bWatermark);
-			if (Cheat::bWatermark)
-				ImGui::Checkbox(Cheat::localization->Get("WATER_MARK_FPS").c_str(), &Cheat::bWatermarkFPS);
-
-			if (ImGui::Button(Cheat::localization->Get("SAVE_CONFIG").c_str()))
-				Cheat::config->SaveConfig();
-
-			ImGui::SameLine();
-
-			if (ImGui::Button(Cheat::localization->Get("LOAD_CONFIG").c_str()))
-				Cheat::config->LoadConfig();
-		}
-		ImGui::EndChild();
+			}));
+		child->AddElement(new Checkbox(Cheat::localization->Get("WATER_MARK"), &Cheat::bWatermark));
+		if (Cheat::bWatermark)
+			child->AddElement(new Checkbox(Cheat::localization->Get("WATER_MARK_FPS"), &Cheat::bWatermarkFPS));
+		child->AddElement(new Button(Cheat::localization->Get("SAVE_CONFIG"), []() {
+			Cheat::config->SaveConfig();
+			}));
+		child->AddElement(new Button(Cheat::localization->Get("LOAD_CONFIG"), []() {
+			Cheat::config->LoadConfig();
+			}), true);
+		Cheat::menu->AddElement(child);
 
 		for (size_t i = 0; i < Features.size(); i++)
 		{
-			Features[i]->DrawMenuItems();
+			Features[i]->PopulateMenu();
 		}
 
-		ImGui::End();
+		Cheat::menu->Render();
 	}
 
 	//

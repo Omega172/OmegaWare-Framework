@@ -11,9 +11,9 @@
 // Framework defines
 #pragma execution_character_set("utf-8")
 
-#define FRAMEWORK_VERSION 5.1.0
+#define FRAMEWORK_VERSION 5.2.0
 #define FRAMEWORK_MAJOR_VERSION 5
-#define FRAMEWORK_MINOR_VERSION 1
+#define FRAMEWORK_MINOR_VERSION 2
 #define FRAMEWORK_REWORK_VERSION 0
 
 #define FRAMEWORK_CODENAME "OmegaWare"
@@ -110,6 +110,9 @@ static_assert((FRAMEWORK_RENDER_D3D11 + FRAMEWORK_RENDER_D3D12) == 1, "Must use 
 #endif
 
 #if FRAMEWORK_RENDER_D3D12
+#pragma comment(lib, "d3d12.lib") // WHY DO I NEED THIS WTF
+#include <D3D12.h>
+#include <dxgi1_4.h>
 #include "ImGUI/imgui_impl_dx12.h"
 #endif
 
@@ -154,6 +157,7 @@ namespace Cheat
 
 	inline std::unique_ptr<Console> console = std::make_unique<Console>(false, Title);  // A unique pointer to the console class that is used to create the console for the framework
 
+	inline std::unique_ptr<Menu> menu = std::make_unique<Menu>(ImVec2(GUI::WIDTH, GUI::HEIGHT), Cheat::Title.c_str(), (bool*)NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoCollapse);
 	inline std::unique_ptr<WndProcHooks> wndproc = std::make_unique<WndProcHooks>();
 	inline std::unique_ptr<RendererHooks> renderer = std::make_unique<RendererHooks>();
 

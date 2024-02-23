@@ -28,9 +28,9 @@ std::string Localization::Get(std::string Key)
 	}
 
 	// If not foun in the current locale, try to find it in the default locale
-	for (LocaleData Entry : Cheat::CurrentLocale.Locales)
+	for (LocaleData Entry : English.Locales)
 	{
-		if (Entry.Key == HASH("ENG"))
+		if (Entry.Key == HASH(Key))
 			return Entry.Value;
 	}
 
