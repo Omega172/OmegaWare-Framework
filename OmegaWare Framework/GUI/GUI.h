@@ -26,5 +26,4 @@ namespace GUI
 	inline float sHEIGHT = float(GetSystemMetrics(SM_CYSCREEN));
 
 	void Render();
-
 }

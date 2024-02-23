@@ -13,4 +13,4 @@ std::vector<LocaleData> GermanLocales = {
 	{HASH("LANGUAGE"), "Sprache"}
 };
 
-LocalizationData German{ "German", HASH("GER"), DefaultRanges, GermanLocales };
+LocalizationData German{ "German", HASH("GER"), GermanLocales };
