@@ -5,7 +5,7 @@
 Config::Config()
 {
 	std::stringstream SS;
-	SS << Utils::GetDocumentsFolder() << "\\\\" << Cheat::Framework << "\\\\";
+	SS << Utils::GetDocumentsFolder() << "\\" << Cheat::Framework << "\\";
 	if (!std::filesystem::exists(SS.str()))
 		std::filesystem::create_directory(SS.str());
 
