@@ -225,11 +225,11 @@ private:
 	float* m_pValue;
 	float m_fValueMin;
 	float m_fValueMax;
-	std::string m_sFormat;
+	const char* m_sFormat;
 	ImGuiSliderFlags m_SliderFlags;
 
 public:
-	SliderFloat(std::string sLabel, float* pValue, float fValueMin, float fValueMax, std::string sFormat = "%.3f", ImGuiSliderFlags SliderFlags = 0) :
+	SliderFloat(std::string sLabel, float* pValue, float fValueMin, float fValueMax, const char* sFormat = "%.3f", ImGuiSliderFlags SliderFlags = 0) :
 		m_sLabel(sLabel), m_pValue(pValue), m_fValueMin(fValueMin), m_fValueMax(fValueMax), m_SliderFlags(SliderFlags)
 	{};
 
@@ -238,7 +238,7 @@ public:
 		if (m_bSameLine)
 			ImGui::SameLine();
 
-		ImGui::SliderFloat(m_sLabel.c_str(), m_pValue, m_fValueMin, m_fValueMax, m_sFormat.c_str(), m_SliderFlags);
+		ImGui::SliderFloat(m_sLabel.c_str(), m_pValue, m_fValueMin, m_fValueMax, m_sFormat, m_SliderFlags);
 	}
 };
 
@@ -249,11 +249,11 @@ private:
 	int* m_pValue;
 	int m_iValueMin;
 	int m_iValueMax;
-	std::string m_sFormat;
+	const char* m_sFormat;
 	ImGuiSliderFlags m_SliderFlags;
 
 public:
-	SliderInt(std::string sLabel, int* pValue, int iValueMin, int iValueMax, std::string sFormat = "%d", ImGuiSliderFlags SliderFlags = 0) :
+	SliderInt(std::string sLabel, int* pValue, int iValueMin, int iValueMax, const char* sFormat = "%d", ImGuiSliderFlags SliderFlags = 0) :
 		m_sLabel(sLabel), m_pValue(pValue), m_iValueMin(iValueMin), m_iValueMax(iValueMax), m_SliderFlags(SliderFlags)
 	{};
 
@@ -262,7 +262,7 @@ public:
 		if (m_bSameLine)
 			ImGui::SameLine();
 
-		ImGui::SliderInt(m_sLabel.c_str(), m_pValue, m_iValueMin, m_iValueMax, m_sFormat.c_str(), m_SliderFlags);
+		ImGui::SliderInt(m_sLabel.c_str(), m_pValue, m_iValueMin, m_iValueMax, m_sFormat, m_SliderFlags);
 	}
 };
 

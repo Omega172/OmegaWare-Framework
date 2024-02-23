@@ -11,10 +11,10 @@
 // Framework defines
 #pragma execution_character_set("utf-8")
 
-#define FRAMEWORK_VERSION 5.2.0
+#define FRAMEWORK_VERSION 5.5.1
 #define FRAMEWORK_MAJOR_VERSION 5
-#define FRAMEWORK_MINOR_VERSION 2
-#define FRAMEWORK_REWORK_VERSION 0
+#define FRAMEWORK_MINOR_VERSION 5
+#define FRAMEWORK_REWORK_VERSION 1
 
 #define FRAMEWORK_CODENAME "OmegaWare"
 #define FRAMEWORK_TARGET_GAME ""
