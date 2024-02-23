@@ -237,6 +237,7 @@
     <ClInclude Include="Interfaces\EasyHook.h" />
     <ClInclude Include="Interfaces\Mono.h" />
     <ClInclude Include="Interfaces\Unreal.h" />
+    <ClInclude Include="Localization\Locales\Polish.h" />
     <ClInclude Include="MinHook\include\MinHook.h" />
     <ClInclude Include="Localization\LocaleStructs.h" />
     <ClInclude Include="Localization\Locales\English.h" />

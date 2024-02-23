@@ -2,11 +2,13 @@
 #include "Localization.h"
 #include "Locales/English.h"
 #include "Locales/German.h"
+#include "Locales/Polish.h"
 
 Localization::Localization()
 {
 	LoadLocale(English);
 	LoadLocale(German);
+	LoadLocale(Polish);
 
 	if (!SetLocale("ENG"))
 	{
@@ -28,10 +30,16 @@ std::string Localization::Get(std::string Key)
 	}
 
 	// If not foun in the current locale, try to find it in the default locale
-	for (LocaleData Entry : English.Locales)
+	for (LocalizationData Locale : Cheat::Locales)
 	{
-		if (Entry.Key == HASH(Key))
-			return Entry.Value;
+		if (Locale.LocaleCode == HASH("ENG"))
+		{
+			for (LocaleData Entry : Locale.Locales)
+			{
+				if (Entry.Key == HASH(Key))
+					return Entry.Value;
+			}
+		}
 	}
 
 	return "NOT_FOUND"; // If not found in any locale, return NOT_FOUND

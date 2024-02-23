@@ -55,6 +55,7 @@
     <ClInclude Include="Hooks\WndProc\WndProcHooks.h" />
     <ClInclude Include="Hooks\Renderer\RendererHooks.h" />
     <ClInclude Include="GUI\Menu\Menu.h" />
+    <ClInclude Include="Localization\Locales\Polish.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
