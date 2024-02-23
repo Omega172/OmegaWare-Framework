@@ -20,7 +20,7 @@ bool ExampleFeature::Setup()
 		{ HASH("EXAMPLE_FEATURE"), "Przykładowa Funkcja" },
 		{ HASH("EXAMPLE_FEATURE_HW"), "Cześć Świecie!" }
 	};
-	Cheat::localization->AddToLocale("PL", PolishLocale);
+	Cheat::localization->AddToLocale("POL", PolishLocale);
 
 	Cheat::localization->UpdateLocale();
 
