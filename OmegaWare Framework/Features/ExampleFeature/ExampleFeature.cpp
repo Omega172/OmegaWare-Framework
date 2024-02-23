@@ -38,6 +38,8 @@ void ExampleFeature::PopulateMenu()
 	ExampleFeature->AddElement(new Checkbox(Cheat::localization->Get("EXAMPLE_FEATURE"), &bExampleFeature));
 	if (bExampleFeature)
 		ExampleFeature->AddElement(new Text(Cheat::localization->Get("EXAMPLE_FEATURE_HW")));
+
+	Cheat::menu->AddElement(ExampleFeature, true);
 }
 
 void ExampleFeature::Render() {}

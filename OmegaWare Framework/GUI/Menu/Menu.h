@@ -195,3 +195,97 @@ public:
 
 	void Render() { ImGui::Checkbox(m_sLabel.c_str(), m_pValue); }
 };
+
+class Hotkey : public Element
+{
+private:
+	std::string m_sLabel;
+	KeyBind m_Key;
+	bool* m_pSetting;
+	ImVec2 m_Size;
+
+public:
+	Hotkey(std::string sLabel, KeyBind Key, bool* pSetting, ImVec2 Size = { 100.0f, 0.0f }) :
+		m_sLabel(sLabel), m_Key(Key), m_pSetting(pSetting), m_Size(Size)
+	{};
+
+	void Render()
+	{
+		if (m_bSameLine)
+			ImGui::SameLine();
+
+		ImGui::Hotkey(m_sLabel.c_str(), m_Key, m_pSetting, m_Size);
+	}
+};
+
+class SliderFloat : public Element
+{
+private:
+	std::string m_sLabel;
+	float* m_pValue;
+	float m_fValueMin;
+	float m_fValueMax;
+	std::string m_sFormat;
+	ImGuiSliderFlags m_SliderFlags;
+
+public:
+	SliderFloat(std::string sLabel, float* pValue, float fValueMin, float fValueMax, std::string sFormat = "%.3f", ImGuiSliderFlags SliderFlags = 0) :
+		m_sLabel(sLabel), m_pValue(pValue), m_fValueMin(fValueMin), m_fValueMax(fValueMax), m_SliderFlags(SliderFlags)
+	{};
+
+	void Render()
+	{
+		if (m_bSameLine)
+			ImGui::SameLine();
+
+		ImGui::SliderFloat(m_sLabel.c_str(), m_pValue, m_fValueMin, m_fValueMax, m_sFormat.c_str(), m_SliderFlags);
+	}
+};
+
+class SliderInt : public Element
+{
+private:
+	std::string m_sLabel;
+	int* m_pValue;
+	int m_iValueMin;
+	int m_iValueMax;
+	std::string m_sFormat;
+	ImGuiSliderFlags m_SliderFlags;
+
+public:
+	SliderInt(std::string sLabel, int* pValue, int iValueMin, int iValueMax, std::string sFormat = "%d", ImGuiSliderFlags SliderFlags = 0) :
+		m_sLabel(sLabel), m_pValue(pValue), m_iValueMin(iValueMin), m_iValueMax(iValueMax), m_SliderFlags(SliderFlags)
+	{};
+
+	void Render()
+	{
+		if (m_bSameLine)
+			ImGui::SameLine();
+
+		ImGui::SliderInt(m_sLabel.c_str(), m_pValue, m_iValueMin, m_iValueMax, m_sFormat.c_str(), m_SliderFlags);
+	}
+};
+
+class InputText : public Element
+{
+private:
+	std::string m_sLabel;
+	char* m_pBuffer;
+	size_t m_ullBuffSize;
+	ImGuiInputTextFlags m_InputTextFlags;
+	ImGuiInputTextCallback m_InputTextCallback;
+	void* m_pUserData;
+
+public:
+	InputText(std::string sLabel, char* pBuffer, size_t ullBuffSize, ImGuiInputTextFlags InputTextFlags = 0, ImGuiInputTextCallback InputTextCallback = (ImGuiInputTextCallback)0, void* pUserData = (void*)0) :
+		m_sLabel(sLabel), m_pBuffer(pBuffer), m_ullBuffSize(ullBuffSize), m_InputTextFlags(InputTextFlags), m_InputTextCallback(InputTextCallback), m_pUserData(pUserData)
+	{};
+
+	void Render()
+	{
+		if (m_bSameLine)
+			ImGui::SameLine();
+
+		ImGui::InputText(m_sLabel.c_str(), m_pBuffer, m_ullBuffSize, m_InputTextFlags, m_InputTextCallback, m_pUserData);
+	}
+};
