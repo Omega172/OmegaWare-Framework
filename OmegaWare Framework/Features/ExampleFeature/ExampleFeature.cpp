@@ -8,21 +8,26 @@ bool ExampleFeature::Setup()
 		{ HASH("EXAMPLE_FEATURE"), "Example Feature" },
 		{ HASH("EXAMPLE_FEATURE_HW"), "Hello, World!" }
 	};
-	Cheat::localization->AddToLocale("ENG", EnglishLocale);
+	if (!Cheat::localization->AddToLocale("ENG", EnglishLocale))
+		return false;
 
 	std::vector<LocaleData> GermanLocale = {
 		{ HASH("EXAMPLE_FEATURE"), "Beispielfunktion" },
 		{ HASH("EXAMPLE_FEATURE_HW"), "Hallo Welt!" }
 	};
-	Cheat::localization->AddToLocale("GER", GermanLocale);
+	if (!Cheat::localization->AddToLocale("GER", GermanLocale))
+		return false;
 
 	std::vector<LocaleData> PolishLocale = {
 		{ HASH("EXAMPLE_FEATURE"), "Przykładowa Funkcja" },
 		{ HASH("EXAMPLE_FEATURE_HW"), "Cześć Świecie!" }
 	};
-	Cheat::localization->AddToLocale("POL", PolishLocale);
+	if (!Cheat::localization->AddToLocale("POL", PolishLocale))
+		return false;
 
 	Cheat::localization->UpdateLocale();
+
+	Utils::LogDebug(Utils::GetLocation(CurrentLoc), "Feature: ExampleFeature Initialized");
 
 	Initialized = true;
 	return Initialized;
