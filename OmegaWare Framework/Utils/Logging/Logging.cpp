@@ -68,7 +68,7 @@ void Utils::LogError(Location stLocation, std::string sErrorMessage)
 
 	SS << FRAMEWORK_TARGET_GAME << "_ERRORS.log";
 
-	std::ofstream ErrorFile(SS.str());
+	std::ofstream ErrorFile(SS.str(), std::ios::app);
 	if (ErrorFile.fail())
 	{
 		Utils::LogError(Utils::GetLocation(CurrentLoc), "Failed to open ERROR log file for writing");
