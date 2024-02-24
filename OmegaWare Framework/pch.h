@@ -146,6 +146,7 @@ namespace Cheat
 	constexpr bool bIs64Bit = true;
 #endif
 
+	inline bool bInitalized = false;
 	inline bool bShouldRun = true; // A boolean to check if the cheat should run or exit
 	inline DWORD dwThreadID = NULL; // A DWORD to store the thread ID of the cheat thread
 	inline HMODULE hModule = NULL; // A HMODULE to store the module handle of the cheat used for unloading the module
