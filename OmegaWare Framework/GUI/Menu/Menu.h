@@ -6,15 +6,18 @@ class Element
 {
 public:
 	bool m_bSameLine = false;
+	float m_flSpacing = -1.f;
+
 	std::vector<Element*> Elements;
 
 	Element() {}
 
 	virtual void Render() = 0;
 
-	void AddElement(Element* Element, bool bSameLine = false)
+	void AddElement(Element* Element, bool bSameLine = false, float flSpacing = -1.f)
 	{
 		Element->m_bSameLine = bSameLine;
+		Element->m_flSpacing = flSpacing;
 		Elements.push_back(Element);
 	}
 };
@@ -92,7 +95,7 @@ public:
 	void Render()
 	{
 		if (m_bSameLine)
-			ImGui::SameLine();
+			ImGui::SameLine(0.f, m_flSpacing);
 
 		if (m_funcCallback)
 			m_Size = m_funcCallback();
@@ -119,7 +122,7 @@ public:
 	void Render()
 	{
 		if (m_bSameLine)
-			ImGui::SameLine();
+			ImGui::SameLine(0.f, m_flSpacing);
 
 		ImGui::Text(m_sText.c_str());
 	}
@@ -143,7 +146,7 @@ public:
 	void Render()
 	{
 		if (m_bSameLine)
-			ImGui::SameLine();
+			ImGui::SameLine(0.f, m_flSpacing);
 
 		if (ImGui::Button(m_sLabel.c_str()))
 			if (m_funcCallback)
@@ -170,7 +173,7 @@ public:
 	void Render()
 	{
 		if (m_bSameLine)
-			ImGui::SameLine();
+			ImGui::SameLine(0.f, m_flSpacing);
 
 		if (ImGui::BeginCombo(m_sLabel.c_str(), m_sPreviewlabel.c_str(), m_ComboFlags))
 		{
@@ -193,7 +196,13 @@ public:
 		m_sLabel(sLabel), m_pValue(pValue)
 	{};
 
-	void Render() { ImGui::Checkbox(m_sLabel.c_str(), m_pValue); }
+	void Render()
+	{
+		if (m_bSameLine)
+			ImGui::SameLine(0.f, m_flSpacing);
+
+		ImGui::Checkbox(m_sLabel.c_str(), m_pValue);
+	}
 };
 
 class Hotkey : public Element
@@ -212,7 +221,7 @@ public:
 	void Render()
 	{
 		if (m_bSameLine)
-			ImGui::SameLine();
+			ImGui::SameLine(0.f, m_flSpacing);
 
 		ImGui::Hotkey(m_sLabel.c_str(), m_Key, m_pSetting, m_Size);
 	}
@@ -236,7 +245,7 @@ public:
 	void Render()
 	{
 		if (m_bSameLine)
-			ImGui::SameLine();
+			ImGui::SameLine(0.f, m_flSpacing);
 
 		ImGui::SliderFloat(m_sLabel.c_str(), m_pValue, m_fValueMin, m_fValueMax, m_sFormat, m_SliderFlags);
 	}
@@ -260,7 +269,7 @@ public:
 	void Render()
 	{
 		if (m_bSameLine)
-			ImGui::SameLine();
+			ImGui::SameLine(0.f, m_flSpacing);
 
 		ImGui::SliderInt(m_sLabel.c_str(), m_pValue, m_iValueMin, m_iValueMax, m_sFormat, m_SliderFlags);
 	}
@@ -284,8 +293,29 @@ public:
 	void Render()
 	{
 		if (m_bSameLine)
-			ImGui::SameLine();
+			ImGui::SameLine(0.f, m_flSpacing);
 
 		ImGui::InputText(m_sLabel.c_str(), m_pBuffer, m_ullBuffSize, m_InputTextFlags, m_InputTextCallback, m_pUserData);
+	}
+};
+
+class ColorPicker : public Element
+{
+private:
+	std::string m_sLabel;
+	float* m_pValue;
+	ImGuiColorEditFlags m_ColorEditFlags;
+
+public:
+	ColorPicker(std::string sLabel, float* pValue, ImGuiColorEditFlags ColorEditFlags = ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoSidePreview | ImGuiColorEditFlags_AlphaBar) :
+		m_sLabel(sLabel), m_pValue(pValue), m_ColorEditFlags(ColorEditFlags)
+	{};
+
+	void Render()
+	{
+		if (m_bSameLine)
+			ImGui::SameLine(0.f, m_flSpacing);
+
+		ImGui::ColorEdit4(m_sLabel.c_str(), m_pValue, m_ColorEditFlags);
 	}
 };
