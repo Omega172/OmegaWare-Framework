@@ -67,31 +67,6 @@ namespace Cheat
 		return true; // Return true if the initalization was successful
 	}
 
-	void HandleKeys() // A function to handle the keys of both the menu and the features
-	{
-		if (GetAsyncKeyState(dwMenuKey) & 0x1)
-		{
-			GUI::bMenuOpen = !GUI::bMenuOpen;
-
-			ImGui::GetIO().MouseDrawCursor = GUI::bMenuOpen;
-
-			if (ImGui::GetIO().MouseDrawCursor)
-				SetCursor(NULL);
-		}
-
-		if (GetAsyncKeyState(dwConsoleKey) & 0x1)
-			console->ToggleVisibility();
-
-		if (GetAsyncKeyState(dwUnloadKey1) || GetAsyncKeyState(dwUnloadKey2))
-			bShouldRun = false;
-
-		for (size_t i = 0; i < Features.size(); i++)
-		{
-			Features[i]->HandleKeys(); // Call the handle keys function for each feature
-			// This is mostly outdated but is still useful for some things, using the ImGui::Hotkey function is better which is located in GUI/Custom.h
-		}
-	}
-
 	DWORD __stdcall CheatThread(LPVOID lpParam)
 	{
 		hModule = reinterpret_cast<HMODULE>(lpParam); // Store the module handle which is used for unloading the module
@@ -111,8 +86,6 @@ namespace Cheat
 
 		while (bShouldRun) // the main process loop used to asynchonously run the features and handle the keys independently from the game
 		{
-			HandleKeys();
-
 #if FRAMEWORK_UNREAL
 			Cheat::unreal.get()->RefreshActorList();
 #endif

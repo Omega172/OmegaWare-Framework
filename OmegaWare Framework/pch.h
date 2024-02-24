@@ -11,10 +11,10 @@
 // Framework defines
 #pragma execution_character_set("utf-8")
 
-#define FRAMEWORK_VERSION 5.5.1
+#define FRAMEWORK_VERSION 5.5.2
 #define FRAMEWORK_MAJOR_VERSION 5
 #define FRAMEWORK_MINOR_VERSION 5
-#define FRAMEWORK_REWORK_VERSION 1
+#define FRAMEWORK_REWORK_VERSION 2
 
 #define FRAMEWORK_CODENAME "OmegaWare"
 #define FRAMEWORK_TARGET_GAME ""
@@ -150,10 +150,10 @@ namespace Cheat
 	inline DWORD dwThreadID = NULL; // A DWORD to store the thread ID of the cheat thread
 	inline HMODULE hModule = NULL; // A HMODULE to store the module handle of the cheat used for unloading the module
 
-	constexpr DWORD dwMenuKey = VK_INSERT; // A DWORD to store the key that opens and closes the menu
-	constexpr DWORD dwUnloadKey1 = VK_END; // A DWORD to store the key that unloads the cheat (Cool one)
-	constexpr DWORD dwUnloadKey2 = VK_DELETE; // A DWORD to store the key that unloads the cheat (Lame one)
-	constexpr DWORD dwConsoleKey = VK_HOME; // A DWORD to store the key that opens and closes the console
+	constexpr ImGuiKey keyMenuKey = ImGuiKey_Insert; // A DWORD to store the key that opens and closes the menu
+	constexpr ImGuiKey keyUnloadKey1 = ImGuiKey_End; // A DWORD to store the key that unloads the cheat (Cool one)
+	constexpr ImGuiKey keyUnloadKey2 = ImGuiKey_Delete; // A DWORD to store the key that unloads the cheat (Lame one)
+	constexpr ImGuiKey keyConsoleKey = ImGuiKey_Home; // A DWORD to store the key that opens and closes the console
 
 	inline std::unique_ptr<Console> console = std::make_unique<Console>(false, Title);  // A unique pointer to the console class that is used to create the console for the framework
 

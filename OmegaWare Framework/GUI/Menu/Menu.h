@@ -209,13 +209,12 @@ class Hotkey : public Element
 {
 private:
 	std::string m_sLabel;
-	KeyBind m_Key;
-	bool* m_pSetting;
+	KeyBind* m_Key;
 	ImVec2 m_Size;
 
 public:
-	Hotkey(std::string sLabel, KeyBind Key, bool* pSetting, ImVec2 Size = { 100.0f, 0.0f }) :
-		m_sLabel(sLabel), m_Key(Key), m_pSetting(pSetting), m_Size(Size)
+	Hotkey(std::string sLabel, KeyBind* Key, ImVec2 Size = { 100.0f, 0.0f }) :
+		m_sLabel(sLabel), m_Key(Key), m_Size(Size)
 	{};
 
 	void Render()
@@ -223,7 +222,7 @@ public:
 		if (m_bSameLine)
 			ImGui::SameLine(0.f, m_flSpacing);
 
-		ImGui::Hotkey(m_sLabel.c_str(), m_Key, m_pSetting, m_Size);
+		ImGui::Hotkey(m_sLabel.c_str(), m_Key, m_Size);
 	}
 };
 
