@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "../LocaleStructs.h"
 
 std::vector<LocaleData> GermanLocales = {

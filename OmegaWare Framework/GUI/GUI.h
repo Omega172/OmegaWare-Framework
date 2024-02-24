@@ -11,10 +11,11 @@ inline ImU32 Green = ImGui::ColorConvertFloat4ToU32({ 0.f, 1.f, 0.f, 1.f });
 inline ImU32 Blue = ImGui::ColorConvertFloat4ToU32({ 0.f, 0.f, 1.f, 1.f });
 
 inline ImU32 Cyan = ImGui::ColorConvertFloat4ToU32({ 0.f, 1.f, 1.f, 1.f });
-inline ImU32 Gold = ImGui::ColorConvertFloat4ToU32({ 1.f, 0.84f, 0.f, 1.f });
-inline ImU32 Orange = ImGui::ColorConvertFloat4ToU32({ 1.f, 0.65f, 0.f, 1.f });
-inline ImU32 Purple = ImGui::ColorConvertFloat4ToU32({ 0.5f, 0.f, 0.5f, 1.f });
+inline ImU32 Gold = ImGui::ColorConvertFloat4ToU32({ 1.f, .84f, 0.f, 1.f });
+inline ImU32 Orange = ImGui::ColorConvertFloat4ToU32({ 1.f, .65f, 0.f, 1.f });
+inline ImU32 Purple = ImGui::ColorConvertFloat4ToU32({ .5f, 0.f, .5f, 1.f });
 inline ImU32 Magenta = ImGui::ColorConvertFloat4ToU32({ 1.f, 0.f, 1.f, 1.f });
+inline ImU32 Gray = ImGui::ColorConvertFloat4ToU32({ .8f, .8f, .8f, 1.f});
 
 namespace GUI
 {

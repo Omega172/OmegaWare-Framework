@@ -11,8 +11,8 @@
 // Framework defines
 #pragma execution_character_set("utf-8")
 
-#define FRAMEWORK_VERSION 5.5.2
-#define FRAMEWORK_MAJOR_VERSION 5
+#define FRAMEWORK_VERSION 6.5.2
+#define FRAMEWORK_MAJOR_VERSION 6
 #define FRAMEWORK_MINOR_VERSION 5
 #define FRAMEWORK_REWORK_VERSION 2
 
@@ -88,6 +88,7 @@ static_assert((FRAMEWORK_RENDER_D3D11 + FRAMEWORK_RENDER_D3D12) == 1, "Must use 
 #include "Interfaces/EasyHook.h"
 
 #if FRAMEWORK_UNREAL // If the framework set is Unreal include the Unreal.h file that contains the Unreal interface class that is used to interact with the Unreal Engine
+#include "Interfaces/FNames.h"
 #include "Interfaces/Unreal.h"
 #endif
 

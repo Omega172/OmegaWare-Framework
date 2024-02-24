@@ -235,6 +235,7 @@
     <ClInclude Include="ImGUI\imstb_truetype.h" />
     <ClInclude Include="ImGUI\Styles.h" />
     <ClInclude Include="Interfaces\EasyHook.h" />
+    <ClInclude Include="Interfaces\FNames.h" />
     <ClInclude Include="Interfaces\Mono.h" />
     <ClInclude Include="Interfaces\Unreal.h" />
     <ClInclude Include="Localization\Locales\Polish.h" />

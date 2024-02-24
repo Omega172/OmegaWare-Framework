@@ -37,7 +37,7 @@ bool Config::SaveConfig()
 	ConfigJson["Config"] = nlohmann::json::array();
 
 	Cheat::Entries.clear();
-	
+
 	PushEntry("Watermark", "bool", std::to_string(Cheat::bWatermark));
 	PushEntry("WatermarkFPS", "bool", std::to_string(Cheat::bWatermarkFPS));
 

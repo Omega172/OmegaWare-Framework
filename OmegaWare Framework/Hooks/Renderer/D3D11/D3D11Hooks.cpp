@@ -130,7 +130,7 @@ static void RenderImGui(IDXGISwapChain* pSwapChain) {
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
 
-	ImGui::PushFont(TahomaFont);
+	ImGui::PushFont(CurrentFont);
 	GUI::Render();
 	ImGui::PopFont();
 
@@ -320,7 +320,7 @@ void RendererHooks::Destroy()
 {
 	MH_DisableHook(MH_ALL_HOOKS);
 
-	std::this_thread::sleep_for(std::chrono::seconds(3)); // Disable hooks and wait a bit for all thsreads to finish so we dont crash
+	std::this_thread::sleep_for(std::chrono::seconds(3)); // Disable hooks and wait a bit for all threads to finish so we dont crash
 
 	if (ImGui::GetCurrentContext()) {
 		ImGuiIO& io = ImGui::GetIO();

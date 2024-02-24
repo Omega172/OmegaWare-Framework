@@ -6,7 +6,7 @@ void GUI::Render()
 	if (!Cheat::bInitalized)
 		return;
 
-	if (ImGui::IsKeyPressed(ImGuiKey_Insert) || ImGui::IsKeyPressed(ImGuiKey_GamepadStart))
+	if (ImGui::IsKeyPressed(Cheat::keyMenuKey) || ImGui::IsKeyPressed(ImGuiKey_GamepadStart))
 	{
 		bMenuOpen = !bMenuOpen;
 		ImGui::GetIO().MouseDrawCursor = GUI::bMenuOpen;
@@ -15,10 +15,10 @@ void GUI::Render()
 			SetCursor(NULL);
 	}
 
-	if (ImGui::IsKeyPressed(ImGuiKey_Home))
+	if (ImGui::IsKeyPressed(Cheat::keyConsoleKey))
 		Cheat::console->ToggleVisibility();
 
-	if (ImGui::IsKeyPressed(ImGuiKey_End) || ImGui::IsKeyPressed(ImGuiKey_Delete))
+	if (ImGui::IsKeyPressed(Cheat::keyUnloadKey1) || ImGui::IsKeyPressed(Cheat::keyUnloadKey2))
 		Cheat::bShouldRun = false;
 
 	for (size_t i = 0; i < Features.size(); i++)

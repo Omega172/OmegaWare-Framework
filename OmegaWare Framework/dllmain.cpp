@@ -16,7 +16,7 @@ namespace Cheat
 		if (!renderer.get()->Setup())
 			return false;
 
-#if FRAMEWORK_UNREAL // If the framework is Unreal initalize the SDK assuming the SDK was generated with CheatGeat by Cormm
+	#if FRAMEWORK_UNREAL // If the framework is Unreal initalize the SDK assuming the SDK was generated with CheatGeat by Cormm
 		if (!CG::InitSdk())
 			return false;
 
@@ -25,13 +25,14 @@ namespace Cheat
 
 		while (!(*CG::UWorld::GWorld))
 			continue;
-#endif
+	#endif
 
 		Utils::LogDebug(Utils::GetLocation(CurrentLoc), "Initalizing Globals, this can take a bit"); // Log that the globals are being initalized
 
-#if FRAMEWORK_UNREAL // If using the Unreal framework print the pointer to the Unreal class to make sure it was initalized
+	#if FRAMEWORK_UNREAL // If using the Unreal framework print the pointer to the Unreal class to make sure it was initalized
 		Utils::LogDebug(Utils::GetLocation(CurrentLoc), (std::stringstream() << "Unreal: 0x" << unreal.get()).str());
-#endif
+		FNames::Initialize();
+	#endif
 
 		// Add other globals that need to be initalized here
 
@@ -55,8 +56,7 @@ namespace Cheat
 					return false;
 				}
 			}
-		}
-		catch (char* e) {
+		} catch (char* e) {
 			Utils::LogDebug(Utils::GetLocation(CurrentLoc), std::string(e));
 		}
 
@@ -81,6 +81,7 @@ namespace Cheat
 			Utils::LogError(Utils::GetLocation(CurrentLoc), Cheat::Title + ": Failed to initalize");
 			bShouldRun = false;
 		}
+		else
 		{
 			// If the initalization was successful log that the cheat was initalized
 			Cheat::bInitalized = true;
@@ -98,13 +99,12 @@ namespace Cheat
 				Features[i]->Run();
 			}
 
-			// If the thread sleep is enabled sleep for the specified amount of time
-			// This is used to reduce the CPU usage of the module, I would recommend keeping this enabled but added the option to disable it if needed for testing and when messing with less CPU intensive games
+// If the thread sleep is enabled sleep for the specified amount of time
+// This is used to reduce the CPU usage of the module, I would recommend keeping this enabled but added the option to disable it if needed for testing and when messing with less CPU intensive games
 #if DO_THREAD_SLEEP
 			std::this_thread::sleep_for(std::chrono::milliseconds(THREAD_SLEEP_TIME));
 #endif
 		}
-
 		console->SetVisibility(true); // Set the console to be visible when the cheat is unloading
 		Utils::LogDebug(Utils::GetLocation(CurrentLoc), Cheat::Title + ": Unloading..."); // Log that the cheat is unloading
 
@@ -113,7 +113,6 @@ namespace Cheat
 		wndproc.get()->Destroy();
 
 		MH_Uninitialize();
-
 
 		// Destroy features
 		for (size_t i = 0; i < Features.size(); i++) // A loop to grab the feature pointers and call their respective destroy functions to clean up any resources that were used and restore any settings that were changed

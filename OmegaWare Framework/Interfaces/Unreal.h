@@ -2,6 +2,121 @@
 #include "pch.h"
 #if FRAMEWORK_UNREAL // Not sure if this is needed but it's here anyway
 
+#ifndef GAME_FNAMES
+#define GAME_FNAMES(x) \
+	x(Invalid)
+#endif
+
+#define CREATE_ENUM(n) n,
+#define CREATE_CLASS_LOOKUP(n) FNames::ClassLookupEntry_t{std::string_view(#n), 0, FNames::EFNames::n},
+namespace FNames
+{
+	enum EFNames {
+		GAME_FNAMES(CREATE_ENUM)
+	};
+
+	typedef struct ActorInfo_t {
+		CG::AActor* pActor;
+		EFNames iLookupIndex;
+		float flDistance;
+	} PawnInfo_t;
+
+	typedef struct ClassLookupEntry_t {
+		std::string_view sName;
+		int32_t ComparisonIndex;
+		EFNames iLookupIndex;
+	} ClassLookupEntry_t;
+
+	inline std::vector<ClassLookupEntry_t> vecClassLookups{
+		GAME_FNAMES(CREATE_CLASS_LOOKUP)
+	};
+	
+	inline EFNames GetLookupIndex(int32_t ComparisonIndex) {
+		for (const auto entry : vecClassLookups) {
+			if (ComparisonIndex == entry.ComparisonIndex)
+				return entry.iLookupIndex;
+		}
+
+		return EFNames::Invalid;
+	}
+
+	inline void Initialize()
+	{
+		Utils::LogDebug(Utils::GetLocation(CurrentLoc), (std::stringstream() << "GNames: 0x" << CG::FName::GNames).str());
+		Utils::LogDebug(Utils::GetLocation(CurrentLoc), (std::stringstream() << "GNames Count: " << CG::FName::GNames->Count()).str());
+		
+		size_t iGNameSize = 0;
+		int lastBlock = 0;
+		uintptr_t nextFNameAddress = reinterpret_cast<uintptr_t>(CG::FName::GNames->Allocator.Blocks[0]);
+
+		while (1) {
+
+		RePlay:
+			int32_t nextFNameComparisonId = MAKELONG((uint16_t)((nextFNameAddress - reinterpret_cast<uintptr_t>(CG::FName::GNames->Allocator.Blocks[lastBlock])) / 2), (uint16_t)lastBlock);
+			int32_t block = nextFNameComparisonId >> 16;
+			int32_t offset = (uint16_t)nextFNameComparisonId;
+			int32_t offsetFromBlock = static_cast<int32_t>(nextFNameAddress - reinterpret_cast<uintptr_t>(CG::FName::GNames->Allocator.Blocks[lastBlock]));
+
+			// Get entry information
+			const uintptr_t entryOffset = nextFNameAddress;
+			const int toAdd = 0x00 + 0x02; // HeaderOffset + HeaderSize
+
+			const uint16_t* pNameHeader = reinterpret_cast<uint16_t*>(entryOffset);
+
+			if (!IsValidObjectPtr(pNameHeader))
+				break;
+
+			const uint16_t nameHeader = *pNameHeader;
+			int nameLength = nameHeader >> 6;
+			bool isWide = (nameHeader & 1) != 0;
+			if (isWide)
+				nameLength += nameLength;
+
+			// if odd number (odd numbers are aligned with 0x00)
+			if (!isWide && nameLength % 2 != 0)
+				nameLength += 1;
+
+			// Block end ?
+			if (offsetFromBlock + toAdd + (nameLength * 2) >= 0xFFFF * CG::FNameEntryAllocator::Stride || nameHeader == 0x00 || block == CG::FName::GNames->Allocator.CurrentBlock && offset >= CG::FName::GNames->Allocator.CurrentByteCursor)
+			{
+				nextFNameAddress = reinterpret_cast<uintptr_t>(CG::FName::GNames->Allocator.Blocks[++lastBlock]);
+				goto RePlay;
+			}
+
+			std::string sName = std::string(reinterpret_cast<CG::FNameEntry*>(entryOffset)->AnsiName, nameHeader >> 6);
+
+			for (int i = 0; i < vecClassLookups.size(); i++) {
+				if (vecClassLookups[i].ComparisonIndex)
+					continue;
+
+				if (sName != vecClassLookups[i].sName)
+					continue;
+
+				vecClassLookups[i].ComparisonIndex = nextFNameComparisonId;
+				Utils::LogDebug(Utils::GetLocation(CurrentLoc), "Initalized " + sName);
+				break;
+			}
+
+			// We hit last Name in last Block
+			if (lastBlock > CG::FName::GNames->Allocator.CurrentBlock)
+				break;
+
+			// Get next name address
+			nextFNameAddress = entryOffset + toAdd + nameLength;
+			++iGNameSize;
+		}
+
+		for (ClassLookupEntry_t stLookupEntry : vecClassLookups) {
+			if (!stLookupEntry.ComparisonIndex)
+				Utils::LogError(Utils::GetLocation(CurrentLoc), "Didnt Find " + std::string(stLookupEntry.sName));
+		}
+
+		Utils::LogDebug(Utils::GetLocation(CurrentLoc), (std::stringstream() << "Resolved GNames Count: " << iGNameSize).str());
+	};
+}
+#undef CREATE_ENUM
+#undef CREATE_CLASS_LOOKUP
+
 static CG::UFont* pFont;
 static DWORD dwOldProtect;
 
@@ -41,6 +156,7 @@ public:
 	}
 
 	std::vector<CG::AActor*> Actors;
+	std::vector<FNames::ActorInfo_t> ActorList;
 	std::mutex ActorLock;
 
 	// Shortcut functions to get pointers to important classes used for many things
@@ -51,14 +167,47 @@ public:
 
 	inline void RefreshActorList() // A function to refresh the actor list
 	{
-		if (CG::UWorld::GWorld == nullptr)
-			return;
+		std::vector<CG::AActor*> lActors{};
+		std::vector<FNames::ActorInfo_t> lActorList{};
+		std::vector<float> AllDistances{};
 
-		if (!(*CG::UWorld::GWorld))
+		if (CG::UWorld::GWorld == nullptr) {
+			ActorLock.lock();
+			Actors.clear();
+			ActorList.clear();
+			ActorLock.unlock();
 			return;
+		}
 
-		ActorLock.lock();
-		Actors.clear();
+		CG::AFSDGameState* pGameState = reinterpret_cast<CG::AFSDGameState*>(GetGameStateBase());
+		if (!IsValidObjectPtr(pGameState) || pGameState->IsOnSpaceRig) {
+			ActorLock.lock();
+			Actors.clear();
+			ActorList.clear();
+			ActorLock.unlock();
+			return;
+		}
+
+		FNames::EFNames iMatchState = FNames::GetLookupIndex(pGameState->MatchState.ComparisonIndex);
+		if (iMatchState != FNames::InProgress) {
+			ActorLock.lock();
+			Actors.clear();
+			ActorList.clear();
+			ActorLock.unlock();
+			return;
+		}
+		
+		CG::APawn* pAcknowledgedPawn = GetAcknowledgedPawn();
+		if (!pAcknowledgedPawn) {
+			ActorLock.lock();
+			Actors.clear();
+			ActorList.clear();
+			ActorLock.unlock();
+			return;
+		}
+
+
+		CG::FVector vecLocation = pAcknowledgedPawn->K2_GetActorLocation();
 
 		for (int i = 0; i < (**CG::UWorld::GWorld).Levels.Count(); i++)
 		{
@@ -76,9 +225,76 @@ public:
 				if (!Actor)
 					continue;
 
-				Actors.push_back(Actor);
+				bool bFailed = false;
+				for (CG::AActor* pOtherActor : lActors) {
+					if (pOtherActor != Actor)
+						continue;
+
+					bFailed = true;
+					break;
+				}
+
+				if (!bFailed)
+					lActors.push_back(Actor);
 			}
 		}
+
+		for (CG::AActor* pActor : lActors)
+		{
+			if (!IsValidObjectPtr(pActor))
+				continue;
+
+			int32_t iComparisonIndex = pActor->Name.ComparisonIndex;
+			FNames::ActorInfo_t stActorInfo{
+				pActor,
+				FNames::Invalid,
+				vecLocation.Distance(pActor->K2_GetActorLocation())
+			};
+
+			for (FNames::ClassLookupEntry_t stEntry : FNames::vecClassLookups) {
+				if (iComparisonIndex == stEntry.ComparisonIndex) {
+					stActorInfo.iLookupIndex = stEntry.iLookupIndex;
+					break;
+				}
+			}
+
+			if (stActorInfo.iLookupIndex == FNames::Invalid)
+				continue;
+
+			while (1) {
+				bool bFixed = true;
+				for (float flOtherDistance : AllDistances)
+				{
+					if (flOtherDistance == stActorInfo.flDistance) {
+						stActorInfo.flDistance = nextafterf(stActorInfo.flDistance, INFINITY);
+						bFixed = false;
+						break;
+					}
+				}
+
+				if (bFixed)
+					break;
+			}
+
+			lActorList.push_back(stActorInfo);
+			AllDistances.push_back(stActorInfo.flDistance);
+		}
+
+		std::stable_sort(lActorList.begin(), lActorList.end(), [](FNames::ActorInfo_t A, FNames::ActorInfo_t B) {
+			return A.flDistance > B.flDistance;
+		});
+
+
+		ActorLock.lock();
+
+		Actors.clear();
+		for (CG::AActor* v : lActors)
+			Actors.push_back(v);
+
+		ActorList.clear();
+		for (auto v : lActorList)
+			ActorList.push_back(v);
+
 		ActorLock.unlock();
 	}
 
@@ -219,22 +435,51 @@ public:
 		if (!IsValidObjectPtr(pAcknowledgedPawn))
 			return actors;
 
-		std::vector<T> SortedActors = actors;
+		std::vector<T> SortedActors{};
 
-		// Remove invalid actors
-		SortedActors.erase(std::remove_if(SortedActors.begin(), SortedActors.end(), [](T pActor) {
-			return !IsValidObjectPtr(pActor);
-			}), SortedActors.end());
+		typedef struct SortHack_t {
+			T pActor;
+			float flDistance;
+		} SortHack_t;
 
-		std::stable_sort(SortedActors.begin(), SortedActors.end(), [pAcknowledgedPawn](T ActorA, T ActorB) {
+		std::vector<SortHack_t> ActorAndDistances{};
+		std::vector<float> AllDistances{};
 
-			float DistanceA = ActorA->GetDistanceTo(pAcknowledgedPawn);
-			float DistanceB = ActorB->GetDistanceTo(pAcknowledgedPawn);
-			if (DistanceA == DistanceB)
-				return ActorA->Name.ComparisonIndex < ActorB->Name.ComparisonIndex;
+		for (T pActor : actors) 
+		{
+			if (!IsValidObjectPtr(pActor))
+				continue;
 
-			return DistanceA < DistanceB;
-			});
+			SortHack_t stActorHack{
+				pActor,
+				pActor->GetDistanceTo(pAcknowledgedPawn)
+			};
+
+			while (1) {
+				bool bFixed = true;
+				for (float flOtherDistance : AllDistances)
+				{
+					if (flOtherDistance == stActorHack.flDistance) {
+						stActorHack.flDistance = nextafterf(stActorHack.flDistance, INFINITY);
+						bFixed = false;
+						break;
+					}
+				}
+
+				if (bFixed)
+					break;
+			}
+
+			ActorAndDistances.push_back(stActorHack);
+			AllDistances.push_back(stActorHack.flDistance);
+		}
+
+		std::stable_sort(ActorAndDistances.begin(), ActorAndDistances.end(), [](SortHack_t A, SortHack_t B) {
+			return A.flDistance > B.flDistance;
+		});
+
+		for (SortHack_t stHack : ActorAndDistances)
+			SortedActors.push_back(stHack.pActor);
 
 		return SortedActors;
 	}

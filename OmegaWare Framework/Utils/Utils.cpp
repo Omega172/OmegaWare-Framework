@@ -72,7 +72,7 @@ bool Utils::IsReadableMemory(const void* lpAddress, size_t dwLength)
 	return true;
 }
 
-size_t Utils::Strlen(char* lpAddress, size_t dwMaxSize) {
+size_t Utils::Strlen(const char* lpAddress, size_t dwMaxSize) {
 	static constexpr size_t dwTypeSize = sizeof(char);
 
 	MEMORY_BASIC_INFORMATION MemInfo;
@@ -127,13 +127,13 @@ size_t Utils::Strlen(char* lpAddress, size_t dwMaxSize) {
 #else
 		if (dwSize > dwMaxSize)
 			return dwMaxSize;
-}
+	}
 
 	return dwSize + strlen(lpAddress + dwSize * dwTypeSize, dwMaxSize - dwSize);
 #endif
 }
 
-size_t Utils::Wcslen(wchar_t* lpAddress, size_t dwMaxSize) {
+size_t Utils::Wcslen(const wchar_t* lpAddress, size_t dwMaxSize) {
 	static constexpr size_t dwTypeSize = sizeof(wchar_t);
 
 	MEMORY_BASIC_INFORMATION MemInfo;
@@ -191,7 +191,7 @@ size_t Utils::Wcslen(wchar_t* lpAddress, size_t dwMaxSize) {
 #else
 		if (dwSize > dwMaxSize)
 			return dwMaxSize;
-}
+	}
 
 	return dwSize + wcslen(lpAddress + dwSize * dwTypeSize, dwMaxSize - dwSize);
 #endif
