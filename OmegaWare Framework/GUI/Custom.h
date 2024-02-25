@@ -1,7 +1,7 @@
 #pragma once
 #include "pch.h"
 #define IMGUI_DEFINE_MATH_OPERATORS
-#include "../ImGui/imgui_internal.h"
+#include "Libs/ImGui/imgui_internal.h"
 
 #include <algorithm>
 #include <array>

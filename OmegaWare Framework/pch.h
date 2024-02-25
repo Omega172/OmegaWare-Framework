@@ -17,8 +17,8 @@
 #define FRAMEWORK_VERSION FRAMEWORK_MAJOR_VERSION.FRAMEWORK_MINOR_VERSION.FRAMEWORK_REWORK_VERSION
 
 #define FRAMEWORK_CODENAME "OmegaWare"
-#define FRAMEWORK_TARGET_GAME ""
-#define FRAMEWORK_TARGET_PROCESS ""
+#define FRAMEWORK_TARGET_GAME "REMOVE"
+#define FRAMEWORK_TARGET_PROCESS "REMOVE"
 #pragma warning(disable : 5056)
 static_assert(FRAMEWORK_TARGET_GAME != "", "Target game not set."); // Make sure the target game title is set
 static_assert(FRAMEWORK_TARGET_PROCESS != "", "Target process name not set."); // Make sure the target process name is set
@@ -38,7 +38,7 @@ static_assert((FRAMEWORK_OTHER + FRAMEWORK_UNREAL + FRAMEWORK_UNITY) == 1, "Must
 #define FRAMEWORK_RENDER_D3D12 0
 static_assert((FRAMEWORK_RENDER_D3D11 + FRAMEWORK_RENDER_D3D12) == 1, "Must use exactly one rendering API"); // Don't allow both rendering API's to be used
 
-#include "MinHook/include/MinHook.h"
+#include "Libs/MinHook/include/MinHook.h"
 
 // A macro to get the current source location to be used with Utils::GetLocation
 #include <source_location>
@@ -86,8 +86,6 @@ static_assert((FRAMEWORK_RENDER_D3D11 + FRAMEWORK_RENDER_D3D12) == 1, "Must use 
 #include "Memory/Memory.h"
 #include "Utils/Utils.h" // Include the Utils.h file that contains various utility functions for the framework
 
-#include "Interfaces/EasyHook.h"
-
 #if FRAMEWORK_UNREAL // If the framework set is Unreal include the Unreal.h file that contains the Unreal interface class that is used to interact with the Unreal Engine
 #include "Interfaces/FNames.h"
 #include "Interfaces/Unreal.h"
@@ -100,25 +98,25 @@ static_assert((FRAMEWORK_RENDER_D3D11 + FRAMEWORK_RENDER_D3D12) == 1, "Must use 
 // Include ImGui and the ImGui implementation for Win32
 #define IMGUI_DEFINE_MATH_OPERATORS
 #pragma warning(disable : 4244) // Disable the warning for the conversion from 'float' to 'int', possible loss of data
-#include "ImGUI/imgui.h"
-#include "ImGUI/imgui_impl_win32.h"
+#include "Libs/ImGui/imgui.h"
+#include "Libs/ImGui/imgui_impl_win32.h"
 
 // Include the ImGui implementation for the rendering API that is being used
 #if FRAMEWORK_RENDER_D3D11
 #pragma comment(lib, "d3d11.lib") // WHY DO I NEED THIS WTF
 #include <d3d11.h>
 #include <dxgi1_2.h>
-#include "ImGUI/imgui_impl_dx11.h"
+#include "Libs/ImGui/imgui_impl_dx11.h"
 #endif
 
 #if FRAMEWORK_RENDER_D3D12
 #pragma comment(lib, "d3d12.lib") // WHY DO I NEED THIS WTF
 #include <D3D12.h>
 #include <dxgi1_4.h>
-#include "ImGUI/imgui_impl_dx12.h"
+#include "Libs/ImGui/imgui_impl_dx12.h"
 #endif
 
-#include "ImGUI/Styles.h" // Include the Styles.h file that contains the ImGui styles for the framework
+#include "GUI/Styles.h" // Include the Styles.h file that contains the ImGui styles for the framework
 
 #include "GUI/Custom.h" // Include the Custom.h file that contains the custom ImGui widgets for the framework
 #include "GUI/GUI.h" // Include the GUI.h file that contains the GUI class that is used to create the framework's menu

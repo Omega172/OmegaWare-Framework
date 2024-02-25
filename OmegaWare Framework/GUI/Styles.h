@@ -1,5 +1,5 @@
 #pragma once
-#include "imgui.h"
+#include "Libs/ImGui/imgui.h"
 #include "../Localization/LocaleStructs.h"
 
 inline ImFont* CurrentFont;
