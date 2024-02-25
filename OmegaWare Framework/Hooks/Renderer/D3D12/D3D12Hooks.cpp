@@ -267,7 +267,8 @@ static HRESULT __fastcall hkPresentD3D12(IDXGISwapChain3* pSwapChain, UINT SyncI
 			pD3D12DescriptorHeapImGuiRender->GetGPUDescriptorHandleForHeapStart());
 
 		ImGui_ImplDX12_CreateDeviceObjects();
-		});
+		return oPresentD3D12(pSwapChain, SyncInterval, Flags);
+	});
 
 	if (Cheat::bShouldRun)
 	{
