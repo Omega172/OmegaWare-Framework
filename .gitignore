@@ -398,3 +398,5 @@ FodyWeavers.xsd
 *.sln.iml
 
 .vscode
+
+OmegaWare Framework/enc_temp_folder
