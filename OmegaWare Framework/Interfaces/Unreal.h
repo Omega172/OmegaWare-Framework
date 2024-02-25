@@ -30,7 +30,7 @@ namespace FNames
 	inline std::vector<ClassLookupEntry_t> vecClassLookups{
 		GAME_FNAMES(CREATE_CLASS_LOOKUP)
 	};
-	
+
 	inline EFNames GetLookupIndex(int32_t ComparisonIndex) {
 		for (const auto entry : vecClassLookups) {
 			if (ComparisonIndex == entry.ComparisonIndex)
@@ -44,7 +44,7 @@ namespace FNames
 	{
 		Utils::LogDebug(Utils::GetLocation(CurrentLoc), (std::stringstream() << "GNames: 0x" << CG::FName::GNames).str());
 		Utils::LogDebug(Utils::GetLocation(CurrentLoc), (std::stringstream() << "GNames Count: " << CG::FName::GNames->Count()).str());
-		
+
 		size_t iGNameSize = 0;
 		int lastBlock = 0;
 		uintptr_t nextFNameAddress = reinterpret_cast<uintptr_t>(CG::FName::GNames->Allocator.Blocks[0]);
@@ -179,8 +179,8 @@ public:
 			return;
 		}
 
-		CG::AFSDGameState* pGameState = reinterpret_cast<CG::AFSDGameState*>(GetGameStateBase());
-		if (!IsValidObjectPtr(pGameState) || pGameState->IsOnSpaceRig) {
+		CG::AGameState* pGameState = reinterpret_cast<CG::AGameState*>(GetGameStateBase());
+		if (!IsValidObjectPtr(pGameState)) {
 			ActorLock.lock();
 			Actors.clear();
 			ActorList.clear();
@@ -196,7 +196,7 @@ public:
 			ActorLock.unlock();
 			return;
 		}
-		
+
 		CG::APawn* pAcknowledgedPawn = GetAcknowledgedPawn();
 		if (!pAcknowledgedPawn) {
 			ActorLock.lock();
@@ -282,7 +282,7 @@ public:
 
 		std::stable_sort(lActorList.begin(), lActorList.end(), [](FNames::ActorInfo_t A, FNames::ActorInfo_t B) {
 			return A.flDistance > B.flDistance;
-		});
+			});
 
 
 		ActorLock.lock();
@@ -445,7 +445,7 @@ public:
 		std::vector<SortHack_t> ActorAndDistances{};
 		std::vector<float> AllDistances{};
 
-		for (T pActor : actors) 
+		for (T pActor : actors)
 		{
 			if (!IsValidObjectPtr(pActor))
 				continue;
@@ -476,7 +476,7 @@ public:
 
 		std::stable_sort(ActorAndDistances.begin(), ActorAndDistances.end(), [](SortHack_t A, SortHack_t B) {
 			return A.flDistance > B.flDistance;
-		});
+			});
 
 		for (SortHack_t stHack : ActorAndDistances)
 			SortedActors.push_back(stHack.pActor);
