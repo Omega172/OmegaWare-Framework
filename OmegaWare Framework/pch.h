@@ -11,10 +11,10 @@
 // Framework defines
 #pragma execution_character_set("utf-8")
 
-#define FRAMEWORK_VERSION 6.5.2
 #define FRAMEWORK_MAJOR_VERSION 6
-#define FRAMEWORK_MINOR_VERSION 5
+#define FRAMEWORK_MINOR_VERSION 6
 #define FRAMEWORK_REWORK_VERSION 2
+#define FRAMEWORK_VERSION FRAMEWORK_MAJOR_VERSION.FRAMEWORK_MINOR_VERSION.FRAMEWORK_REWORK_VERSION
 
 #define FRAMEWORK_CODENAME "OmegaWare"
 #define FRAMEWORK_TARGET_GAME ""
@@ -83,6 +83,7 @@ static_assert((FRAMEWORK_RENDER_D3D11 + FRAMEWORK_RENDER_D3D12) == 1, "Must use 
 #include <math.h>
 
 #define FAIL_ON_MAX_STRLEN // Prevent overreading strings
+#include "Memory/Memory.h"
 #include "Utils/Utils.h" // Include the Utils.h file that contains various utility functions for the framework
 
 #include "Interfaces/EasyHook.h"

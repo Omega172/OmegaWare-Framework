@@ -1,16 +1,6 @@
 #include "pch.h"
 #if FRAMEWORK_RENDER_D3D11
 
-typedef LRESULT(CALLBACK* WNDPROC)(HWND, UINT, WPARAM, LPARAM);
-typedef HRESULT(WINAPI* Present)(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags);
-typedef HRESULT(WINAPI* Present1)(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT PresentFlags, const DXGI_PRESENT_PARAMETERS* pPresentParameters);
-typedef HRESULT(WINAPI* ResizeBuffers)(IDXGISwapChain* pSwapChain, UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT NewFormat, UINT SwapChainFlags);
-typedef HRESULT(WINAPI* ResizeBuffers1)(IDXGISwapChain* pSwapChain, UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT NewFormat, UINT SwapChainFlags, const UINT* pCreationNodeMask, IUnknown* const* ppPresentQueue);
-typedef HRESULT(WINAPI* CreateSwapChain)(IDXGIFactory* pFactory, IUnknown* pDevice, DXGI_SWAP_CHAIN_DESC* pDesc, IDXGISwapChain** ppSwapChain);
-typedef HRESULT(WINAPI* CreateSwapChainForHwnd)(IDXGIFactory* pFactory, IUnknown* pDevice, HWND hWnd, const DXGI_SWAP_CHAIN_DESC1* pDesc, const DXGI_SWAP_CHAIN_FULLSCREEN_DESC* pFullscreenDesc, IDXGIOutput* pRestrictToOutput, IDXGISwapChain1** ppSwapChain);
-typedef HRESULT(WINAPI* CreateSwapChainForCoreWindow)(IDXGIFactory* pFactory, IUnknown* pDevice, IUnknown* pWindow, const DXGI_SWAP_CHAIN_DESC1* pDesc, IDXGIOutput* pRestrictToOutput, IDXGISwapChain1** ppSwapChain);
-typedef HRESULT(WINAPI* CreateSwapChainForComposition)(IDXGIFactory* pFactory, IUnknown* pDevice, const DXGI_SWAP_CHAIN_DESC1* pDesc, IDXGIOutput* pRestrictToOutput, IDXGISwapChain1** ppSwapChain);
-
 static ID3D11Device* g_pDevice = NULL;
 static ID3D11DeviceContext* g_pDeviceContext = NULL;
 static ID3D11RenderTargetView* g_pRenderTargetView = NULL;
@@ -139,56 +129,56 @@ static void RenderImGui(IDXGISwapChain* pSwapChain) {
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 }
 
-static Present oPresent;
+static Memory::Hook<HRESULT(WINAPI*)(IDXGISwapChain*, UINT, UINT)> oPresent;
 static HRESULT WINAPI hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags) {
 	RenderImGui(pSwapChain);
 
 	return oPresent(pSwapChain, SyncInterval, Flags);
 }
 
-static Present1 oPresent1;
+static Memory::Hook<HRESULT(WINAPI*)(IDXGISwapChain*, UINT, UINT, const DXGI_PRESENT_PARAMETERS*)> oPresent1;
 static HRESULT WINAPI hkPresent1(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT PresentFlags, const DXGI_PRESENT_PARAMETERS* pPresentParameters) {
 	RenderImGui(pSwapChain);
 
 	return oPresent1(pSwapChain, SyncInterval, PresentFlags, pPresentParameters);
 }
 
-static ResizeBuffers oResizeBuffers;
+static Memory::Hook<HRESULT(WINAPI*)(IDXGISwapChain*, UINT, UINT, UINT, DXGI_FORMAT, UINT)> oResizeBuffers;
 static HRESULT WINAPI hkResizeBuffers(IDXGISwapChain* pSwapChain, UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT NewFormat, UINT SwapChainFlags) {
 	CleanupRenderTarget();
 
 	return oResizeBuffers(pSwapChain, BufferCount, Width, Height, NewFormat, SwapChainFlags);
 }
 
-static ResizeBuffers1 oResizeBuffers1;
+static Memory::Hook<HRESULT(WINAPI*)(IDXGISwapChain*, UINT, UINT, UINT, DXGI_FORMAT, UINT, const UINT*, IUnknown* const*)> oResizeBuffers1;
 static HRESULT WINAPI hkResizeBuffers1(IDXGISwapChain* pSwapChain, UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT NewFormat, UINT SwapChainFlags, const UINT* pCreationNodeMask, IUnknown* const* ppPresentQueue) {
 	CleanupRenderTarget();
 
 	return oResizeBuffers1(pSwapChain, BufferCount, Width, Height, NewFormat, SwapChainFlags, pCreationNodeMask, ppPresentQueue);
 }
 
-static CreateSwapChain oCreateSwapChain;
+static Memory::Hook<HRESULT(WINAPI*)(IDXGIFactory*, IUnknown*, DXGI_SWAP_CHAIN_DESC*, IDXGISwapChain**)> oCreateSwapChain;
 static HRESULT WINAPI hkCreateSwapChain(IDXGIFactory* pFactory, IUnknown* pDevice, DXGI_SWAP_CHAIN_DESC* pDesc, IDXGISwapChain** ppSwapChain) {
 	CleanupRenderTarget();
 
 	return oCreateSwapChain(pFactory, pDevice, pDesc, ppSwapChain);
 }
 
-static CreateSwapChainForHwnd oCreateSwapChainForHwnd;
+static Memory::Hook<HRESULT(WINAPI*)(IDXGIFactory*, IUnknown*, HWND, const DXGI_SWAP_CHAIN_DESC1*, const DXGI_SWAP_CHAIN_FULLSCREEN_DESC*, IDXGIOutput*, IDXGISwapChain1**)> oCreateSwapChainForHwnd;
 static HRESULT WINAPI hkCreateSwapChainForHwnd(IDXGIFactory* pFactory, IUnknown* pDevice, HWND hWnd, const DXGI_SWAP_CHAIN_DESC1* pDesc, const DXGI_SWAP_CHAIN_FULLSCREEN_DESC* pFullscreenDesc, IDXGIOutput* pRestrictToOutput, IDXGISwapChain1** ppSwapChain) {
 	CleanupRenderTarget();
 
 	return oCreateSwapChainForHwnd(pFactory, pDevice, hWnd, pDesc, pFullscreenDesc, pRestrictToOutput, ppSwapChain);
 }
 
-static CreateSwapChainForCoreWindow oCreateSwapChainForCoreWindow;
+static Memory::Hook<HRESULT(WINAPI*)(IDXGIFactory*, IUnknown*, IUnknown*, const DXGI_SWAP_CHAIN_DESC1*, IDXGIOutput*, IDXGISwapChain1**)> oCreateSwapChainForCoreWindow;
 static HRESULT WINAPI hkCreateSwapChainForCoreWindow(IDXGIFactory* pFactory, IUnknown* pDevice, IUnknown* pWindow, const DXGI_SWAP_CHAIN_DESC1* pDesc, IDXGIOutput* pRestrictToOutput, IDXGISwapChain1** ppSwapChain) {
 	CleanupRenderTarget();
 
 	return oCreateSwapChainForCoreWindow(pFactory, pDevice, pWindow, pDesc, pRestrictToOutput, ppSwapChain);
 }
 
-static CreateSwapChainForComposition oCreateSwapChainForComposition;
+static Memory::Hook<HRESULT(WINAPI*)(IDXGIFactory*, IUnknown*, const DXGI_SWAP_CHAIN_DESC1*, IDXGIOutput*, IDXGISwapChain1**)> oCreateSwapChainForComposition;
 static HRESULT WINAPI hkCreateSwapChainForComposition(IDXGIFactory* pFactory, IUnknown* pDevice, const DXGI_SWAP_CHAIN_DESC1* pDesc, IDXGIOutput* pRestrictToOutput, IDXGISwapChain1** ppSwapChain) {
 	CleanupRenderTarget();
 
@@ -211,101 +201,49 @@ bool RendererHooks::Setup()
 	IDXGIFactory* pIDXGIFactory = NULL;
 	pDXGIAdapter->GetParent(IID_PPV_ARGS(&pIDXGIFactory));
 
-	// CreateSwapChain
-	void* pMethod = Utils::GetVirtualMethod(pIDXGIFactory, 10);
-	if (!pMethod) {
-		Utils::LogError(Utils::GetLocation(CurrentLoc), "CreateSwapChain was null!");
-		return false;
-	}
-	if (MH_CreateHook(pMethod, hkCreateSwapChain, reinterpret_cast<void**>(&oCreateSwapChain)) != MH_OK || MH_EnableHook(pMethod) != MH_OK) {
+	// IDXGIFactory
+	if (oCreateSwapChain.HookVirtualMethod(hkCreateSwapChain, pIDXGIFactory, 10) != MH_OK) {
 		Utils::LogError(Utils::GetLocation(CurrentLoc), "CreateSwapChain hook couldnt be created!");
 		return false;
 	}
-	// CreateSwapChain
-
-	// CreateSwapChainForHwnd
-	pMethod = Utils::GetVirtualMethod(pIDXGIFactory, 15);
-	if (!pMethod) {
-		Utils::LogError(Utils::GetLocation(CurrentLoc), "CreateSwapChainForHwnd was null!");
-		return false;
-	}
-	if (MH_CreateHook(pMethod, hkCreateSwapChainForHwnd, reinterpret_cast<void**>(&oCreateSwapChainForHwnd)) != MH_OK || MH_EnableHook(pMethod) != MH_OK) {
+	
+	if (oCreateSwapChainForHwnd.HookVirtualMethod(hkCreateSwapChainForHwnd, pIDXGIFactory, 15) != MH_OK) {
 		Utils::LogError(Utils::GetLocation(CurrentLoc), "CreateSwapChainForHwnd hook couldnt be created!");
 		return false;
 	}
-	// CreateSwapChainForHwnd
 
-	// CreateSwapChainForCoreWindow
-	pMethod = Utils::GetVirtualMethod(pIDXGIFactory, 16);
-	if (!pMethod) {
-		Utils::LogError(Utils::GetLocation(CurrentLoc), "CreateSwapChainForCoreWindow was null!");
-		return false;
-	}
-	if (MH_CreateHook(pMethod, hkCreateSwapChainForCoreWindow, reinterpret_cast<void**>(&oCreateSwapChainForCoreWindow)) != MH_OK || MH_EnableHook(pMethod) != MH_OK) {
+	if (oCreateSwapChainForCoreWindow.HookVirtualMethod(hkCreateSwapChainForCoreWindow, pIDXGIFactory, 16) != MH_OK) {
 		Utils::LogError(Utils::GetLocation(CurrentLoc), "CreateSwapChainForCoreWindow hook couldnt be created!");
 		return false;
 	}
-	// CreateSwapChainForCoreWindow
 
-	// CreateSwapChainForComposition
-	pMethod = Utils::GetVirtualMethod(pIDXGIFactory, 24);
-	if (!pMethod) {
-		Utils::LogError(Utils::GetLocation(CurrentLoc), "CreateSwapChainForComposition was null!");
-		return false;
-	}
-	if (MH_CreateHook(pMethod, hkCreateSwapChainForComposition, reinterpret_cast<void**>(&oCreateSwapChainForComposition)) != MH_OK || MH_EnableHook(pMethod) != MH_OK) {
+	if (oCreateSwapChainForComposition.HookVirtualMethod(hkCreateSwapChainForComposition, pIDXGIFactory, 24) != MH_OK) {
 		Utils::LogError(Utils::GetLocation(CurrentLoc), "CreateSwapChainForComposition hook couldnt be created!");
 		return false;
 	}
-	// CreateSwapChainForComposition
+	// IDXGIFactory
 
-	// Present
-	pMethod = Utils::GetVirtualMethod(g_pSwapChain, 8);
-	if (!pMethod) {
-		Utils::LogError(Utils::GetLocation(CurrentLoc), "Present was null!");
-		return false;
-	}
-	if (MH_CreateHook(pMethod, hkPresent, reinterpret_cast<void**>(&oPresent)) != MH_OK || MH_EnableHook(pMethod) != MH_OK) {
+	// SwapChain
+	if (oPresent.HookVirtualMethod(hkPresent, g_pSwapChain, 8) != MH_OK) {
 		Utils::LogError(Utils::GetLocation(CurrentLoc), "Present hook couldnt be created!");
 		return false;
 	}
-	// Present
 
-	// ResizeBuffers
-	pMethod = Utils::GetVirtualMethod(g_pSwapChain, 13);
-	if (!pMethod) {
-		Utils::LogError(Utils::GetLocation(CurrentLoc), "ResizeBuffers was null!");
-		return false;
-	}
-	if (MH_CreateHook(pMethod, hkResizeBuffers, reinterpret_cast<void**>(&oResizeBuffers)) != MH_OK || MH_EnableHook(pMethod) != MH_OK) {
+	if (oResizeBuffers.HookVirtualMethod(hkResizeBuffers, g_pSwapChain, 13) != MH_OK) {
 		Utils::LogError(Utils::GetLocation(CurrentLoc), "ResizeBuffers hook couldnt be created!");
 		return false;
 	}
-	// ResizeBuffers
 
-	// Present1
-	pMethod = Utils::GetVirtualMethod(g_pSwapChain, 22);
-	if (!pMethod) {
-		Utils::LogError(Utils::GetLocation(CurrentLoc), "Present1 was null!");
-		return false;
-	}
-	if (MH_CreateHook(pMethod, hkPresent1, reinterpret_cast<void**>(&oPresent1)) != MH_OK || MH_EnableHook(pMethod) != MH_OK) {
+	if (oPresent1.HookVirtualMethod(hkPresent1, g_pSwapChain, 22) != MH_OK) {
 		Utils::LogError(Utils::GetLocation(CurrentLoc), "Present1 hook couldnt be created!");
 		return false;
 	}
-	// Present1
 
-	// ResizeBuffers1
-	pMethod = Utils::GetVirtualMethod(g_pSwapChain, 39);
-	if (!pMethod) {
-		Utils::LogError(Utils::GetLocation(CurrentLoc), "ResizeBuffers1 was null!");
-		return false;
-	}
-	if (MH_CreateHook(pMethod, hkResizeBuffers1, reinterpret_cast<void**>(&oResizeBuffers1)) != MH_OK || MH_EnableHook(pMethod) != MH_OK) {
+	if (oResizeBuffers1.HookVirtualMethod(hkResizeBuffers1, g_pSwapChain, 39) != MH_OK) {
 		Utils::LogError(Utils::GetLocation(CurrentLoc), "ResizeBuffers1 hook couldnt be created!");
 		return false;
 	}
-	// ResizeBuffers1
+	// SwapChain
 
 	pIDXGIFactory->Release();
 	pDXGIAdapter->Release();

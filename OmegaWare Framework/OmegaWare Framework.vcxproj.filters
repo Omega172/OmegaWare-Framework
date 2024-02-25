@@ -20,6 +20,7 @@
     <ClCompile Include="Features\ExampleFeature\ExampleFeature.cpp" />
     <ClCompile Include="Hooks\WndProc\WndProcHooks.cpp" />
     <ClCompile Include="Hooks\Renderer\D3D11\D3D11Hooks.cpp" />
+    <ClCompile Include="Memory\Memory.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Utils\Console\Console.h" />
@@ -57,6 +58,7 @@
     <ClInclude Include="GUI\Menu\Menu.h" />
     <ClInclude Include="Localization\Locales\Polish.h" />
     <ClInclude Include="Interfaces\FNames.h" />
+    <ClInclude Include="Memory\Memory.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
