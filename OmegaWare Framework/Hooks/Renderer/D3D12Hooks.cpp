@@ -33,6 +33,23 @@ static bool CreateDeviceD3D12(HWND hWnd) {
     sd.SampleDesc.Count = 1;
     sd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 
+    /* // -d3ddebug launch option
+    HMODULE dx12 = GetModuleHandleA("d3d12.dll");
+
+    auto pD3D12GetDebugInterface =
+        reinterpret_cast<PFN_D3D12_GET_DEBUG_INTERFACE>(
+            GetProcAddress(dx12, "D3D12GetDebugInterface"));
+    if (pD3D12GetDebugInterface)
+    {
+        ID3D12Debug* debugController;
+        if (SUCCEEDED(pD3D12GetDebugInterface(
+            IID_PPV_ARGS(&debugController))))
+        {
+            debugController->EnableDebugLayer();
+        }
+    }
+    */
+
     // Create device
     D3D_FEATURE_LEVEL featureLevel = D3D_FEATURE_LEVEL_11_0;
     if (D3D12CreateDevice(NULL, featureLevel, IID_PPV_ARGS(&g_pDevice)) != S_OK)
@@ -42,17 +59,18 @@ static bool CreateDeviceD3D12(HWND hWnd) {
     if (g_pDevice->CreateCommandQueue(&desc, IID_PPV_ARGS(&g_pD3DCommandQueue)) != S_OK)
         return false;
 
-    IDXGISwapChain1* swapChain1 = NULL;
-    if (CreateDXGIFactory1(IID_PPV_ARGS(&g_pDXGIFactory)) != S_OK) {
+    if (CreateDXGIFactory2(DXGI_CREATE_FACTORY_DEBUG, IID_PPV_ARGS(&g_pDXGIFactory)) != S_OK) {
         Utils::LogError(Utils::GetLocation(CurrentLoc), "Unable to create DXGIFactory!");
         return false;
     }
 
     // FAILURE HERE
+    IDXGISwapChain1* swapChain1 = NULL;
     if (g_pDXGIFactory->CreateSwapChainForHwnd(g_pD3DCommandQueue, hWnd, &sd, NULL, NULL, &swapChain1) != S_OK) {
         Utils::LogError(Utils::GetLocation(CurrentLoc), "Unable to create SwapChainForHwnd!");
         return false;
     }
+
     if (swapChain1->QueryInterface(IID_PPV_ARGS(&g_pSwapChain)) != S_OK) {
         Utils::LogError(Utils::GetLocation(CurrentLoc), "Unable to create SwapChain!");
         return false;
@@ -214,8 +232,19 @@ static void RenderImGui_DX12(IDXGISwapChain3* pSwapChain) {
 
 static Memory::Hook<HRESULT(WINAPI*)(IDXGISwapChain3*, UINT, UINT)> oPresent;
 static HRESULT WINAPI hkPresent(IDXGISwapChain3* pSwapChain, UINT SyncInterval, UINT Flags) {
-    RenderImGui_DX12(pSwapChain);
 
+    static std::once_flag once;
+    std::call_once(once, [pSwapChain]() {
+        g_pSwapChain = pSwapChain;
+        DXGI_SWAP_CHAIN_DESC sdesc;
+        g_pSwapChain->GetDesc(&sdesc);
+        sdesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
+        sdesc.OutputWindow = Cheat::wndproc->hwndWindow;
+        sdesc.Windowed = ((GetWindowLongPtr(Cheat::wndproc->hwndWindow, GWL_STYLE) & WS_POPUP) != 0) ? false : true;
+    });
+    
+    RenderImGui_DX12(pSwapChain);
+ 
     return oPresent(pSwapChain, SyncInterval, Flags);
 }
 
@@ -278,10 +307,33 @@ static HRESULT WINAPI hkCreateSwapChainForComposition(IDXGIFactory* pFactory, IU
 
 bool RendererHooks::D3D12Setup()
 {
-    if (!CreateDeviceD3D12(Cheat::wndproc.get()->hwndWindow)) {
+    WNDCLASSEX WndClass;
+    WndClass.cbSize = sizeof(WNDCLASSEX);
+    WndClass.style = CS_HREDRAW | CS_VREDRAW;
+    WndClass.lpfnWndProc = DefWindowProc;
+    WndClass.cbClsExtra = 0;
+    WndClass.cbWndExtra = 0;
+    WndClass.hInstance = GetModuleHandle(NULL);
+    WndClass.hIcon = NULL;
+    WndClass.hCursor = NULL;
+    WndClass.hbrBackground = NULL;
+    WndClass.lpszMenuName = NULL;
+    WndClass.lpszClassName = "OmegaWare";
+    WndClass.hIconSm = NULL;
+
+    RegisterClassExA(&WndClass);
+
+    HWND hWindow = CreateWindowA(WndClass.lpszClassName, "OmegaWare DirectX Window", WS_OVERLAPPEDWINDOW, 0, 0, 100, 100, NULL, NULL, WndClass.hInstance, NULL);
+
+    if (!CreateDeviceD3D12(hWindow)) {
         Utils::LogError(Utils::GetLocation(CurrentLoc), "Unable to create dx12 device!");
+        
+        DestroyWindow(hWindow);
+        UnregisterClassA(WndClass.lpszClassName, WndClass.hInstance);
+
         return false;
     }
+    DestroyWindow(hWindow);
 
     // IDXGIFactory
     if (oCreateSwapChain.HookVirtualMethod(hkCreateSwapChain, g_pDXGIFactory, 10) != MH_OK) {
