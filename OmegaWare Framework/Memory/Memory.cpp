@@ -179,7 +179,7 @@ HMODULE Memory::GetModule(std::string sModuleName)
 	return module;
 }
 
-void Memory::EnumerateHandles(EnumerateHandlesFunc fn) 
+void Memory::EnumerateHandles(EnumerateHandlesFunc fn)
 {
 	_NtQuerySystemInformation NtQuerySystemInformation = reinterpret_cast<_NtQuerySystemInformation>(GetProcAddress(GetModuleHandle("ntdll.dll"), "NtQuerySystemInformation"));
 	if (!NtQuerySystemInformation)
@@ -212,12 +212,15 @@ void Memory::EnumerateHandles(EnumerateHandlesFunc fn)
 	VirtualFree(pSystemHandleInformation, 0, MEM_RELEASE);
 }
 
-HANDLE Memory::GetPrivilegedHandleToCurrentProcess()
+HANDLE Memory::GetPrivilegedHandleToProcess(DWORD dwProcessId)
 {
+	if (!dwProcessId)
+		dwProcessId = Cheat::wndproc->dwProcessId;
+
 	HANDLE rv = nullptr;
 
-	EnumerateHandles([&rv](PSYSTEM_HANDLE_TABLE_ENTRY_INFO pHandleEntryInfo) -> bool {
-		if (Cheat::wndproc->dwProcessId != pHandleEntryInfo->ProcessId)
+	EnumerateHandles([&rv, dwProcessId](PSYSTEM_HANDLE_TABLE_ENTRY_INFO pHandleEntryInfo) -> bool {
+		if (dwProcessId != pHandleEntryInfo->ProcessId)
 			return false;
 		
 		POBJECT_TYPE_INFORMATION pTypeInformation = nullptr;
@@ -250,9 +253,15 @@ HANDLE Memory::GetPrivilegedHandleToCurrentProcess()
 		if (iComparison != 0)
 			return false;
 
-		// This check will fail if the handle doesnt have access to PROCESS_QUERY_INFORMATION and PROCESS_VM_READ
-		WCHAR wszProcessPath[MAX_PATH];
-		if (!GetModuleFileNameExW(reinterpret_cast<HANDLE>(pHandleEntryInfo->Handle), NULL, wszProcessPath, MAX_PATH))
+		HMODULE hModules[1024];
+		DWORD dwNeeded;
+		// This check will fail if the handle doesnt have access to PROCESS_QUERY_INFORMATION
+		if (!EnumProcessModules(reinterpret_cast<HANDLE>(pHandleEntryInfo->Handle), hModules, sizeof(hModules), &dwNeeded))
+			return false;
+
+		// This check will fail if the handle doesnt have access to PROCESS_VM_READ
+		TCHAR szProcessPath[MAX_PATH];
+		if (!GetModuleFileNameEx(reinterpret_cast<HANDLE>(pHandleEntryInfo->Handle), NULL, szProcessPath, MAX_PATH))
 			return false;
 
 		rv = reinterpret_cast<HANDLE>(pHandleEntryInfo->Handle);
@@ -260,6 +269,47 @@ HANDLE Memory::GetPrivilegedHandleToCurrentProcess()
 	});
 
 	return rv;
+}
+
+void Memory::EnumerateModules(EnumerateModulesFunc fn, DWORD dwProcessId, DWORD flags)
+{
+	HANDLE hProcess = GetPrivilegedHandleToProcess(dwProcessId);
+	if (!hProcess)
+		return;
+
+	HMODULE hModules[1024];
+	DWORD dwNeeded;
+	if (!EnumProcessModules(hProcess, hModules, sizeof(hModules), &dwNeeded))
+		return;
+
+	TCHAR szModuleName[MAX_PATH];
+	for (UINT i = 0; i < (dwNeeded / sizeof(HMODULE)); i++)
+	{
+		if (!GetModuleFileNameEx(hProcess, hModules[i], szModuleName, sizeof(szModuleName)))
+			continue;
+
+		std::string sModuleName(szModuleName);
+
+		if (flags & EnumerateModulesFlags::DiscardSystemModules) {
+			if (sModuleName.find(":\\WINDOWS\\") != std::string::npos || sModuleName.find(":\\Windows\\") != std::string::npos)
+				continue;
+		}
+
+		if (flags & EnumerateModulesFlags::ModuleNameOnly) {
+			int i = sModuleName.find_last_of("/\\");
+			if (i != std::string::npos)
+				sModuleName = sModuleName.substr(i + 1);
+		}
+
+		if (flags & EnumerateModulesFlags::LowercaseName) {
+			std::transform(sModuleName.begin(), sModuleName.end(), sModuleName.begin(), [](unsigned char c) -> unsigned char {
+				return std::tolower(c);
+			});
+		}
+
+		if (fn(sModuleName))
+			return;
+	}
 }
 
 void* Memory::GetVirtualMethod(void* lpAddress, size_t index)

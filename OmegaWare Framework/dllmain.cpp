@@ -38,7 +38,7 @@ namespace Cheat
 
 		Utils::LogDebug(Utils::GetLocation(CurrentLoc), "Globals Initalized"); // Log that the globals have been initalized
 
-		HANDLE pPrivilagedHandle = Memory::GetPrivilegedHandleToCurrentProcess();
+		HANDLE pPrivilagedHandle = Memory::GetPrivilegedHandleToProcess();
 		if (pPrivilagedHandle)
 			Utils::LogDebug(Utils::GetLocation(CurrentLoc), (std::stringstream() << "PrivilagedHandle: 0x" << std::hex << pPrivilagedHandle).str());
 
