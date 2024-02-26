@@ -8,6 +8,7 @@ private:
 
 public:
 	HWND hwndWindow;
+	DWORD dwProcessId;
 
 	bool Setup();
 

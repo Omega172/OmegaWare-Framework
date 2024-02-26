@@ -164,6 +164,104 @@ size_t Memory::Wcslen(const wchar_t* lpAddress, size_t dwMaxSize) {
 #endif
 }
 
+static std::unordered_map<int, HMODULE> aCachedModules{};
+HMODULE Memory::GetModule(std::string sModuleName)
+{
+	int iModuleHash = std::hash<std::string>{}(sModuleName);
+	if (auto itr = aCachedModules.find(iModuleHash); itr != aCachedModules.end())
+		return itr->second;
+
+	HMODULE module = GetModuleHandle(sModuleName.c_str());
+	if (!module)
+		return nullptr;
+
+	aCachedModules.emplace(iModuleHash, module);
+	return module;
+}
+
+void Memory::EnumerateHandles(EnumerateHandlesFunc fn) 
+{
+	_NtQuerySystemInformation NtQuerySystemInformation = reinterpret_cast<_NtQuerySystemInformation>(GetProcAddress(GetModuleHandle("ntdll.dll"), "NtQuerySystemInformation"));
+	if (!NtQuerySystemInformation)
+		return;
+
+	PSYSTEM_HANDLE_INFORMATION pSystemHandleInformation = nullptr;
+	ULONG ulSize = 0;
+	NTSTATUS lStatus = STATUS_UNSUCCESSFUL;
+
+	// Wait until we successfully get the sysinfo
+	while (1) {
+		lStatus = NtQuerySystemInformation(SystemHandleInformation, pSystemHandleInformation, ulSize, &ulSize);
+		if (NT_SUCCESS(lStatus) || lStatus != STATUS_INFO_LENGTH_MISMATCH)
+			break;
+
+		if (pSystemHandleInformation)
+			VirtualFree(pSystemHandleInformation, 0, MEM_RELEASE);
+
+		pSystemHandleInformation = reinterpret_cast<PSYSTEM_HANDLE_INFORMATION>(
+			VirtualAlloc(NULL, ulSize, MEM_COMMIT, PAGE_READWRITE));
+	}
+
+	if (!pSystemHandleInformation)
+		return;
+
+	for (ULONG i = 0; i < pSystemHandleInformation->NumberOfHandles; i++)
+		if (fn(&pSystemHandleInformation->Handles[i]))
+			break;
+
+	VirtualFree(pSystemHandleInformation, 0, MEM_RELEASE);
+}
+
+HANDLE Memory::GetPrivilegedHandleToCurrentProcess()
+{
+	HANDLE rv = nullptr;
+
+	EnumerateHandles([&rv](PSYSTEM_HANDLE_TABLE_ENTRY_INFO pHandleEntryInfo) -> bool {
+		if (Cheat::wndproc->dwProcessId != pHandleEntryInfo->ProcessId)
+			return false;
+		
+		POBJECT_TYPE_INFORMATION pTypeInformation = nullptr;
+		ULONG ulSize = 0x400;
+		NTSTATUS lStatus = STATUS_INFO_LENGTH_MISMATCH;
+
+		while (lStatus == STATUS_INFO_LENGTH_MISMATCH) {
+			pTypeInformation = reinterpret_cast<POBJECT_TYPE_INFORMATION>(
+				VirtualAlloc(NULL, ulSize, MEM_COMMIT, PAGE_READWRITE));
+			lStatus = NtQueryObject(reinterpret_cast<HANDLE>(pHandleEntryInfo->Handle), ObjectTypeInformation, pTypeInformation, ulSize, &ulSize);
+
+			if (NT_SUCCESS(lStatus))
+				break;
+
+			if (pTypeInformation)
+				VirtualFree(pTypeInformation, 0, MEM_RELEASE);
+		}
+
+
+		if (!NT_SUCCESS(lStatus)) {
+			if (pTypeInformation)
+				VirtualFree(pTypeInformation, 0, MEM_RELEASE);
+
+			return false;
+		}
+
+		int iComparison = std::wcscmp(pTypeInformation->TypeName.Buffer, L"Process");
+		VirtualFree(pTypeInformation, 0, MEM_RELEASE);
+
+		if (iComparison != 0)
+			return false;
+
+		// This check will fail if the handle doesnt have access to PROCESS_QUERY_INFORMATION and PROCESS_VM_READ
+		WCHAR wszProcessPath[MAX_PATH];
+		if (!GetModuleFileNameExW(reinterpret_cast<HANDLE>(pHandleEntryInfo->Handle), NULL, wszProcessPath, MAX_PATH))
+			return false;
+
+		rv = reinterpret_cast<HANDLE>(pHandleEntryInfo->Handle);
+		return true;
+	});
+
+	return rv;
+}
+
 void* Memory::GetVirtualMethod(void* lpAddress, size_t index)
 {
 	if (!IsValidPtr(lpAddress))

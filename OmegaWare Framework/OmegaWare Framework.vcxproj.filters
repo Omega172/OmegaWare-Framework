@@ -19,8 +19,10 @@
     <ClCompile Include="Localization\Localization.cpp" />
     <ClCompile Include="Features\ExampleFeature\ExampleFeature.cpp" />
     <ClCompile Include="Hooks\WndProc\WndProcHooks.cpp" />
-    <ClCompile Include="Hooks\Renderer\D3D11\D3D11Hooks.cpp" />
+    <ClCompile Include="Hooks\Renderer\D3D11Hooks.cpp" />
     <ClCompile Include="Memory\Memory.cpp" />
+    <ClCompile Include="Hooks\Renderer\RendererHooks.cpp" />
+    <ClCompile Include="Hooks\Renderer\D3D12Hooks.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Utils\Console\Console.h" />
@@ -42,7 +44,6 @@
     <ClInclude Include="GUI\Styles.h" />
     <ClInclude Include="Libs\MinHook\include\MinHook.h" />
     <ClInclude Include="Libs\ImGui\imgui_impl_dx12.h" />
-    <ClInclude Include="Hooks\Renderer\D3D12\D3D12Hooks.cpp" />
     <ClInclude Include="Interfaces\Unreal.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Interfaces\Mono.h" />
@@ -58,6 +59,7 @@
     <ClInclude Include="Localization\Locales\Polish.h" />
     <ClInclude Include="Interfaces\FNames.h" />
     <ClInclude Include="Memory\Memory.h" />
+    <ClInclude Include="Memory\WindowsTypes.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

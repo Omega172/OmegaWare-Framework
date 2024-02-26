@@ -190,7 +190,9 @@
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="Features\ExampleFeature\ExampleFeature.cpp" />
     <ClCompile Include="GUI\GUI.cpp" />
-    <ClCompile Include="Hooks\Renderer\D3D11\D3D11Hooks.cpp" />
+    <ClCompile Include="Hooks\Renderer\D3D11Hooks.cpp" />
+    <ClCompile Include="Hooks\Renderer\D3D12Hooks.cpp" />
+    <ClCompile Include="Hooks\Renderer\RendererHooks.cpp" />
     <ClCompile Include="Hooks\WndProc\WndProcHooks.cpp" />
     <ClCompile Include="Libs\ImGui\imgui.cpp" />
     <ClCompile Include="Libs\ImGui\imgui_demo.cpp" />
@@ -222,7 +224,6 @@
     <ClInclude Include="GUI\GUI.h" />
     <ClInclude Include="GUI\Menu\Menu.h" />
     <ClInclude Include="GUI\Watermark.h" />
-    <ClInclude Include="Hooks\Renderer\D3D12\D3D12Hooks.cpp" />
     <ClInclude Include="Hooks\Renderer\RendererHooks.h" />
     <ClInclude Include="Hooks\WndProc\WndProcHooks.h" />
     <ClInclude Include="Libs\ImGui\imconfig.h" />
@@ -245,6 +246,7 @@
     <ClInclude Include="Localization\Locales\English.h" />
     <ClInclude Include="Localization\Locales\German.h" />
     <ClInclude Include="Localization\Localization.h" />
+    <ClInclude Include="Memory\WindowsTypes.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Utils\Console\Console.h" />
     <ClInclude Include="Utils\Logging\Colors.hpp" />
