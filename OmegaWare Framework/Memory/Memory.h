@@ -1,10 +1,21 @@
 #pragma once
 
 #include "pch.h"
-#include "WindowsTypes.h"
+
+#define STB_OMIT_TESTS
+#include "Libs/StringToBytes/stb.hh"
+
+#include "Windows/WindowsMemory.h"
 
 #define IsValidObjectPtr(lpAddress) (Memory::IsReadable(lpAddress, sizeof(*lpAddress)))
 #define IsValidPtr(lpAddress) (Memory::IsReadable(lpAddress, sizeof(void*)))
+
+#define PtrOffset(ptr, n)         (ptr + n)
+#define PtrDereference(ptr)       (*reinterpret_cast<void**>(ptr))
+#define PtrJmp(ptr)               (PtrOffset(ptr, sizeof(int) + *reinterpret_cast<int*>(ptr)))
+#define PtrOffsetJmp(ptr, n1, n2) (PtrOffset(PtrJmp(PtrOffset(ptr, n1)), n2))
+
+#define Signature(n) Memory::SignatureConversion_t::<stb::fixed_string{n}>::value
 
 namespace Memory
 {
@@ -16,30 +27,31 @@ namespace Memory
 	// Gets the length of a wstring while doing readable checks, more expensive than std::wcslen
 	size_t Wcslen(const wchar_t* lpAddress, size_t dwMaxSize = 1024);
 
-	// Gets loaded module handle
-	HMODULE GetModule(std::string sModuleName);
 
-	// Type used for EnumerateHandles function
-	typedef std::function<bool(PSYSTEM_HANDLE_TABLE_ENTRY_INFO)>EnumerateHandlesFunc;
-	// Enumerates open handles with fn that returns true if it wants to stop the enumeration
-	void EnumerateHandles(EnumerateHandlesFunc fn);
-
-	// Get a handle to current process with PROCESS_QUERY_INFORMATION and PROCESS_VM_READ
-	HANDLE GetPrivilegedHandleToProcess(DWORD dwProcessId = 0);
-
-	// Type used for EnumerateModules function
-	typedef std::function<bool(std::string)>EnumerateModulesFunc;
-	// Enum used for EnumerateModules function, filters the strings provided to the callback fn
-	namespace EnumerateModulesFlags {
-		constexpr DWORD DiscardSystemModules = 1 << 0; // No SYSTEM32 Modules
-		constexpr DWORD ModuleNameOnly       = 1 << 1; // Instead of full path
-		constexpr DWORD LowercaseName        = 1 << 2; // Passes a fully lowercase name
-	}
-	// Enumerates process moduleswith fn that returns true if it wants to stop the enumeration
-	void EnumerateModules(EnumerateModulesFunc fn, DWORD dwProcessId = 0, DWORD flags = 0);
+	// Get the size of the virtual method table
+	size_t GetVirtualMethodTableSize(void* lpAddress);
 
 	// Gets method of type T from virtual method table
 	void* GetVirtualMethod(void* lpAddress, size_t index);
+
+	// Types used for Signature conversion and arrays, use STB (string to bytes) to convert strings to spans that contain SignatureElement_t
+	using SignatureElement_t = short;
+	constexpr SignatureElement_t SignatureWildcardConvertedValue = -1;
+	using SignatureConversion_t = stb::basic_hex_string_array_conversion<' ', '?', SignatureElement_t, SignatureWildcardConvertedValue>;
+	using SignatureSpan_t = std::span<const SignatureElement_t>;
+	
+	// Scans module for memory signature, returning the found address
+	void* SignatureScan(LPMODULEINFO pModuleInfo, SignatureSpan_t aSignature);
+
+	// Type used for MultiSignatureScan function, contains signature and function to correct the return address
+	typedef struct SignatureData_t {
+		SignatureSpan_t aSignature;
+		// Used for multiscan so different signatures that would need to be corrected differently can be scanned, can be a nullptr
+		std::function<void*(void*)> CorrectReturnAddressFunc;
+	} SignatureData_t;
+
+	// Scans module for signatures and will call the sig's CorrectReturnAddressFunc before returning the found address
+	void* MultiSignatureScan(std::string sModuleName, std::vector<SignatureData_t*> vecSignatures);
 
 	template<typename TFunction>
 	class Hook
@@ -105,4 +117,5 @@ namespace Memory
 			return HookAddress(fnHook, GetVirtualMethod(lpAddress, index));
 		}
 	};
+
 }

@@ -78,6 +78,7 @@ static_assert(!(FRAMEWORK_RENDER_DYNAMIC || FRAMEWORK_RENDER_D3D12), "This does 
 #include <vector>
 #include <functional>
 #include <algorithm>
+#include <span>
 #include <eh.h> // I dont remember what this was for, but I think it was for a scuffed try catch block to stop crashes on memory access violations
 
 #ifndef FRAMEWORK_INJECTOR

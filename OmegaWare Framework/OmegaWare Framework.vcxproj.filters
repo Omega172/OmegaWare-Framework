@@ -23,6 +23,7 @@
     <ClCompile Include="Memory\Memory.cpp" />
     <ClCompile Include="Hooks\Renderer\RendererHooks.cpp" />
     <ClCompile Include="Hooks\Renderer\D3D12Hooks.cpp" />
+    <ClCompile Include="Memory\Windows\WindowsMemory.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Utils\Console\Console.h" />
@@ -59,7 +60,9 @@
     <ClInclude Include="Localization\Locales\Polish.h" />
     <ClInclude Include="Interfaces\FNames.h" />
     <ClInclude Include="Memory\Memory.h" />
-    <ClInclude Include="Memory\WindowsTypes.h" />
+    <ClInclude Include="Memory\Windows\WindowsTypes.h" />
+    <ClInclude Include="Libs\StringToBytes\stb.hh" />
+    <ClInclude Include="Memory\Windows\WindowsMemory.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -164,152 +164,20 @@ size_t Memory::Wcslen(const wchar_t* lpAddress, size_t dwMaxSize) {
 #endif
 }
 
-static std::unordered_map<int, HMODULE> aCachedModules{};
-HMODULE Memory::GetModule(std::string sModuleName)
+size_t Memory::GetVirtualMethodTableSize(void* lpAddress)
 {
-	int iModuleHash = std::hash<std::string>{}(sModuleName);
-	if (auto itr = aCachedModules.find(iModuleHash); itr != aCachedModules.end())
-		return itr->second;
+	if (!IsValidPtr(lpAddress))
+		return 0;
 
-	HMODULE module = GetModuleHandle(sModuleName.c_str());
-	if (!module)
-		return nullptr;
+	void** pMethodTable = *static_cast<void***>(lpAddress);
+	if (!IsValidPtr(pMethodTable))
+		return 0;
 
-	aCachedModules.emplace(iModuleHash, module);
-	return module;
-}
-
-void Memory::EnumerateHandles(EnumerateHandlesFunc fn)
-{
-	_NtQuerySystemInformation NtQuerySystemInformation = reinterpret_cast<_NtQuerySystemInformation>(GetProcAddress(GetModuleHandle("ntdll.dll"), "NtQuerySystemInformation"));
-	if (!NtQuerySystemInformation)
-		return;
-
-	PSYSTEM_HANDLE_INFORMATION pSystemHandleInformation = nullptr;
-	ULONG ulSize = 0;
-	NTSTATUS lStatus = STATUS_UNSUCCESSFUL;
-
-	// Wait until we successfully get the sysinfo
-	while (1) {
-		lStatus = NtQuerySystemInformation(SystemHandleInformation, pSystemHandleInformation, ulSize, &ulSize);
-		if (NT_SUCCESS(lStatus) || lStatus != STATUS_INFO_LENGTH_MISMATCH)
-			break;
-
-		if (pSystemHandleInformation)
-			VirtualFree(pSystemHandleInformation, 0, MEM_RELEASE);
-
-		pSystemHandleInformation = reinterpret_cast<PSYSTEM_HANDLE_INFORMATION>(
-			VirtualAlloc(NULL, ulSize, MEM_COMMIT, PAGE_READWRITE));
-	}
-
-	if (!pSystemHandleInformation)
-		return;
-
-	for (ULONG i = 0; i < pSystemHandleInformation->NumberOfHandles; i++)
-		if (fn(&pSystemHandleInformation->Handles[i]))
-			break;
-
-	VirtualFree(pSystemHandleInformation, 0, MEM_RELEASE);
-}
-
-HANDLE Memory::GetPrivilegedHandleToProcess(DWORD dwProcessId)
-{
-	if (!dwProcessId)
-		dwProcessId = Cheat::wndproc->dwProcessId;
-
-	HANDLE rv = nullptr;
-
-	EnumerateHandles([&rv, dwProcessId](PSYSTEM_HANDLE_TABLE_ENTRY_INFO pHandleEntryInfo) -> bool {
-		if (dwProcessId != pHandleEntryInfo->ProcessId)
-			return false;
-		
-		POBJECT_TYPE_INFORMATION pTypeInformation = nullptr;
-		ULONG ulSize = 0x400;
-		NTSTATUS lStatus = STATUS_INFO_LENGTH_MISMATCH;
-
-		while (lStatus == STATUS_INFO_LENGTH_MISMATCH) {
-			pTypeInformation = reinterpret_cast<POBJECT_TYPE_INFORMATION>(
-				VirtualAlloc(NULL, ulSize, MEM_COMMIT, PAGE_READWRITE));
-			lStatus = NtQueryObject(reinterpret_cast<HANDLE>(pHandleEntryInfo->Handle), ObjectTypeInformation, pTypeInformation, ulSize, &ulSize);
-
-			if (NT_SUCCESS(lStatus))
-				break;
-
-			if (pTypeInformation)
-				VirtualFree(pTypeInformation, 0, MEM_RELEASE);
-		}
-
-
-		if (!NT_SUCCESS(lStatus)) {
-			if (pTypeInformation)
-				VirtualFree(pTypeInformation, 0, MEM_RELEASE);
-
-			return false;
-		}
-
-		int iComparison = std::wcscmp(pTypeInformation->TypeName.Buffer, L"Process");
-		VirtualFree(pTypeInformation, 0, MEM_RELEASE);
-
-		if (iComparison != 0)
-			return false;
-
-		HMODULE hModules[1024];
-		DWORD dwNeeded;
-		// This check will fail if the handle doesnt have access to PROCESS_QUERY_INFORMATION
-		if (!EnumProcessModules(reinterpret_cast<HANDLE>(pHandleEntryInfo->Handle), hModules, sizeof(hModules), &dwNeeded))
-			return false;
-
-		// This check will fail if the handle doesnt have access to PROCESS_VM_READ
-		TCHAR szProcessPath[MAX_PATH];
-		if (!GetModuleFileNameEx(reinterpret_cast<HANDLE>(pHandleEntryInfo->Handle), NULL, szProcessPath, MAX_PATH))
-			return false;
-
-		rv = reinterpret_cast<HANDLE>(pHandleEntryInfo->Handle);
-		return true;
-	});
+	size_t rv = 0;
+	while (IsValidPtr(pMethodTable[rv++])) 
+	{}
 
 	return rv;
-}
-
-void Memory::EnumerateModules(EnumerateModulesFunc fn, DWORD dwProcessId, DWORD flags)
-{
-	HANDLE hProcess = GetPrivilegedHandleToProcess(dwProcessId);
-	if (!hProcess)
-		return;
-
-	HMODULE hModules[1024];
-	DWORD dwNeeded;
-	if (!EnumProcessModules(hProcess, hModules, sizeof(hModules), &dwNeeded))
-		return;
-
-	TCHAR szModuleName[MAX_PATH];
-	for (UINT i = 0; i < (dwNeeded / sizeof(HMODULE)); i++)
-	{
-		if (!GetModuleFileNameEx(hProcess, hModules[i], szModuleName, sizeof(szModuleName)))
-			continue;
-
-		std::string sModuleName(szModuleName);
-
-		if (flags & EnumerateModulesFlags::DiscardSystemModules) {
-			if (sModuleName.find(":\\WINDOWS\\") != std::string::npos || sModuleName.find(":\\Windows\\") != std::string::npos)
-				continue;
-		}
-
-		if (flags & EnumerateModulesFlags::ModuleNameOnly) {
-			int i = sModuleName.find_last_of("/\\");
-			if (i != std::string::npos)
-				sModuleName = sModuleName.substr(i + 1);
-		}
-
-		if (flags & EnumerateModulesFlags::LowercaseName) {
-			std::transform(sModuleName.begin(), sModuleName.end(), sModuleName.begin(), [](unsigned char c) -> unsigned char {
-				return std::tolower(c);
-			});
-		}
-
-		if (fn(sModuleName))
-			return;
-	}
 }
 
 void* Memory::GetVirtualMethod(void* lpAddress, size_t index)
@@ -323,4 +191,52 @@ void* Memory::GetVirtualMethod(void* lpAddress, size_t index)
 
 	void* pMethod = pMethodTable[index];
 	return (IsValidPtr(pMethod)) ? pMethod : nullptr;
+}
+
+
+void* Memory::SignatureScan(LPMODULEINFO pModuleInfo, SignatureSpan_t aSignature)
+{
+	if (!pModuleInfo || !pModuleInfo->lpBaseOfDll || !pModuleInfo->SizeOfImage)
+		return nullptr;
+
+	PUCHAR pMemory = reinterpret_cast<PUCHAR>(pModuleInfo->lpBaseOfDll);
+
+	const SignatureElement_t* pSignature = aSignature.data();
+	const size_t dwSignatureSize = aSignature.size();
+
+	for (size_t i = 0; i < pModuleInfo->SizeOfImage - dwSignatureSize; i++) {
+		bool bFound = true;
+		for (size_t j = 0; j < dwSignatureSize; j++) {
+			if (pMemory[i + j] != pSignature[j] && pSignature[j] != SignatureWildcardConvertedValue) {
+				bFound = false;
+				break;
+			}
+		}
+
+		if (bFound)
+			return reinterpret_cast<void*>(&pMemory[i]);
+	}
+
+	return nullptr;
+}
+
+void* Memory::MultiSignatureScan(std::string sModuleName, std::vector<SignatureData_t*> vecSignatures)
+{
+	LPMODULEINFO pModuleInfo = GetModuleInfo(sModuleName);
+	if (!pModuleInfo)
+		return nullptr;
+
+	for (SignatureData_t* stSignatureData : vecSignatures)
+	{
+		void* rv = SignatureScan(pModuleInfo, stSignatureData->aSignature);
+		if (!rv)
+			continue;
+
+		if (!stSignatureData->CorrectReturnAddressFunc)
+			return rv;
+
+		return stSignatureData->CorrectReturnAddressFunc(rv);
+	}
+
+	return nullptr;
 }

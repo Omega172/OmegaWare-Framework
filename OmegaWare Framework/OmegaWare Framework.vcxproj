@@ -208,6 +208,7 @@
     <ClCompile Include="Libs\ImGui\imgui_widgets.cpp" />
     <ClCompile Include="Localization\Localization.cpp" />
     <ClCompile Include="Memory\Memory.cpp" />
+    <ClCompile Include="Memory\Windows\WindowsMemory.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
@@ -243,6 +244,7 @@
     <ClInclude Include="Interfaces\FNames.h" />
     <ClInclude Include="Interfaces\Mono.h" />
     <ClInclude Include="Interfaces\Unreal.h" />
+    <ClInclude Include="Libs\StringToBytes\stb.hh" />
     <ClInclude Include="Localization\Locales\Polish.h" />
     <ClInclude Include="Memory\Memory.h" />
     <ClInclude Include="Libs\MinHook\include\MinHook.h" />
@@ -250,7 +252,8 @@
     <ClInclude Include="Localization\Locales\English.h" />
     <ClInclude Include="Localization\Locales\German.h" />
     <ClInclude Include="Localization\Localization.h" />
-    <ClInclude Include="Memory\WindowsTypes.h" />
+    <ClInclude Include="Memory\Windows\WindowsMemory.h" />
+    <ClInclude Include="Memory\Windows\WindowsTypes.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Utils\Console\Console.h" />
     <ClInclude Include="Utils\Logging\Colors.hpp" />
