@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 
 ExampleFeature::ExampleFeature() {};
 
@@ -41,8 +41,6 @@ void ExampleFeature::PopulateMenu()
 {
 	if (!Initialized)
 		return;
-
-	ImGui::SameLine();
 
 	Child* ExampleFeature = new Child("ExampleFeature", []() { return ImVec2(ImGui::GetContentRegionAvail().x / 2, ImGui::GetContentRegionAvail().y / 2); }, ImGuiChildFlags_Border);
 	ExampleFeature->AddElement(new Text(Cheat::localization->Get("EXAMPLE_FEATURE")));
