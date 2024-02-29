@@ -2,9 +2,9 @@
 #include "WindowsMemory.h"
 
 static std::unordered_map<size_t, MODULEINFO> aCachedModules{};
-LPMODULEINFO Memory::GetModuleInfo(std::string sModuleName)
+LPMODULEINFO Memory::GetModuleInfo(std::string_view sModuleName)
 {
-	const size_t iModuleHash = std::hash<std::string>{}(sModuleName);
+	const size_t iModuleHash = std::hash<std::string_view>{}(sModuleName);
 	if (auto itr = aCachedModules.find(iModuleHash); itr != aCachedModules.end())
 		return &itr->second;
 
@@ -12,7 +12,7 @@ LPMODULEINFO Memory::GetModuleInfo(std::string sModuleName)
 	if (!hHandle)
 		return nullptr;
 
-	HMODULE hModule = GetModuleHandle(sModuleName.c_str());
+	HMODULE hModule = GetModuleHandle(sModuleName.data());
 	if (!hModule)
 		return nullptr;
 

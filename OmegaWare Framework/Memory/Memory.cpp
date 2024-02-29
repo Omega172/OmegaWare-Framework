@@ -164,6 +164,60 @@ size_t Memory::Wcslen(const wchar_t* lpAddress, size_t dwMaxSize) {
 #endif
 }
 
+void Memory::EnumerateInterfaces(std::string_view sModuleName, EnumerateInterfacesFunc fn)
+{
+	LPMODULEINFO pModuleInfo = GetModuleInfo(sModuleName);
+	if (!pModuleInfo || !pModuleInfo->lpBaseOfDll || !pModuleInfo->SizeOfImage) {
+		Utils::LogError(Utils::GetLocation(CurrentLoc), (std::stringstream() << '[' << sModuleName << "] Unable to get Module Info!").str());
+		return;
+	}
+
+	const uintptr_t CreateInterfaceSymbol = reinterpret_cast<uintptr_t>(GetProcAddress(static_cast<HMODULE>(pModuleInfo->lpBaseOfDll), "CreateInterface"));
+	if (!CreateInterfaceSymbol) {
+		Utils::LogError(Utils::GetLocation(CurrentLoc), (std::stringstream() << '[' << sModuleName << "] Unable to get CreateInterface address!").str());
+		return;
+	}
+
+	int32_t* pStartOffset = reinterpret_cast<int32_t*>(CreateInterfaceSymbol + 3);
+	if (!IsValidObjectPtr(pStartOffset)) {
+		Utils::LogError(Utils::GetLocation(CurrentLoc), (std::stringstream() << '[' << sModuleName << "] Unable to get StartOffset!").str());
+		return;
+	}
+
+	InterfaceRegistry_t** pInterfaceRegistryStart = reinterpret_cast<InterfaceRegistry_t**>(CreateInterfaceSymbol + *pStartOffset + 7);
+	if (!IsValidPtr(pInterfaceRegistryStart)) {
+		Utils::LogError(Utils::GetLocation(CurrentLoc), (std::stringstream() << '[' << sModuleName << "] Unable to get InterfaceRegistryStart address!").str());
+		return;
+	}
+
+	InterfaceRegistry_t* pInterfaceRegistry = *pInterfaceRegistryStart;
+	for (; IsValidObjectPtr(pInterfaceRegistry); pInterfaceRegistry = pInterfaceRegistry->pNext) {
+		if (!Strlen(pInterfaceRegistry->szName))
+			continue;
+
+		if (fn(pInterfaceRegistry))
+			return;
+	}
+}
+
+void* Memory::CreateInterface(std::string_view sModuleName, std::string_view sInterfaceName)
+{
+	void* rv = nullptr;
+
+	EnumerateInterfaces(sModuleName, [&rv, sInterfaceName](InterfaceRegistry_t* pInterfaceRegistry) -> bool {
+		if (std::string_view(pInterfaceRegistry->szName).find(sInterfaceName) == std::string_view::npos)
+			return false;
+
+		rv = pInterfaceRegistry->Create();
+		return true;
+		});
+
+	if (!rv)
+		Utils::LogError(Utils::GetLocation(CurrentLoc), (std::stringstream() << '[' << sModuleName << "] Unable to get " << sInterfaceName).str());
+
+	return rv;
+}
+
 size_t Memory::GetVirtualMethodTableSize(void* lpAddress)
 {
 	if (!IsValidPtr(lpAddress))
@@ -174,11 +228,12 @@ size_t Memory::GetVirtualMethodTableSize(void* lpAddress)
 		return 0;
 
 	size_t rv = 0;
-	while (IsValidPtr(pMethodTable[rv++])) 
+	while (IsValidPtr(pMethodTable[rv++]))
 	{}
 
 	return rv;
 }
+
 
 void* Memory::GetVirtualMethod(void* lpAddress, size_t index)
 {
@@ -220,7 +275,7 @@ void* Memory::SignatureScan(LPMODULEINFO pModuleInfo, SignatureSpan_t aSignature
 	return nullptr;
 }
 
-void* Memory::MultiSignatureScan(std::string sModuleName, std::vector<SignatureData_t*> vecSignatures)
+void* Memory::MultiSignatureScan(std::string_view sModuleName, std::vector<SignatureData_t*> vecSignatures)
 {
 	LPMODULEINFO pModuleInfo = GetModuleInfo(sModuleName);
 	if (!pModuleInfo)
