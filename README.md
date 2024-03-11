@@ -5,7 +5,6 @@ You can see this framework being used in these places:
 - [Satisfactory Cheat](https://github.com/Omega172/Satisfactory-Cheat)
 - [Crush Crush Cheat](https://github.com/Omega172/Crush-Crush-Cheat)
 - [Deep Rock Galactic](https://github.com/Omega172/Deep-Rock-Galactic-Cheat)
-- [Palworld Cheat](https://github.com/Omega172/Palworld-Cheat) (In progress not published) <-- Priority
 - [Dead Island 2 Cheat](https://github.com/Omega172/Dead-Island-2-Cheat) (In progress)
 - ARK Survival Ascended (In progress not published)
 
