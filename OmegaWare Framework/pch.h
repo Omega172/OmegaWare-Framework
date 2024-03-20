@@ -13,12 +13,12 @@
 
 #define FRAMEWORK_MAJOR_VERSION 6
 #define FRAMEWORK_MINOR_VERSION 8
-#define FRAMEWORK_REWORK_VERSION 2
+#define FRAMEWORK_REWORK_VERSION 3
 #define FRAMEWORK_VERSION FRAMEWORK_MAJOR_VERSION.FRAMEWORK_MINOR_VERSION.FRAMEWORK_REWORK_VERSION
 
 #define FRAMEWORK_CODENAME "OmegaWare"
-#define FRAMEWORK_TARGET_GAME ""
-#define FRAMEWORK_TARGET_PROCESS ""
+#define FRAMEWORK_TARGET_GAME "a"
+#define FRAMEWORK_TARGET_PROCESS "a"
 #pragma warning(disable : 5056)
 static_assert(FRAMEWORK_TARGET_GAME != "", "Target game not set."); // Make sure the target game title is set
 static_assert(FRAMEWORK_TARGET_PROCESS != "", "Target process name not set."); // Make sure the target process name is set
