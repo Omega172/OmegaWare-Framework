@@ -8,6 +8,11 @@
 
 // I use Pascal case for almost everything, if you don't like it 1v1 me in the parking lot :smile:
 
+// Disabled warnings for this file
+#pragma warning(push : 5056)
+#pragma warning(disable : 5056) // warning C5056: operator '!=': deprecated for array types
+
+
 // Framework defines
 #pragma execution_character_set("utf-8")
 
@@ -17,9 +22,8 @@
 #define FRAMEWORK_VERSION FRAMEWORK_MAJOR_VERSION.FRAMEWORK_MINOR_VERSION.FRAMEWORK_REWORK_VERSION
 
 #define FRAMEWORK_CODENAME "OmegaWare"
-#define FRAMEWORK_TARGET_GAME ""
-#define FRAMEWORK_TARGET_PROCESS ""
-#pragma warning(disable : 5056)
+#define FRAMEWORK_TARGET_GAME "ye"
+#define FRAMEWORK_TARGET_PROCESS "ye"
 static_assert(FRAMEWORK_TARGET_GAME != "", "Target game not set."); // Make sure the target game title is set
 static_assert(FRAMEWORK_TARGET_PROCESS != "", "Target process name not set."); // Make sure the target process name is set
 
@@ -44,7 +48,7 @@ static_assert(!(FRAMEWORK_RENDER_DYNAMIC || FRAMEWORK_RENDER_D3D12), "This does 
 
 // A macro to get the current source location to be used with Utils::GetLocation
 #include <source_location>
-#define CurrentLoc std::source_location::current()
+#define CurrentLoc (std::source_location::current())
 
 #endif
 
@@ -199,3 +203,7 @@ inline std::vector<std::unique_ptr<Feature>> Features; // A vector of unique poi
 #endif
 
 #endif //PCH_H
+
+
+
+#pragma warning(pop : 5056)

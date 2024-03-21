@@ -42,13 +42,13 @@ void ExampleFeature::PopulateMenu()
 	if (!Initialized)
 		return;
 
-	Child* ExampleFeature = new Child("ExampleFeature", []() { return ImVec2(ImGui::GetContentRegionAvail().x / 2, ImGui::GetContentRegionAvail().y / 2); }, ImGuiChildFlags_Border);
-	ExampleFeature->AddElement(new Text(Cheat::localization->Get("EXAMPLE_FEATURE")));
-	ExampleFeature->AddElement(new Checkbox(Cheat::localization->Get("EXAMPLE_FEATURE"), &bExampleFeature));
+	auto ExampleFeature = std::make_unique<Child>(Child("ExampleFeature", []() { return ImVec2(ImGui::GetContentRegionAvail().x / 2, ImGui::GetContentRegionAvail().y / 2); }, ImGuiChildFlags_Border));
+	ExampleFeature->AddElement(std::make_unique<Text>(Text(Cheat::localization->Get("EXAMPLE_FEATURE"))));
+	ExampleFeature->AddElement(std::make_unique<Checkbox>(Checkbox(Cheat::localization->Get("EXAMPLE_FEATURE"), &bExampleFeature)));
 	if (bExampleFeature)
-		ExampleFeature->AddElement(new Text(Cheat::localization->Get("EXAMPLE_FEATURE_HW")));
+		ExampleFeature->AddElement(std::make_unique<Text>(Text(Cheat::localization->Get("EXAMPLE_FEATURE_HW"))));
 
-	Cheat::menu->AddElement(ExampleFeature, true);
+	Cheat::menu->AddElement(std::move(ExampleFeature), true);
 }
 
 void ExampleFeature::Render() {}

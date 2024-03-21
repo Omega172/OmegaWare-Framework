@@ -5,20 +5,21 @@
 class Element
 {
 public:
+
 	bool m_bSameLine = false;
 	float m_flSpacing = -1.f;
 
-	std::vector<Element*> Elements;
-
+	std::vector<std::unique_ptr<Element>> Elements;
+	
 	Element() {}
 
 	virtual void Render() = 0;
 
-	void AddElement(Element* Element, bool bSameLine = false, float flSpacing = -1.f)
+	void AddElement(std::unique_ptr<Element> pElement, bool bSameLine = false, float flSpacing = -1.f)
 	{
-		Element->m_bSameLine = bSameLine;
-		Element->m_flSpacing = flSpacing;
-		Elements.push_back(Element);
+		pElement.get()->m_bSameLine = bSameLine;
+		pElement.get()->m_flSpacing = flSpacing;
+		Elements.push_back(std::move(pElement));
 	}
 };
 
@@ -43,13 +44,13 @@ public:
 		m_Size(Size), m_sName(sName), m_pOpen(pOpen), m_Flags(Flags)
 	{};
 
-	void Render()
+	void Render() override
 	{
 		ImGui::SetNextWindowSize(m_Size);
 		ImGui::Begin(m_sName.c_str(), m_pOpen, m_Flags);
 		{
-			for (Element* Element : Elements)
-				Element->Render();
+			for (const std::unique_ptr<Element>& pElement : Elements)
+				pElement->Render();
 		}
 		ImGui::End();
 
@@ -61,8 +62,8 @@ public:
 		ImGui::SetNextWindowSize(m_Size);
 		ImGui::Begin(m_sName.c_str(), m_pOpen, m_Flags);
 		{
-			for (Element* Element : Elements)
-				Element->Render();
+			for (const std::unique_ptr<Element>& pElement : Elements)
+				pElement->Render();
 		}
 	}
 
@@ -84,15 +85,23 @@ private:
 	std::function<ImVec2()> m_funcCallback = nullptr;
 
 public:
-	Child(std::string sID, ImVec2 Size = ImVec2(0, 0), ImGuiChildFlags ChildFlags = 0, ImGuiWindowFlags WindowFlags = 0) :
-		m_sID(sID), m_Size(Size), m_ChildFlags(ChildFlags), m_WindowFlags(WindowFlags)
-	{};
+	Child(std::string sID, ImVec2 Size = ImVec2(0, 0), ImGuiChildFlags ChildFlags = 0, ImGuiWindowFlags WindowFlags = 0)
+	{
+		m_sID = sID;
+		m_Size = Size;
+		m_ChildFlags = ChildFlags;
+		m_WindowFlags = WindowFlags;
+	};
 
-	Child(std::string sID, std::function<ImVec2()> funcCallback = nullptr, ImGuiChildFlags ChildFlags = 0, ImGuiWindowFlags WindowFlags = 0) :
-		m_sID(sID), m_funcCallback(funcCallback), m_ChildFlags(ChildFlags), m_WindowFlags(WindowFlags)
-	{};
+	Child(std::string sID, std::function<ImVec2()> funcCallback = nullptr, ImGuiChildFlags ChildFlags = 0, ImGuiWindowFlags WindowFlags = 0)
+	{
+		m_sID = sID;
+		m_funcCallback = funcCallback;
+		m_ChildFlags = ChildFlags;
+		m_WindowFlags = WindowFlags;
+	};
 
-	void Render()
+	void Render() override
 	{
 		if (m_bSameLine)
 			ImGui::SameLine(0.f, m_flSpacing);
@@ -102,8 +111,8 @@ public:
 
 		ImGui::BeginChild(m_sID.c_str(), m_Size, m_ChildFlags, m_WindowFlags);
 		{
-			for (Element* Element : Elements)
-				Element->Render();
+			for (const std::unique_ptr<Element>& pElement : Elements)
+				pElement->Render();
 		}
 		ImGui::EndChild();
 	};
@@ -119,7 +128,7 @@ public:
 		m_sText(sText)
 	{};
 
-	void Render()
+	void Render() override
 	{
 		if (m_bSameLine)
 			ImGui::SameLine(0.f, m_flSpacing);
@@ -143,7 +152,7 @@ public:
 		m_sLabel(sLabel), m_funcCallback(funcCallback)
 	{};
 
-	void Render()
+	void Render() override
 	{
 		if (m_bSameLine)
 			ImGui::SameLine(0.f, m_flSpacing);
@@ -170,7 +179,7 @@ public:
 		m_sLabel(sLabel), m_sPreviewlabel(sPreviewlabel), m_ComboFlags(ComboFlags), m_funcCallback(funcCallback)
 	{};
 
-	void Render()
+	void Render() override
 	{
 		if (m_bSameLine)
 			ImGui::SameLine(0.f, m_flSpacing);
@@ -196,7 +205,7 @@ public:
 		m_sLabel(sLabel), m_pValue(pValue)
 	{};
 
-	void Render()
+	void Render() override
 	{
 		if (m_bSameLine)
 			ImGui::SameLine(0.f, m_flSpacing);
@@ -217,7 +226,7 @@ public:
 		m_sLabel(sLabel), m_Key(Key), m_Size(Size)
 	{};
 
-	void Render()
+	void Render() override
 	{
 		if (m_bSameLine)
 			ImGui::SameLine(0.f, m_flSpacing);
@@ -241,7 +250,7 @@ public:
 		m_sLabel(sLabel), m_pValue(pValue), m_fValueMin(fValueMin), m_fValueMax(fValueMax), m_SliderFlags(SliderFlags)
 	{};
 
-	void Render()
+	void Render() override
 	{
 		if (m_bSameLine)
 			ImGui::SameLine(0.f, m_flSpacing);
@@ -265,7 +274,7 @@ public:
 		m_sLabel(sLabel), m_pValue(pValue), m_iValueMin(iValueMin), m_iValueMax(iValueMax), m_SliderFlags(SliderFlags)
 	{};
 
-	void Render()
+	void Render() override
 	{
 		if (m_bSameLine)
 			ImGui::SameLine(0.f, m_flSpacing);
@@ -289,7 +298,7 @@ public:
 		m_sLabel(sLabel), m_pBuffer(pBuffer), m_ullBuffSize(ullBuffSize), m_InputTextFlags(InputTextFlags), m_InputTextCallback(InputTextCallback), m_pUserData(pUserData)
 	{};
 
-	void Render()
+	void Render() override
 	{
 		if (m_bSameLine)
 			ImGui::SameLine(0.f, m_flSpacing);
@@ -310,7 +319,7 @@ public:
 		m_sLabel(sLabel), m_pValue(pValue), m_ColorEditFlags(ColorEditFlags)
 	{};
 
-	void Render()
+	void Render() override 
 	{
 		if (m_bSameLine)
 			ImGui::SameLine(0.f, m_flSpacing);
