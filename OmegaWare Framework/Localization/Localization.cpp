@@ -12,7 +12,7 @@ Localization::Localization()
 
 	if (!SetLocale("ENG"))
 	{
-		Utils::LogError(Utils::GetLocation(CurrentLoc), "Failed to set default locale");
+		LogErrorHere("Failed to set default locale!");
 		return;
 	}
 

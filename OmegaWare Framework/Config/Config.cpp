@@ -12,7 +12,7 @@ Config::Config()
 	SS << FRAMEWORK_TARGET_GAME << ".cfg";
 	ConfigPath = SS.str();
 
-	Utils::LogDebug(Utils::GetLocation(CurrentLoc), "Config Path: " + ConfigPath.string());
+	LogDebugHere("Config Path: " + ConfigPath.string());
 
 	if (!std::filesystem::exists(ConfigPath))
 	{
@@ -29,7 +29,7 @@ bool Config::SaveConfig()
 	std::ofstream ConfigFile(ConfigPath);
 	if (ConfigFile.fail())
 	{
-		Utils::LogError(Utils::GetLocation(CurrentLoc), "Failed to open config file for writing");
+		LogErrorHere("Failed to open config file for writing");
 		return false;
 	}
 
@@ -67,7 +67,7 @@ bool Config::LoadConfig()
 	std::ifstream ConfigFile(ConfigPath);
 	if (ConfigFile.fail())
 	{
-		Utils::LogError(Utils::GetLocation(CurrentLoc), "Failed to open config file for reading");
+		LogErrorHere("Failed to open config file for reading");
 		return false;
 	}
 

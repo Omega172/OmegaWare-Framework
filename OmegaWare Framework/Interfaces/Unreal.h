@@ -111,7 +111,7 @@ namespace FNames
 				Utils::LogError(Utils::GetLocation(CurrentLoc), "Didnt Find " + std::string(stLookupEntry.sName));
 		}
 
-		Utils::LogDebug(Utils::GetLocation(CurrentLoc), (std::stringstream() << "Resolved GNames Count: " << iGNameSize).str());
+		LogDebugStreamHere("Resolved GNames Count: " << iGNameSize);
 	};
 }
 #undef CREATE_ENUM

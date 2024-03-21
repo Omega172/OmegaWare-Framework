@@ -4,6 +4,8 @@
 
 // These functions might be ugly but they are used to make the console text look pretty and make debugging easier
 
+
+
 Utils::Location Utils::GetLocation(std::source_location stLocation)
 {
 	return { std::filesystem::path(stLocation.file_name()).filename().string(), stLocation.function_name(), stLocation.line(), stLocation.column() };
@@ -36,7 +38,7 @@ void Utils::LogError(Location stLocation, int iErrorCode)
 	std::ofstream ErrorFile(SS.str(), std::ios::app);
 	if (ErrorFile.fail())
 	{
-		Utils::LogError(Utils::GetLocation(CurrentLoc), "Failed to open ERROR log file for writing");
+		LogErrorHere("Failed to open ERROR log file for writing");
 		return;
 	}
 
@@ -71,7 +73,7 @@ void Utils::LogError(Location stLocation, std::string sErrorMessage)
 	std::ofstream ErrorFile(SS.str(), std::ios::app);
 	if (ErrorFile.fail())
 	{
-		Utils::LogError(Utils::GetLocation(CurrentLoc), "Failed to open ERROR log file for writing");
+		LogErrorHere("Failed to open ERROR log file for writing");
 		return;
 	}
 

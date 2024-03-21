@@ -9,9 +9,9 @@
 // I use Pascal case for almost everything, if you don't like it 1v1 me in the parking lot :smile:
 
 // Disabled warnings for this file
-#pragma warning(push : 5056)
-#pragma warning(disable : 5056) // warning C5056: operator '!=': deprecated for array types
-
+#pragma warning(push)
+#pragma warning(disable : 5056) // Operator '!=': deprecated for array types
+#pragma warning(disable : 4244) // Disable the warning for the conversion from 'float' to 'int', possible loss of data
 
 // Framework defines
 #pragma execution_character_set("utf-8")
@@ -45,10 +45,6 @@ static_assert((FRAMEWORK_RENDER_DYNAMIC + FRAMEWORK_RENDER_D3D11 + FRAMEWORK_REN
 static_assert(!(FRAMEWORK_RENDER_DYNAMIC || FRAMEWORK_RENDER_D3D12), "This does NOT work right now, please dont use ;3");
 
 #include "Libs/MinHook/include/MinHook.h"
-
-// A macro to get the current source location to be used with Utils::GetLocation
-#include <source_location>
-#define CurrentLoc (std::source_location::current())
 
 #endif
 
@@ -105,7 +101,6 @@ static_assert(!(FRAMEWORK_RENDER_DYNAMIC || FRAMEWORK_RENDER_D3D12), "This does 
 
 // Include ImGui and the ImGui implementation for Win32
 #define IMGUI_DEFINE_MATH_OPERATORS
-#pragma warning(disable : 4244) // Disable the warning for the conversion from 'float' to 'int', possible loss of data
 #include "Libs/ImGui/imgui.h"
 #include "Libs/ImGui/imgui_impl_win32.h"
 
@@ -206,4 +201,4 @@ inline std::vector<std::unique_ptr<Feature>> Features; // A vector of unique poi
 
 
 
-#pragma warning(pop : 5056)
+#pragma warning(pop)

@@ -11,7 +11,7 @@ Console::Console(bool bVisibility, std::string sConsoleTitle)
 		SS << GetLastError();
 		
 		MessageBoxA(NULL, SS.str().c_str(), "Error", MB_ICONERROR);
-		Utils::LogError(Utils::GetLocation(CurrentLoc), GetLastError()); // This code is here only to log the error, if another console is already attached
+		LogErrorHere(GetLastError()); // This code is here only to log the error, if another console is already attached
 		this->bInitalized = false;
 		return;
 	}
@@ -19,7 +19,7 @@ Console::Console(bool bVisibility, std::string sConsoleTitle)
 	errno_t errSTDOut = freopen_s(&m_pSTDOutDummy, "CONOUT$", "w", stdout);
 	if (errSTDOut != NULL)
 	{
-		Utils::LogError(Utils::GetLocation(CurrentLoc), errSTDOut);
+		LogErrorHere(errSTDOut);
 		this->bInitalized = false;
 		return;
 	}
@@ -27,7 +27,7 @@ Console::Console(bool bVisibility, std::string sConsoleTitle)
 	errno_t errSTDIn = freopen_s(&m_pSTDInDummy, "CONIN$", "w", stdin);
 	if (errSTDIn != NULL)
 	{
-		Utils::LogError(Utils::GetLocation(CurrentLoc), errSTDIn);
+		LogErrorHere(errSTDIn);
 		this->bInitalized = false;
 		return;
 	}
@@ -54,7 +54,7 @@ void Console::Destroy()
 		fclose(m_pSTDInDummy);
 
 	if (!FreeConsole())
-		Utils::LogError(Utils::GetLocation(CurrentLoc), GetLastError());
+		LogErrorHere(GetLastError());
 
 	this->bInitalized = false;
 	return;

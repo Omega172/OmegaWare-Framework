@@ -27,7 +27,7 @@ bool ExampleFeature::Setup()
 
 	Cheat::localization->UpdateLocale();
 
-	Utils::LogDebug(Utils::GetLocation(CurrentLoc), "Feature: ExampleFeature Initialized");
+	LogDebugHere("Feature: ExampleFeature Initialized");
 
 	Initialized = true;
 	return Initialized;

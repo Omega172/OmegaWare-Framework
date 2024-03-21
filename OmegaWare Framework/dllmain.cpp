@@ -21,26 +21,25 @@ namespace Cheat
 			return false;
 
 		if (!(*CG::UWorld::GWorld))
-			Utils::LogError(Utils::GetLocation(CurrentLoc), "Waiting for GWorld to initalize");
+			LogErrorHere("Waiting for GWorld to initalize");
 
 		while (!(*CG::UWorld::GWorld))
 			continue;
 	#endif
 
-		Utils::LogDebug(Utils::GetLocation(CurrentLoc), "Initalizing Globals, this can take a bit"); // Log that the globals are being initalized
+		LogDebugHere("Initalizing Globals, this can take a bit"); // Log that the globals are being initalized
 
 	#if FRAMEWORK_UNREAL // If using the Unreal framework print the pointer to the Unreal class to make sure it was initalized
-		Utils::LogDebug(Utils::GetLocation(CurrentLoc), (std::stringstream() << "Unreal: 0x" << unreal.get()).str());
+		LogDebugStreamHere("Unreal: 0x" << unreal.get());
 		FNames::Initialize();
 	#endif
 
 		// Add other globals that need to be initalized here
-
-		Utils::LogDebug(Utils::GetLocation(CurrentLoc), "Globals Initalized"); // Log that the globals have been initalized
+		LogDebugHere("Globals Initalized"); // Log that the globals have been initalized
 
 		HANDLE pPrivilagedHandle = Memory::GetPrivilegedHandleToProcess();
 		if (pPrivilagedHandle)
-			Utils::LogDebug(Utils::GetLocation(CurrentLoc), (std::stringstream() << "PrivilagedHandle: 0x" << std::hex << pPrivilagedHandle).str());
+			LogDebugStreamHere("PrivilagedHandle: 0x" << std::hex << pPrivilagedHandle);
 
 
 		localization = std::make_unique<Localization>();
@@ -57,12 +56,12 @@ namespace Cheat
 				bool bResult = Features[i]->Setup();
 				if (!bResult)
 				{
-					Utils::LogError(Utils::GetLocation(CurrentLoc), "Failed to setup feature: " + std::to_string(i));
+					LogErrorHere("Failed to setup feature: " + std::to_string(i));
 					return false;
 				}
 			}
 		} catch (char* e) {
-			Utils::LogDebug(Utils::GetLocation(CurrentLoc), std::string(e));
+			LogDebugHere(std::string(e));
 		}
 
 		config = std::make_unique<Config>(); // Initalize the config class
@@ -81,14 +80,14 @@ namespace Cheat
 		if (!Init())
 		{
 			// If the initalization failed log an error and set the boolean to false to stop the cheat from running
-			Utils::LogError(Utils::GetLocation(CurrentLoc), Cheat::Title + ": Failed to initalize");
+			LogErrorHere(Cheat::Title + ": Failed to initalize");
 			bShouldRun = false;
 		}
 		else
 		{
 			// If the initalization was successful log that the cheat was initalized
 			Cheat::bInitalized = true;
-			Utils::LogDebug(Utils::GetLocation(CurrentLoc), Cheat::Title + ": Initalized");
+			LogDebugHere(Cheat::Title + ": Initalized");
 		}
 
 		while (bShouldRun) // the main process loop used to asynchonously run the features and handle the keys independently from the game
@@ -109,7 +108,7 @@ namespace Cheat
 #endif
 		}
 		console->SetVisibility(true); // Set the console to be visible when the cheat is unloading
-		Utils::LogDebug(Utils::GetLocation(CurrentLoc), Cheat::Title + ": Unloading..."); // Log that the cheat is unloading
+		LogDebugHere(Cheat::Title + ": Unloading..."); // Log that the cheat is unloading
 
 		wndproc.get()->Destroy();
 		renderer.get()->Destroy();

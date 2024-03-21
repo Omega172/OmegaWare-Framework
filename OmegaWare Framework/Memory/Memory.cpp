@@ -168,25 +168,25 @@ void Memory::EnumerateInterfaces(std::string_view sModuleName, EnumerateInterfac
 {
 	LPMODULEINFO pModuleInfo = GetModuleInfo(sModuleName);
 	if (!pModuleInfo || !pModuleInfo->lpBaseOfDll || !pModuleInfo->SizeOfImage) {
-		Utils::LogError(Utils::GetLocation(CurrentLoc), (std::stringstream() << '[' << sModuleName << "] Unable to get Module Info!").str());
+		LogErrorStreamHere('[' << sModuleName << "] Unable to get Module Info!");
 		return;
 	}
 
 	const uintptr_t CreateInterfaceSymbol = reinterpret_cast<uintptr_t>(GetProcAddress(static_cast<HMODULE>(pModuleInfo->lpBaseOfDll), "CreateInterface"));
 	if (!CreateInterfaceSymbol) {
-		Utils::LogError(Utils::GetLocation(CurrentLoc), (std::stringstream() << '[' << sModuleName << "] Unable to get CreateInterface address!").str());
+		LogErrorStreamHere('[' << sModuleName << "] Unable to get CreateInterface address!");
 		return;
 	}
 
 	int32_t* pStartOffset = reinterpret_cast<int32_t*>(CreateInterfaceSymbol + 3);
 	if (!IsValidObjectPtr(pStartOffset)) {
-		Utils::LogError(Utils::GetLocation(CurrentLoc), (std::stringstream() << '[' << sModuleName << "] Unable to get StartOffset!").str());
+		LogErrorStreamHere('[' << sModuleName << "] Unable to get StartOffset!");
 		return;
 	}
 
 	InterfaceRegistry_t** pInterfaceRegistryStart = reinterpret_cast<InterfaceRegistry_t**>(CreateInterfaceSymbol + *pStartOffset + 7);
 	if (!IsValidPtr(pInterfaceRegistryStart)) {
-		Utils::LogError(Utils::GetLocation(CurrentLoc), (std::stringstream() << '[' << sModuleName << "] Unable to get InterfaceRegistryStart address!").str());
+		LogErrorStreamHere('[' << sModuleName << "] Unable to get InterfaceRegistryStart address!");
 		return;
 	}
 
@@ -213,7 +213,7 @@ void* Memory::CreateInterface(std::string_view sModuleName, std::string_view sIn
 		});
 
 	if (!rv)
-		Utils::LogError(Utils::GetLocation(CurrentLoc), (std::stringstream() << '[' << sModuleName << "] Unable to get " << sInterfaceName).str());
+		LogErrorStreamHere('[' << sModuleName << "] Unable to get " << sInterfaceName);
 
 	return rv;
 }

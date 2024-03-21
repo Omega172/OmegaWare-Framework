@@ -47,7 +47,7 @@ static void CreateRenderTarget(IDXGISwapChain* pSwapChain)
 		desc.Format = GetCorrectDXGIFormat(sd.BufferDesc.Format);
 
 		if (!IsValidObjectPtr(g_pDevice)) {
-			Utils::LogError(Utils::GetLocation(CurrentLoc), "This is not funny!");
+			LogErrorHere("This is not funny!");
 			return;
 		}
 
@@ -58,7 +58,7 @@ static void CreateRenderTarget(IDXGISwapChain* pSwapChain)
 			if (FAILED(g_pDevice->CreateRenderTargetView(pBackBuffer, &desc, &g_pRenderTargetView))) {
 
 				if (FAILED(g_pDevice->CreateRenderTargetView(pBackBuffer, NULL, &g_pRenderTargetView))) {
-					Utils::LogError(Utils::GetLocation(CurrentLoc), "CreateRenderTargetView failure!");
+					LogErrorHere("CreateRenderTargetView failure!");
 				}
 			}
 		}
@@ -68,8 +68,8 @@ static void CreateRenderTarget(IDXGISwapChain* pSwapChain)
 }
 
 static void CleanupRenderTarget() {
-	Utils::LogDebug(Utils::GetLocation(CurrentLoc), "DX11 CleanupRenderTarget()");
-
+	LogDebugHere("DX11 CleanupRenderTarget()");
+	
 	if (g_pRenderTargetView) {
 		g_pRenderTargetView->Release();
 		g_pRenderTargetView = NULL;
@@ -77,7 +77,7 @@ static void CleanupRenderTarget() {
 }
 
 static void CleanupDevice() {
-	Utils::LogDebug(Utils::GetLocation(CurrentLoc), "DX11 CleanupDevice()");
+	LogDebugHere("DX11 CleanupDevice()");
 
 	CleanupRenderTarget();
 
@@ -102,7 +102,7 @@ static void RenderImGui(IDXGISwapChain* pSwapChain) {
 	if (!ImGui::GetIO().BackendRendererUserData) {
 
 		if (!SUCCEEDED(pSwapChain->GetDevice(IID_PPV_ARGS(&g_pDevice)))) {
-			Utils::LogError(Utils::GetLocation(CurrentLoc), "Couldnt get device?!???");
+			LogErrorHere("Couldnt get device ?!???");
 			return;
 		}
 
@@ -188,7 +188,7 @@ static HRESULT WINAPI hkCreateSwapChainForComposition(IDXGIFactory* pFactory, IU
 bool RendererHooks::D3D11Setup()
 {
 	if (!CreateDevice(Cheat::wndproc.get()->hwndWindow)) {
-		Utils::LogError(Utils::GetLocation(CurrentLoc), "Unable to create dx11 device!");
+		LogErrorHere("Unable to create dx11 device!");
 		return false;
 	}
 
@@ -203,44 +203,44 @@ bool RendererHooks::D3D11Setup()
 
 	// IDXGIFactory
 	if (oCreateSwapChain.HookVirtualMethod(hkCreateSwapChain, pIDXGIFactory, 10) != MH_OK) {
-		Utils::LogError(Utils::GetLocation(CurrentLoc), "CreateSwapChain hook couldnt be created!");
+		LogErrorHere("CreateSwapCain hook couldnt be created!");
 		return false;
 	}
 	
 	if (oCreateSwapChainForHwnd.HookVirtualMethod(hkCreateSwapChainForHwnd, pIDXGIFactory, 15) != MH_OK) {
-		Utils::LogError(Utils::GetLocation(CurrentLoc), "CreateSwapChainForHwnd hook couldnt be created!");
+		LogErrorHere("CreateSwapChainForHwnd hook couldnt be created!");
 		return false;
 	}
 
 	if (oCreateSwapChainForCoreWindow.HookVirtualMethod(hkCreateSwapChainForCoreWindow, pIDXGIFactory, 16) != MH_OK) {
-		Utils::LogError(Utils::GetLocation(CurrentLoc), "CreateSwapChainForCoreWindow hook couldnt be created!");
+		LogErrorHere("CreateSwapChainForCoreWindow hook couldnt be created!");
 		return false;
 	}
 
 	if (oCreateSwapChainForComposition.HookVirtualMethod(hkCreateSwapChainForComposition, pIDXGIFactory, 24) != MH_OK) {
-		Utils::LogError(Utils::GetLocation(CurrentLoc), "CreateSwapChainForComposition hook couldnt be created!");
+		LogErrorHere("CreateSwapChainForComposition hook couldnt be created!");
 		return false;
 	}
 	// IDXGIFactory
 
 	// SwapChain
 	if (oPresent.HookVirtualMethod(hkPresent, g_pSwapChain, 8) != MH_OK) {
-		Utils::LogError(Utils::GetLocation(CurrentLoc), "Present hook couldnt be created!");
+		LogErrorHere("Present hook couldnt be created!");
 		return false;
 	}
 
 	if (oResizeBuffers.HookVirtualMethod(hkResizeBuffers, g_pSwapChain, 13) != MH_OK) {
-		Utils::LogError(Utils::GetLocation(CurrentLoc), "ResizeBuffers hook couldnt be created!");
+		LogErrorHere("ResizeBuffers hook couldnt be created!");
 		return false;
 	}
 
 	if (oPresent1.HookVirtualMethod(hkPresent1, g_pSwapChain, 22) != MH_OK) {
-		Utils::LogError(Utils::GetLocation(CurrentLoc), "Present1 hook couldnt be created!");
+		LogErrorHere("Present1 hook couldnt be created!");
 		return false;
 	}
 
 	if (oResizeBuffers1.HookVirtualMethod(hkResizeBuffers1, g_pSwapChain, 39) != MH_OK) {
-		Utils::LogError(Utils::GetLocation(CurrentLoc), "ResizeBuffers1 hook couldnt be created!");
+		LogErrorHere("ResizeBuffers1 hook couldnt be created!");
 		return false;
 	}
 	// SwapChain

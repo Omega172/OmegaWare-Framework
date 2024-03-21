@@ -4,6 +4,15 @@
 #include <source_location>
 #include <filesystem>
 
+#define CurrentLoc (std::source_location::current())
+
+#define LogHookHere(hook, reason, message) (Utils::LogHook(Utils::GetLocation(CurrentLoc), hook, reason, message))
+#define LogErrorHere(message) (Utils::LogError(Utils::GetLocation(CurrentLoc), message))
+#define LogErrorStreamHere(message) (Utils::LogError(Utils::GetLocation(CurrentLoc), (std::stringstream() << message).str()))
+#define LogDebugHere(message) (Utils::LogDebug(Utils::GetLocation(CurrentLoc), message))
+#define LogDebugStreamHere(message) (Utils::LogDebug(Utils::GetLocation(CurrentLoc), (std::stringstream() << message).str()))
+
+
 namespace Utils
 {
 	struct Location // A struct to hold the location of the error used in the logging function for pretty printing
