@@ -31,16 +31,16 @@ void GUI::Render()
 
 	if (bMenuOpen)
 	{
-		auto child = std::make_unique<Child>(Child("Cheat", []() { return ImVec2(ImGui::GetContentRegionAvail().x / 3, ImGui::GetContentRegionAvail().y / 2); }, ImGuiChildFlags_Border));
-		child->AddElement(std::make_unique<Text>(Text(Cheat::localization->Get("CHEAT"))));
-		child->AddElement(std::make_unique<Spacing>(Spacing()));
-		child->AddElement(std::make_unique<Button>(Button(Cheat::localization->Get("UNLOAD_BTN"), []() {
+		auto child = std::make_unique<Child>("Cheat", []() { return ImVec2(ImGui::GetContentRegionAvail().x / 3, ImGui::GetContentRegionAvail().y / 2); }, ImGuiChildFlags_Border);
+		child->AddElement(std::make_unique<Text>(Cheat::localization->Get("CHEAT")));
+		child->AddElement(std::make_unique<Spacing>());
+		child->AddElement(std::make_unique<Button>(Cheat::localization->Get("UNLOAD_BTN"), []() {
 			Cheat::bShouldRun = false;
-		})));
-		child->AddElement(std::make_unique<Button>(Button(Cheat::console->GetVisibility() ? Cheat::localization->Get("CONSOLE_HIDE") : Cheat::localization->Get("CONSOLE_SHOW"), []() {
+		}));
+		child->AddElement(std::make_unique<Button>(Cheat::console->GetVisibility() ? Cheat::localization->Get("CONSOLE_HIDE") : Cheat::localization->Get("CONSOLE_SHOW"), []() {
 			Cheat::console->ToggleVisibility();
-		})), true);
-		child->AddElement(std::make_unique<Combo>(Combo(Cheat::localization->Get("LANGUAGE"), Cheat::CurrentLocale.Name, NULL, []() {
+		}), true);
+		child->AddElement(std::make_unique<Combo>(Cheat::localization->Get("LANGUAGE"), Cheat::CurrentLocale.Name, NULL, []() {
 			for (LocalizationData Locale : Cheat::Locales)
 			{
 				bool bSelected = Cheat::CurrentLocale.LocaleCode == Locale.LocaleCode;
@@ -52,16 +52,16 @@ void GUI::Render()
 				if (bSelected)
 					ImGui::SetItemDefaultFocus();
 			}
-		})));
-		child->AddElement(std::make_unique<Checkbox>(Checkbox(Cheat::localization->Get("WATER_MARK"), &Cheat::bWatermark)));
+		}));
+		child->AddElement(std::make_unique<Checkbox>(Cheat::localization->Get("WATER_MARK"), &Cheat::bWatermark));
 		if (Cheat::bWatermark)
-			child->AddElement(std::make_unique<Checkbox>(Checkbox(Cheat::localization->Get("WATER_MARK_FPS"), &Cheat::bWatermarkFPS)));
-		child->AddElement(std::make_unique<Button>(Button(Cheat::localization->Get("SAVE_CONFIG"), []() {
+			child->AddElement(std::make_unique<Checkbox>(Cheat::localization->Get("WATER_MARK_FPS"), &Cheat::bWatermarkFPS));
+		child->AddElement(std::make_unique<Button>(Cheat::localization->Get("SAVE_CONFIG"), []() {
 			Cheat::config->SaveConfig();
-		})));
-		child->AddElement(std::make_unique<Button>(Button(Cheat::localization->Get("LOAD_CONFIG"), []() {
+		}));
+		child->AddElement(std::make_unique<Button>(Cheat::localization->Get("LOAD_CONFIG"), []() {
 			Cheat::config->LoadConfig();
-		})), true);
+		}), true);
 
 		Cheat::menu->AddElement(std::move(child));
 
