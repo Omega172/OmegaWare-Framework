@@ -59,12 +59,3 @@ void ExampleFeature::HandleMenu()
 
 	guiEnabledText->SetVisible(guiCheckbox->GetValue());
 }
-
-void ExampleFeature::SaveConfig() { Cheat::config->PushEntry("ExampleFeature", "bool", std::to_string(bExampleFeature)); }
-
-void ExampleFeature::LoadConfig()
-{
-	ConfigEntry entry = Cheat::config->GetEntryByName("ExampleFeature");
-	if (entry.Name == "ExampleFeature")
-		bExampleFeature = std::stoi(entry.Value);
-}

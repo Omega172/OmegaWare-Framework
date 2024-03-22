@@ -1,6 +1,8 @@
 #pragma once
 #include "pch.h"
 #include <functional>
+#include <nlohmann/json.hpp>
+#include <fstream>
 
 class ElementBase
 {
@@ -8,16 +10,22 @@ public:
 	typedef struct Style_t
 	{
 		bool bVisible = true;
+
 		bool bSameLine = false;
 		float flSpacing = -1.f;
+
 		ImVec2 vec2Size = { 100.f, 0.f };
 		ImDrawFlags iFlags = 0;
+
 	} Style_t;
+
+	Style_t m_stStyle;
+
+
 
 protected:
 	std::string m_sUnique = "INVALID_UNIQUE";
-	Style_t m_stStyle;
-
+	
 	ElementBase* m_pParent = nullptr;
 	std::vector<ElementBase*> m_Children;
 
@@ -84,6 +92,11 @@ public:
 		return m_pParent != nullptr;
 	};
 
+	inline const bool HasChildren() const
+	{
+		return m_Children.size() > 0;
+	};
+
 	inline void SetVisible(bool vis)
 	{
 		m_stStyle.bVisible = vis;
@@ -92,6 +105,41 @@ public:
 	inline bool IsVisible() const
 	{
 		return m_stStyle.bVisible;
+	};
+
+	virtual void ConfigSave(nlohmann::json& jsonParent) const
+	{
+		if (!HasChildren())
+			return;
+
+		nlohmann::json& jsonEntry = jsonParent[m_sUnique.c_str()] = nlohmann::json();
+
+		jsonEntry["Children"] = nlohmann::json();
+
+		ConfigSaveChildren(jsonEntry["Children"]);
+	};
+
+	virtual void ConfigSaveChildren(nlohmann::json& jsonParent) const
+	{
+		for (ElementBase* const pElement : m_Children)
+			pElement->ConfigSave(jsonParent);
+	};
+
+	virtual void ConfigLoad(nlohmann::json& jsonParent)
+	{
+		if (!HasChildren() || !jsonParent.contains(m_sUnique.c_str()))
+			return;
+
+		nlohmann::json& jsonEntry = jsonParent[m_sUnique.c_str()];
+
+		if (jsonEntry.contains("Children"))
+			ConfigLoadChildren(jsonEntry["Children"]);
+	};
+
+	virtual void ConfigLoadChildren(nlohmann::json& jsonParent)
+	{
+		for (ElementBase* const pElement : m_Children)
+			pElement->ConfigLoad(jsonParent);
 	};
 
 	virtual void Render()
@@ -284,6 +332,34 @@ public:
 	Checkbox(bool Value = false) : m_Value(Value)
 	{};
 
+	void ConfigSave(nlohmann::json& jsonParent) const override
+	{
+		nlohmann::json& jsonEntry = jsonParent[m_sUnique.c_str()] = nlohmann::json();
+
+		jsonEntry["Value"] = std::to_string(m_Value);
+
+		if (!HasChildren())
+			return;
+
+		jsonEntry["Children"] = nlohmann::json();
+
+		ConfigSaveChildren(jsonEntry["Children"]);
+	};
+
+	void ConfigLoad(nlohmann::json& jsonParent) override
+	{
+		if (!jsonParent.contains(m_sUnique.c_str()))
+			return;
+
+		nlohmann::json& jsonEntry = jsonParent[m_sUnique.c_str()];
+
+		if (jsonEntry.contains("Value"))
+			m_Value = std::stoi(jsonEntry["Value"].get<std::string>());
+
+		if (jsonEntry.contains("Children"))
+			ConfigLoadChildren(jsonEntry["Children"]);
+	};
+
 	void Render() override
 	{
 		if (!m_stStyle.bVisible)
@@ -344,6 +420,34 @@ public:
 		m_Value(Value), m_Min(Min), m_Max(Max), m_sFormat(sFormat)
 	{};
 
+	void ConfigSave(nlohmann::json& jsonParent) const override
+	{
+		nlohmann::json& jsonEntry = jsonParent[m_sUnique.c_str()] = nlohmann::json();
+
+		jsonEntry["Value"] = std::to_string(m_Value);
+
+		if (!HasChildren())
+			return;
+
+		jsonEntry["Children"] = nlohmann::json();
+
+		ConfigSaveChildren(jsonEntry["Children"]);
+	};
+
+	void ConfigLoad(nlohmann::json& jsonParent) override
+	{
+		if (!jsonParent.contains(m_sUnique.c_str()))
+			return;
+
+		nlohmann::json& jsonEntry = jsonParent[m_sUnique.c_str()];
+
+		if (jsonEntry.contains("Value"))
+			m_Value = std::stof(jsonEntry["Value"].get<std::string>());
+
+		if (jsonEntry.contains("Children"))
+			ConfigLoadChildren(jsonEntry["Children"]);
+	};
+
 	void Render() override
 	{
 		if (!m_stStyle.bVisible)
@@ -380,6 +484,34 @@ public:
 	SliderInt(int Value, int Min, int Max, const char* sFormat = "%d") :
 		m_Value(Value), m_Min(Min), m_Max(Max), m_sFormat(sFormat)
 	{};
+
+	void ConfigSave(nlohmann::json& jsonParent) const override
+	{
+		nlohmann::json& jsonEntry = jsonParent[m_sUnique.c_str()] = nlohmann::json();
+
+		jsonEntry["Value"] = std::to_string(m_Value);
+
+		if (!HasChildren())
+			return;
+
+		jsonEntry["Children"] = nlohmann::json();
+
+		ConfigSaveChildren(jsonEntry["Children"]);
+	};
+
+	void ConfigLoad(nlohmann::json& jsonParent) override
+	{
+		if (!jsonParent.contains(m_sUnique.c_str()))
+			return;
+
+		nlohmann::json& jsonEntry = jsonParent[m_sUnique.c_str()];
+
+		if (jsonEntry.contains("Value"))
+			m_Value = std::stoi(jsonEntry["Value"].get<std::string>());
+
+		if (jsonEntry.contains("Children"))
+			ConfigLoadChildren(jsonEntry["Children"]);
+	};
 
 	void Render() override
 	{
@@ -440,6 +572,34 @@ protected:
 public:
 	ColorPicker()
 	{};
+
+	void ConfigSave(nlohmann::json& jsonParent) const override
+	{
+		nlohmann::json& jsonEntry = jsonParent[m_sUnique.c_str()] = nlohmann::json();
+
+		jsonEntry["Value"] = std::to_string(ImGui::ColorConvertFloat4ToU32(m_Value));
+
+		if (!HasChildren())
+			return;
+
+		jsonEntry["Children"] = nlohmann::json();
+
+		ConfigSaveChildren(jsonEntry["Children"]);
+	};
+
+	void ConfigLoad(nlohmann::json& jsonParent) override
+	{
+		if (!jsonParent.contains(m_sUnique.c_str()))
+			return;
+
+		nlohmann::json& jsonEntry = jsonParent[m_sUnique.c_str()];
+
+		if (jsonEntry.contains("Value"))
+			m_Value = ImGui::ColorConvertU32ToFloat4(std::stoul(jsonEntry["Value"].get<std::string>()));
+
+		if (jsonEntry.contains("Children"))
+			ConfigLoadChildren(jsonEntry["Children"]);
+	};
 
 	void Render() override
 	{

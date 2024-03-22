@@ -26,10 +26,4 @@ public:
 	
 	// Called every frame before any ImGui elements
 	virtual void HandleMenu() = 0;
-
-	// Save the feature's config to the config file
-	virtual void SaveConfig() = 0;
-
-	// Load the feature's config from the config file
-	virtual void LoadConfig() = 0;
 };

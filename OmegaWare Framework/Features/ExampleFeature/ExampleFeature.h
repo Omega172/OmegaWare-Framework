@@ -26,8 +26,4 @@ public:
 	void Run();
 
 	void HandleMenu();
-
-	void SaveConfig();
-
-	void LoadConfig();
 };

@@ -16,77 +16,47 @@ Config::Config()
 
 	if (!std::filesystem::exists(ConfigPath))
 	{
-		SaveConfig();
+		//SaveConfig();
 		return;
 	}
 
-	LoadConfig();
+	//LoadConfig();
 	return;
 }
 
 bool Config::SaveConfig()
 {
-	std::ofstream ConfigFile(ConfigPath);
-	if (ConfigFile.fail())
+	std::ofstream fileConfig(ConfigPath);
+	if (fileConfig.fail())
 	{
 		LogErrorHere("Failed to open config file for writing");
 		return false;
 	}
 
-	nlohmann::json ConfigJson;
-	ConfigJson["Config"] = nlohmann::json::array();
+	nlohmann::json jsonConfig;
+	Cheat::menu->ConfigSave(jsonConfig);
 
-	Cheat::Entries.clear();
+	fileConfig << jsonConfig.dump(4);
+	fileConfig.close();
 
-	for (size_t i = 0; i < Features.size(); i++)
-	{
-		Features[i]->SaveConfig();
-	}
-
-	for (ConfigEntry Entry : Cheat::Entries)
-	{
-		nlohmann::json EntryJson;
-		EntryJson["Name"] = Entry.Name;
-		EntryJson["Type"] = Entry.Type;
-		EntryJson["Value"] = Entry.Value;
-		ConfigJson["Config"].push_back(EntryJson);
-	}
-
-	ConfigFile << ConfigJson.dump(4);
-	ConfigFile.close();
 	return true;
 }
 
 bool Config::LoadConfig()
 {
-	Cheat::Entries.clear();
-
-	std::ifstream ConfigFile(ConfigPath);
-	if (ConfigFile.fail())
+	std::ifstream fileConfig(ConfigPath);
+	if (fileConfig.fail())
 	{
 		LogErrorHere("Failed to open config file for reading");
 		return false;
 	}
 
-	std::stringstream Container;
-	Container << ConfigFile.rdbuf();
-	ConfigFile.close();
+	std::stringstream ssContainer;
+	ssContainer << fileConfig.rdbuf();
+	nlohmann::json jsonConfig(nlohmann::json::parse(ssContainer.str()));
+	fileConfig.close();
 
-	nlohmann::json ConfigJson(nlohmann::json::parse(Container.str()));
-
-	for (nlohmann::json Entry : ConfigJson["Config"])
-	{
-		std::string Name = Entry["Name"];
-		std::string Type = Entry["Type"];
-		std::string Value = Entry["Value"];
-
-		PushEntry(Name, Type, Value);
-	}
-
-	for (size_t i = 0; i < Features.size(); i++)
-	{
-		Features[i]->LoadConfig();
-	}
+	Cheat::menu->ConfigLoad(jsonConfig);
 
 	return true;
 }
