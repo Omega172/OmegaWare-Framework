@@ -10,6 +10,7 @@ public:
 	typedef struct Style_t
 	{
 		bool bVisible = true;
+		bool bChildrenVisible = true;
 
 		bool bSameLine = false;
 		float flSpacing = -1.f;
@@ -133,6 +134,16 @@ public:
 		return m_stStyle.bVisible;
 	};
 
+	inline void SetChildrenVisible(bool vis)
+	{
+		m_stStyle.bChildrenVisible = vis;
+	};
+
+	inline bool IsChildrenVisible() const
+	{
+		return m_stStyle.bChildrenVisible;
+	};
+
 	virtual void ConfigSave(nlohmann::json& jsonParent) const
 	{
 		if (!HasChildren())
@@ -140,9 +151,7 @@ public:
 
 		nlohmann::json& jsonEntry = jsonParent[m_sUnique.c_str()] = nlohmann::json();
 
-		jsonEntry["Children"] = nlohmann::json();
-
-		ConfigSaveChildren(jsonEntry["Children"]);
+		ConfigSaveChildren(jsonEntry);
 	};
 
 	virtual void ConfigSaveChildren(nlohmann::json& jsonParent) const
@@ -156,10 +165,7 @@ public:
 		if (!HasChildren() || !jsonParent.contains(m_sUnique.c_str()))
 			return;
 
-		nlohmann::json& jsonEntry = jsonParent[m_sUnique.c_str()];
-
-		if (jsonEntry.contains("Children"))
-			ConfigLoadChildren(jsonEntry["Children"]);
+		ConfigLoadChildren(jsonParent[m_sUnique.c_str()]);
 	};
 
 	virtual void ConfigLoadChildren(nlohmann::json& jsonParent)
@@ -178,6 +184,9 @@ public:
 
 	virtual void RenderChildren()
 	{
+		if (!m_stStyle.bChildrenVisible)
+			return;
+
 		for (ElementBase* const pElement : m_Children)
 			pElement->Render();
 	};
@@ -602,7 +611,7 @@ protected:
 	const char* m_sFormat;
 
 public:
-	SliderFloat(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {}, float Value = 0.f, float Min = -FLT_MAX, float Max = FLT_MAX, const char* sFormat = "%.3f") :
+	SliderFloat(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {}, float Value = 0.f, float Min = -1000.f, float Max = 1000.f, const char* sFormat = "%.3f") :
 		m_Min(Min), m_Max(Max), m_sFormat(sFormat)
 	{
 		m_sUnique = sUnique;
@@ -612,7 +621,7 @@ public:
 		SetValue(Value);
 	};
 
-	SliderFloat(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle = {}, float Value = 0.f, float Min = -FLT_MAX, float Max = FLT_MAX, const char* sFormat = "%.3f") :
+	SliderFloat(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle = {}, float Value = 0.f, float Min = -1000.f, float Max = 1000.f, const char* sFormat = "%.3f") :
 		m_Min(Min), m_Max(Max), m_sFormat(sFormat)
 	{
 		m_sUnique = sUnique;
@@ -645,7 +654,7 @@ protected:
 	const char* m_sFormat;
 
 public:
-	SliderInt(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {}, int Value = 0, int Min = INT_MIN, int Max = INT_MAX, const char* sFormat = "%d") :
+	SliderInt(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {}, int Value = 0, int Min = -1000, int Max = 1000, const char* sFormat = "%d") :
 		m_Min(Min), m_Max(Max), m_sFormat(sFormat)
 	{
 		m_sUnique = sUnique;
@@ -655,7 +664,7 @@ public:
 		SetValue(Value);
 	};
 
-	SliderInt(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle = {}, int Value = 0, int Min = INT_MIN, int Max = INT_MAX, const char* sFormat = "%d") :
+	SliderInt(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle = {}, int Value = 0, int Min = -1000, int Max = 1000, const char* sFormat = "%d") :
 		m_Min(Min), m_Max(Max), m_sFormat(sFormat)
 	{
 		m_sUnique = sUnique;

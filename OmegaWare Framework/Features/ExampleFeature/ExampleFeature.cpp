@@ -6,7 +6,8 @@ bool ExampleFeature::Setup()
 {
 	std::vector<LocaleData> EnglishLocale = {
 		{ "EXAMPLE_FEATURE"_hash, "Example Feature" },
-		{ "EXAMPLE_FEATURE_HW"_hash, "Hello, World!" }
+		{ "EXAMPLE_FEATURE_HW"_hash, "Hello, World!" },
+		{ "EXAMPLE_FEATURE_SLIDER"_hash, "Cool slider boi?" }
 	};
 	if (!Cheat::localization->AddToLocale("ENG", EnglishLocale))
 		return false;
@@ -49,7 +50,9 @@ void ExampleFeature::HandleMenu()
 
 		guiSection->AddElement(guiCheckboxText.get());
 		guiSection->AddElement(guiCheckbox.get());
-		guiSection->AddElement(guiEnabledText.get());
+
+		guiCheckbox->AddElement(guiEnabledText.get());
+		guiCheckbox->AddElement(guiEnabledSlider.get());
 	});
 
 	if (!guiSection->HasParent())
@@ -57,5 +60,5 @@ void ExampleFeature::HandleMenu()
 		Cheat::menu->AddElement(guiSection.get());
 	}
 
-	guiEnabledText->SetVisible(guiCheckbox->GetValue());
+	guiCheckbox->SetChildrenVisible(guiCheckbox->GetValue());
 }
