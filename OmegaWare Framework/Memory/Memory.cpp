@@ -78,7 +78,6 @@ size_t Memory::Strlen(const char* lpAddress, size_t dwMaxSize) {
 
 		++dwSize;
 
-#ifdef FAIL_ON_MAX_STRLEN
 		if (dwSize > dwMaxSize)
 			return 0;
 	}
@@ -91,13 +90,6 @@ size_t Memory::Strlen(const char* lpAddress, size_t dwMaxSize) {
 		return 0;
 
 	return dwSize + dwSizeNext;
-#else
-		if (dwSize > dwMaxSize)
-			return dwMaxSize;
-}
-
-	return dwSize + strlen(lpAddress + dwSize * dwTypeSize, dwMaxSize - dwSize);
-#endif
 }
 
 size_t Memory::Wcslen(const wchar_t* lpAddress, size_t dwMaxSize) {
@@ -142,7 +134,6 @@ size_t Memory::Wcslen(const wchar_t* lpAddress, size_t dwMaxSize) {
 
 		++dwSize;
 
-#ifdef FAIL_ON_MAX_STRLEN
 		if (dwSize > dwMaxSize)
 			return 0;
 	}
@@ -155,13 +146,6 @@ size_t Memory::Wcslen(const wchar_t* lpAddress, size_t dwMaxSize) {
 		return 0;
 
 	return dwSize + dwSizeNext;
-#else
-		if (dwSize > dwMaxSize)
-			return dwMaxSize;
-}
-
-	return dwSize + wcslen(lpAddress + dwSize * dwTypeSize, dwMaxSize - dwSize);
-#endif
 }
 
 void Memory::EnumerateInterfaces(std::string_view sModuleName, EnumerateInterfacesFunc fn)

@@ -22,8 +22,8 @@
 #define FRAMEWORK_VERSION FRAMEWORK_MAJOR_VERSION.FRAMEWORK_MINOR_VERSION.FRAMEWORK_REWORK_VERSION
 
 #define FRAMEWORK_CODENAME "OmegaWare"
-#define FRAMEWORK_TARGET_GAME ""
-#define FRAMEWORK_TARGET_PROCESS ""
+#define FRAMEWORK_TARGET_GAME "ye"
+#define FRAMEWORK_TARGET_PROCESS "ye"
 static_assert(FRAMEWORK_TARGET_GAME != "", "Target game not set."); // Make sure the target game title is set
 static_assert(FRAMEWORK_TARGET_PROCESS != "", "Target process name not set."); // Make sure the target process name is set
 
@@ -86,7 +86,6 @@ static_assert(!(FRAMEWORK_RENDER_DYNAMIC || FRAMEWORK_RENDER_D3D12), "This does 
 #define _USE_MATH_DEFINES // Define math constants for things like M_PI and M_SQRT2
 #include <math.h>
 
-#define FAIL_ON_MAX_STRLEN // Prevent overreading strings
 #include "Memory/Memory.h"
 #include "Utils/Utils.h" // Include the Utils.h file that contains various utility functions for the framework
 
@@ -163,7 +162,11 @@ namespace Cheat
 
 	inline std::unique_ptr<Console> console = std::make_unique<Console>(false, Title);  // A unique pointer to the console class that is used to create the console for the framework
 
-	inline std::unique_ptr<Menu> menu = std::make_unique<Menu>(ImVec2(GUI::WIDTH, GUI::HEIGHT), Cheat::Title.c_str(), (bool*)NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoCollapse);
+	inline std::unique_ptr<Menu> menu = std::make_unique<Menu>(Cheat::Title, ElementBase::Style_t({
+		.vec2Size = { GUI::WIDTH, GUI::HEIGHT },
+		.iFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoCollapse,
+	}));
+		
 	inline std::unique_ptr<WndProcHooks> wndproc = std::make_unique<WndProcHooks>();
 	inline std::unique_ptr<RendererHooks> renderer = std::make_unique<RendererHooks>();
 
@@ -174,9 +177,6 @@ namespace Cheat
 #if FRAMEWORK_UNITY // If the framework set is Unity create a unique pointer to the Mono interface class
 	inline Mono mono = Mono::Instance(); // I would use a unique pointer but the class is already setup as a singlton and I need to call the destructor to clean up the mono domain
 #endif
-
-	inline bool bWatermark = true;
-	inline bool bWatermarkFPS = true;
 
 	inline std::unique_ptr<Config> config;
 	inline std::vector<ConfigEntry> Entries;

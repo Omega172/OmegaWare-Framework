@@ -2,328 +2,465 @@
 #include "pch.h"
 #include <functional>
 
-class Element
+class ElementBase
 {
 public:
-
-	bool m_bSameLine = false;
-	float m_flSpacing = -1.f;
-
-	std::vector<std::unique_ptr<Element>> Elements;
-	
-	Element() {}
-
-	virtual void Render() = 0;
-
-	void AddElement(std::unique_ptr<Element> pElement, bool bSameLine = false, float flSpacing = -1.f)
+	typedef struct Style_t
 	{
-		pElement.get()->m_bSameLine = bSameLine;
-		pElement.get()->m_flSpacing = flSpacing;
-		Elements.push_back(std::move(pElement));
-	}
+		bool bVisible = true;
+		bool bSameLine = false;
+		float flSpacing = -1.f;
+		ImVec2 vec2Size = { 100.f, 0.f };
+		ImDrawFlags iFlags = 0;
+	} Style_t;
+
+protected:
+	std::string m_sUnique = "INVALID_UNIQUE";
+	Style_t m_stStyle;
+
+	ElementBase* m_pParent = nullptr;
+	std::vector<ElementBase*> m_Children;
+
+public:
+
+	ElementBase() = default;
+	
+	void AddElement(ElementBase* pElement, std::string sUnique, Style_t stStyle)
+	{
+		pElement->m_sUnique = sUnique;
+		pElement->m_stStyle = stStyle;
+		pElement->m_pParent = this;
+		m_Children.push_back(pElement);
+	};
+
+	void RemoveElement(std::string sUnique)
+	{
+		for (auto it = m_Children.begin(); it != m_Children.end(); ++it)
+		{
+			if ((*it)->m_sUnique != sUnique)
+				continue;
+
+			m_Children.erase(it);
+			break;
+		}
+	};
+
+	void LeaveParent()
+	{
+		if (!m_pParent)
+			return;
+
+		for (auto it = m_pParent->m_Children.begin(); it != m_pParent->m_Children.end(); ++it)
+		{
+			if (*it != this)
+				continue;
+
+			m_pParent->m_Children.erase(it);
+			break;
+		}
+
+		m_pParent = nullptr;
+	};
+
+	// Gets internal element name
+	inline const std::string GetUnique() const
+	{
+		return m_sUnique;
+	};
+
+	// Gets localized element name
+	inline const std::string GetName() const
+	{
+		return GetUnique();//"NOT_IMPLEMENTED_YET_KEKW";
+	};
+
+	inline ElementBase* GetParent() const
+	{
+		return m_pParent;
+	};
+
+	inline const bool HasParent() const
+	{
+		return m_pParent != nullptr;
+	};
+
+	inline void SetVisible(bool vis)
+	{
+		m_stStyle.bVisible = vis;
+	};
+
+	inline bool IsVisible() const
+	{
+		return m_stStyle.bVisible;
+	};
+
+	virtual void Render()
+	{
+		if (!m_stStyle.bVisible)
+			return;
+
+		RenderChildren();
+	};
+
+	virtual void RenderChildren()
+	{
+		for (ElementBase* const pElement : m_Children)
+			pElement->Render();
+	};
 };
 
-class Spacing : public Element
+class Spacing : public ElementBase
 {
 public:
 	Spacing() {};
 
-	void Render() { ImGui::Spacing(); }
+	void Render() override
+	{ 
+		ImGui::Spacing(); 
+	}
 };
 
-class Menu : public Element
+class Menu : public ElementBase
 {
-private:
-	ImVec2 m_Size;
-	std::string m_sName;
-	bool* m_pOpen;
-	ImGuiWindowFlags m_Flags;
+protected:
 
 public:
-	Menu(ImVec2 Size, std::string sName, bool* pOpen = (bool*)0, ImGuiWindowFlags Flags = 0) :
-		m_Size(Size), m_sName(sName), m_pOpen(pOpen), m_Flags(Flags)
-	{};
+	Menu(std::string sUnique, Style_t stStyle)
+	{
+		m_sUnique = sUnique;
+		m_stStyle = stStyle;
+	};
 
 	void Render() override
 	{
-		ImGui::SetNextWindowSize(m_Size);
-		ImGui::Begin(m_sName.c_str(), m_pOpen, m_Flags);
-		{
-			for (const std::unique_ptr<Element>& pElement : Elements)
-				pElement->Render();
-		}
+		ImGui::SetNextWindowSize(m_stStyle.vec2Size);
+		ImGui::Begin(GetName().c_str(), &m_stStyle.bVisible, m_stStyle.iFlags);
+		RenderChildren();
 		ImGui::End();
-
-		Elements.clear();
 	}
 
 	void StartRender()
 	{
-		ImGui::SetNextWindowSize(m_Size);
-		ImGui::Begin(m_sName.c_str(), m_pOpen, m_Flags);
-		{
-			for (const std::unique_ptr<Element>& pElement : Elements)
-				pElement->Render();
-		}
+		ImGui::SetNextWindowSize(m_stStyle.vec2Size);
+		ImGui::Begin(GetName().c_str(), &m_stStyle.bVisible, m_stStyle.iFlags);
+		RenderChildren();
 	}
 
 	void EndRender()
 	{
 		ImGui::End();
-
-		Elements.clear();
 	}
 };
 
-class Child : public Element
+class Child : public ElementBase
 {
-private:
-	std::string m_sID;
-	ImVec2 m_Size;
-	ImGuiChildFlags m_ChildFlags;
+protected:
 	ImGuiWindowFlags m_WindowFlags;
 	std::function<ImVec2()> m_funcCallback = nullptr;
 
 public:
-	Child(std::string sID, ImVec2 Size = ImVec2(0, 0), ImGuiChildFlags ChildFlags = 0, ImGuiWindowFlags WindowFlags = 0)
+	Child(ImGuiWindowFlags WindowFlags = 0)
 	{
-		m_sID = sID;
-		m_Size = Size;
-		m_ChildFlags = ChildFlags;
 		m_WindowFlags = WindowFlags;
 	};
 
-	Child(std::string sID, std::function<ImVec2()> funcCallback = nullptr, ImGuiChildFlags ChildFlags = 0, ImGuiWindowFlags WindowFlags = 0)
+	Child(std::function<ImVec2()> funcCallback = nullptr, ImGuiWindowFlags WindowFlags = 0)
 	{
-		m_sID = sID;
 		m_funcCallback = funcCallback;
-		m_ChildFlags = ChildFlags;
 		m_WindowFlags = WindowFlags;
 	};
 
 	void Render() override
 	{
-		if (m_bSameLine)
-			ImGui::SameLine(0.f, m_flSpacing);
+		if (!m_stStyle.bVisible)
+			return;
+
+		if (m_stStyle.bSameLine)
+			ImGui::SameLine(0.f, m_stStyle.flSpacing);
 
 		if (m_funcCallback)
-			m_Size = m_funcCallback();
+			m_stStyle.vec2Size = m_funcCallback();
 
-		ImGui::BeginChild(m_sID.c_str(), m_Size, m_ChildFlags, m_WindowFlags);
-		{
-			for (const std::unique_ptr<Element>& pElement : Elements)
-				pElement->Render();
-		}
+		ImGui::BeginChild(GetName().c_str(), m_stStyle.vec2Size, m_stStyle.iFlags, m_WindowFlags);
+		RenderChildren();
 		ImGui::EndChild();
 	};
 };
 
-class Text : public Element
+class Text : public ElementBase
 {
-private:
-	std::string m_sText;
+protected:
 
 public:
-	Text(std::string sText) :
-		m_sText(sText)
+	Text()
 	{};
 
 	void Render() override
 	{
-		if (m_bSameLine)
-			ImGui::SameLine(0.f, m_flSpacing);
+		if (!m_stStyle.bVisible)
+			return;
 
-		ImGui::Text(m_sText.c_str());
-	}
+		if (m_stStyle.bSameLine)
+			ImGui::SameLine(0.f, m_stStyle.flSpacing);
 
-	constexpr std::string GetText(std::string& sText) { return m_sText; }
+		ImGui::Text(GetName().c_str());
+	};
 
-	void SetText(std::string sText) { m_sText = sText; }
 };
 
-class Button : public Element
+class Button : public ElementBase
 {
-private:
-	std::string m_sLabel;
-	std::function<void()> m_funcCallback;
+protected:
+	std::function<void()> m_Callback = nullptr;
 
 public:
-	Button(std::string sLabel, std::function<void()> funcCallback = nullptr) :
-		m_sLabel(sLabel), m_funcCallback(funcCallback)
+	Button()
 	{};
 
 	void Render() override
 	{
-		if (m_bSameLine)
-			ImGui::SameLine(0.f, m_flSpacing);
+		if (!m_stStyle.bVisible)
+			return;
 
-		if (ImGui::Button(m_sLabel.c_str()))
-			if (m_funcCallback)
-				m_funcCallback();
-	}
+		if (m_stStyle.bSameLine)
+			ImGui::SameLine(0.f, m_stStyle.flSpacing);
 
-	constexpr std::string GetLabel() { return m_sLabel; }
-	void SetLabel(std::string sLabel) { m_sLabel = sLabel; }
+		if (ImGui::Button(GetName().c_str()))
+			if (m_Callback)
+				m_Callback();
+
+		RenderChildren();
+	};
+
+
+	void SetCallback(std::function<void()> Callback)
+	{
+		m_Callback = Callback;
+	};
 };
 
-class Combo : public Element
+class Combo : public ElementBase
 {
-private:
-	std::string m_sLabel;
+protected:
 	std::string m_sPreviewlabel;
-	ImGuiComboFlags m_ComboFlags;
-	std::function<void()> m_funcCallback;
+	std::function<void()> m_Callback;
 
 public:
-	Combo(std::string sLabel, std::string sPreviewlabel, ImGuiComboFlags ComboFlags = 0, std::function<void()> funcCallback = nullptr) :
-		m_sLabel(sLabel), m_sPreviewlabel(sPreviewlabel), m_ComboFlags(ComboFlags), m_funcCallback(funcCallback)
+	Combo(std::string sPreviewlabel) :
+		m_sPreviewlabel(sPreviewlabel)
 	{};
 
 	void Render() override
 	{
-		if (m_bSameLine)
-			ImGui::SameLine(0.f, m_flSpacing);
+		if (!m_stStyle.bVisible)
+			return;
 
-		if (ImGui::BeginCombo(m_sLabel.c_str(), m_sPreviewlabel.c_str(), m_ComboFlags))
+		if (m_stStyle.bSameLine)
+			ImGui::SameLine(0.f, m_stStyle.flSpacing);
+
+		if (ImGui::BeginCombo(GetName().c_str(), m_sPreviewlabel.c_str(), m_stStyle.iFlags))
 		{
-			if (m_funcCallback)
-				m_funcCallback();
+			if (m_Callback)
+				m_Callback();
 
 			ImGui::EndCombo();
 		}
-	}
+
+		RenderChildren();
+	};
+
+	void SetCallback(std::function<void()> Callback)
+	{
+		m_Callback = Callback;
+	};
 };
 
-class Checkbox : public Element
+class Checkbox : public ElementBase
 {
-private:
-	std::string m_sLabel;
-	bool* m_pValue;
+protected:
+	bool m_Value;
 
 public:
-	Checkbox(std::string sLabel, bool* pValue) :
-		m_sLabel(sLabel), m_pValue(pValue)
+	Checkbox(bool Value = false) : m_Value(Value)
 	{};
 
 	void Render() override
 	{
-		if (m_bSameLine)
-			ImGui::SameLine(0.f, m_flSpacing);
+		if (!m_stStyle.bVisible)
+			return;
 
-		ImGui::Checkbox(m_sLabel.c_str(), m_pValue);
-	}
+		if (m_stStyle.bSameLine)
+			ImGui::SameLine(0.f, m_stStyle.flSpacing);
+
+		ImGui::Checkbox(GetName().c_str(), &m_Value);
+
+		RenderChildren();
+	};
+
+	inline bool GetValue() const
+	{
+		return m_Value;
+	};
+
+	inline void SetValue(const bool& n)
+	{
+		m_Value = n;
+	};
 };
 
-class Hotkey : public Element
+class Hotkey : public ElementBase
 {
-private:
-	std::string m_sLabel;
+protected:
 	KeyBind* m_Key;
-	ImVec2 m_Size;
 
 public:
-	Hotkey(std::string sLabel, KeyBind* Key, ImVec2 Size = { 100.0f, 0.0f }) :
-		m_sLabel(sLabel), m_Key(Key), m_Size(Size)
+	Hotkey(KeyBind* Key) : m_Key(Key)
 	{};
 
 	void Render() override
 	{
-		if (m_bSameLine)
-			ImGui::SameLine(0.f, m_flSpacing);
+		if (!m_stStyle.bVisible)
+			return;
 
-		ImGui::Hotkey(m_sLabel.c_str(), m_Key, m_Size);
-	}
+		if (m_stStyle.bSameLine)
+			ImGui::SameLine(0.f, m_stStyle.flSpacing);
+
+		ImGui::Hotkey(GetName().c_str(), m_Key, m_stStyle.vec2Size);
+
+		RenderChildren();
+	};
 };
 
-class SliderFloat : public Element
+class SliderFloat : public ElementBase
 {
-private:
-	std::string m_sLabel;
-	float* m_pValue;
-	float m_fValueMin;
-	float m_fValueMax;
+protected:
+	float m_Value;
+	float m_Min;
+	float m_Max;
 	const char* m_sFormat;
-	ImGuiSliderFlags m_SliderFlags;
 
 public:
-	SliderFloat(std::string sLabel, float* pValue, float fValueMin, float fValueMax, const char* sFormat = "%.3f", ImGuiSliderFlags SliderFlags = 0) :
-		m_sLabel(sLabel), m_pValue(pValue), m_fValueMin(fValueMin), m_fValueMax(fValueMax), m_SliderFlags(SliderFlags)
+	SliderFloat(float Value, float Min, float Max, const char* sFormat = "%.3f") :
+		m_Value(Value), m_Min(Min), m_Max(Max), m_sFormat(sFormat)
 	{};
 
 	void Render() override
 	{
-		if (m_bSameLine)
-			ImGui::SameLine(0.f, m_flSpacing);
+		if (!m_stStyle.bVisible)
+			return;
 
-		ImGui::SliderFloat(m_sLabel.c_str(), m_pValue, m_fValueMin, m_fValueMax, m_sFormat, m_SliderFlags);
-	}
+		if (m_stStyle.bSameLine)
+			ImGui::SameLine(0.f, m_stStyle.flSpacing);
+
+		ImGui::SliderFloat(GetName().c_str(), &m_Value, m_Min, m_Max, m_sFormat, m_stStyle.iFlags);
+
+		RenderChildren();
+	};
+
+	inline float GetValue() const
+	{
+		return m_Value;
+	};
+
+	inline void SetValue(const float& n)
+	{
+		m_Value = n;
+	};
 };
 
-class SliderInt : public Element
+class SliderInt : public ElementBase
 {
-private:
-	std::string m_sLabel;
-	int* m_pValue;
-	int m_iValueMin;
-	int m_iValueMax;
+protected:
+	int m_Value;
+	int m_Min;
+	int m_Max;
 	const char* m_sFormat;
-	ImGuiSliderFlags m_SliderFlags;
 
 public:
-	SliderInt(std::string sLabel, int* pValue, int iValueMin, int iValueMax, const char* sFormat = "%d", ImGuiSliderFlags SliderFlags = 0) :
-		m_sLabel(sLabel), m_pValue(pValue), m_iValueMin(iValueMin), m_iValueMax(iValueMax), m_SliderFlags(SliderFlags)
+	SliderInt(int Value, int Min, int Max, const char* sFormat = "%d") :
+		m_Value(Value), m_Min(Min), m_Max(Max), m_sFormat(sFormat)
 	{};
 
 	void Render() override
 	{
-		if (m_bSameLine)
-			ImGui::SameLine(0.f, m_flSpacing);
+		if (!m_stStyle.bVisible)
+			return;
 
-		ImGui::SliderInt(m_sLabel.c_str(), m_pValue, m_iValueMin, m_iValueMax, m_sFormat, m_SliderFlags);
-	}
+		if (m_stStyle.bSameLine)
+			ImGui::SameLine(0.f, m_stStyle.flSpacing);
+
+		ImGui::SliderInt(GetName().c_str(), &m_Value, m_Min, m_Max, m_sFormat, m_stStyle.iFlags);
+
+		RenderChildren();
+	};
+
+	inline int GetValue() const
+	{
+		return m_Value;
+	};
+
+	inline void SetValue(const int& n)
+	{
+		m_Value = n;
+	};
 };
 
-class InputText : public Element
+class InputText : public ElementBase
 {
-private:
-	std::string m_sLabel;
+protected:
 	char* m_pBuffer;
 	size_t m_ullBuffSize;
-	ImGuiInputTextFlags m_InputTextFlags;
 	ImGuiInputTextCallback m_InputTextCallback;
 	void* m_pUserData;
 
 public:
-	InputText(std::string sLabel, char* pBuffer, size_t ullBuffSize, ImGuiInputTextFlags InputTextFlags = 0, ImGuiInputTextCallback InputTextCallback = (ImGuiInputTextCallback)0, void* pUserData = (void*)0) :
-		m_sLabel(sLabel), m_pBuffer(pBuffer), m_ullBuffSize(ullBuffSize), m_InputTextFlags(InputTextFlags), m_InputTextCallback(InputTextCallback), m_pUserData(pUserData)
+	InputText(char* pBuffer, size_t ullBuffSize, ImGuiInputTextCallback InputTextCallback = (ImGuiInputTextCallback)0, void* pUserData = nullptr) :
+		m_pBuffer(pBuffer), m_ullBuffSize(ullBuffSize), m_InputTextCallback(InputTextCallback), m_pUserData(pUserData)
 	{};
 
 	void Render() override
 	{
-		if (m_bSameLine)
-			ImGui::SameLine(0.f, m_flSpacing);
+		if (!m_stStyle.bVisible)
+			return;
 
-		ImGui::InputText(m_sLabel.c_str(), m_pBuffer, m_ullBuffSize, m_InputTextFlags, m_InputTextCallback, m_pUserData);
-	}
+		if (m_stStyle.bSameLine)
+			ImGui::SameLine(0.f, m_stStyle.flSpacing);
+
+		ImGui::InputText(GetName().c_str(), m_pBuffer, m_ullBuffSize, m_stStyle.iFlags, m_InputTextCallback, m_pUserData);
+
+		RenderChildren();
+	};
 };
 
-class ColorPicker : public Element
+class ColorPicker : public ElementBase
 {
-private:
-	std::string m_sLabel;
-	float* m_pValue;
-	ImGuiColorEditFlags m_ColorEditFlags;
+protected:
+	ImVec4 m_Value;
 
 public:
-	ColorPicker(std::string sLabel, float* pValue, ImGuiColorEditFlags ColorEditFlags = ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoSidePreview | ImGuiColorEditFlags_AlphaBar) :
-		m_sLabel(sLabel), m_pValue(pValue), m_ColorEditFlags(ColorEditFlags)
+	ColorPicker()
 	{};
 
-	void Render() override 
+	void Render() override
 	{
-		if (m_bSameLine)
-			ImGui::SameLine(0.f, m_flSpacing);
+		if (!m_stStyle.bVisible)
+			return;
 
-		ImGui::ColorEdit4(m_sLabel.c_str(), m_pValue, m_ColorEditFlags);
-	}
+		if (m_stStyle.bSameLine)
+			ImGui::SameLine(0.f, m_stStyle.flSpacing);
+
+		ImGui::ColorEdit4(GetName().c_str(), reinterpret_cast<float*>(&m_Value), m_stStyle.iFlags);
+
+		RenderChildren();
+	};
+
+	inline ImVec4 GetValue() const
+	{
+		return m_Value;
+	};
+
+	inline void SetValue(const ImVec4& n)
+	{
+		m_Value = n;
+	};
 };

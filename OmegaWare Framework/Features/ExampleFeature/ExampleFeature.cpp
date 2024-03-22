@@ -37,23 +37,28 @@ void ExampleFeature::Destroy() { Initialized = false; }
 
 void ExampleFeature::HandleKeys() {}
 
-void ExampleFeature::PopulateMenu()
-{
-	if (!Initialized)
-		return;
-
-	auto ExampleFeature = std::make_unique<Child>("ExampleFeature", []() { return ImVec2(ImGui::GetContentRegionAvail().x / 2, ImGui::GetContentRegionAvail().y / 2); }, ImGuiChildFlags_Border);
-	ExampleFeature->AddElement(std::make_unique<Text>(Cheat::localization->Get("EXAMPLE_FEATURE")));
-	ExampleFeature->AddElement(std::make_unique<Checkbox>(Cheat::localization->Get("EXAMPLE_FEATURE"), &bExampleFeature));
-	if (bExampleFeature)
-		ExampleFeature->AddElement(std::make_unique<Text>(Cheat::localization->Get("EXAMPLE_FEATURE_HW")));
-
-	Cheat::menu->AddElement(std::move(ExampleFeature), true);
-}
-
 void ExampleFeature::Render() {}
 
 void ExampleFeature::Run() {}
+
+void ExampleFeature::HandleMenu()
+{
+	static std::once_flag onceflag;
+	std::call_once(onceflag, [this]() {
+		guiSection->AddElement(static_cast<ElementBase*>(guiCheckboxText.get()), "EXAMPLE_FEATURE", {});
+		guiSection->AddElement(static_cast<ElementBase*>(guiCheckbox.get()), "EXAMPLE_FEATURE", {});
+		guiSection->AddElement(static_cast<ElementBase*>(guiEnabledText.get()), "EXAMPLE_FEATURE_HW", {});
+	});
+
+	if (!guiSection->HasParent())
+	{
+		Cheat::menu->AddElement(static_cast<ElementBase*>(guiSection.get()), "EXAMPLE_FEATURE_SECTION", {
+			.iFlags = ImGuiChildFlags_Border,
+		});
+	}
+
+	guiEnabledText->SetVisible(guiCheckbox->GetValue());
+}
 
 void ExampleFeature::SaveConfig() { Cheat::config->PushEntry("ExampleFeature", "bool", std::to_string(bExampleFeature)); }
 

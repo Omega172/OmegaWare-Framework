@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Watermark.h"
 
+
 void GUI::Render()
 {
 	if (!Cheat::bInitalized)
@@ -26,48 +27,65 @@ void GUI::Render()
 		Features[i]->HandleKeys();
 	}
 
-	if (Cheat::bWatermark)
-		showWatermark(Cheat::bWatermarkFPS, Cheat::Title.c_str(), ImVec4(255, 255, 255, 255), ImVec4(255, 255, 255, 0));
+	if (guiWatermark->GetValue())
+		showWatermark(guiWatermarkFPS->GetValue(), Cheat::Title.c_str(), ImVec4(255, 255, 255, 255), ImVec4(255, 255, 255, 0));
 
 	if (bMenuOpen)
 	{
-		auto child = std::make_unique<Child>("Cheat", []() { return ImVec2(ImGui::GetContentRegionAvail().x / 3, ImGui::GetContentRegionAvail().y / 2); }, ImGuiChildFlags_Border);
-		child->AddElement(std::make_unique<Text>(Cheat::localization->Get("CHEAT")));
-		child->AddElement(std::make_unique<Spacing>());
-		child->AddElement(std::make_unique<Button>(Cheat::localization->Get("UNLOAD_BTN"), []() {
-			Cheat::bShouldRun = false;
-		}));
-		child->AddElement(std::make_unique<Button>(Cheat::console->GetVisibility() ? Cheat::localization->Get("CONSOLE_HIDE") : Cheat::localization->Get("CONSOLE_SHOW"), []() {
-			Cheat::console->ToggleVisibility();
-		}), true);
-		child->AddElement(std::make_unique<Combo>(Cheat::localization->Get("LANGUAGE"), Cheat::CurrentLocale.Name, NULL, []() {
-			for (LocalizationData Locale : Cheat::Locales)
-			{
-				bool bSelected = Cheat::CurrentLocale.LocaleCode == Locale.LocaleCode;
-				if (ImGui::Selectable(Locale.Name.c_str(), bSelected))
-				{
-					Cheat::CurrentLocale = Locale;
-					Cheat::localization->SetLocale(Locale.LocaleCode);
-				}
-				if (bSelected)
-					ImGui::SetItemDefaultFocus();
-			}
-		}));
-		child->AddElement(std::make_unique<Checkbox>(Cheat::localization->Get("WATER_MARK"), &Cheat::bWatermark));
-		if (Cheat::bWatermark)
-			child->AddElement(std::make_unique<Checkbox>(Cheat::localization->Get("WATER_MARK_FPS"), &Cheat::bWatermarkFPS));
-		child->AddElement(std::make_unique<Button>(Cheat::localization->Get("SAVE_CONFIG"), []() {
-			Cheat::config->SaveConfig();
-		}));
-		child->AddElement(std::make_unique<Button>(Cheat::localization->Get("LOAD_CONFIG"), []() {
-			Cheat::config->LoadConfig();
-		}), true);
+		static std::once_flag onceflag;
 
-		Cheat::menu->AddElement(std::move(child));
+		std::call_once(onceflag, []() {
+			guiCheat->AddElement(static_cast<ElementBase*>(guiCheatText.get()), "CHEAT", {});
+			guiCheat->AddElement(static_cast<ElementBase*>(guiCheatSpacing1.get()), "SPACING_1", {});
+			guiCheat->AddElement(static_cast<ElementBase*>(guiUnloadButton.get()), "UNLOAD_BTN", {});
+			guiUnloadButton->SetCallback([]() {
+				Cheat::bShouldRun = false;
+			});
+			guiCheat->AddElement(static_cast<ElementBase*>(guiConsoleVisibility.get()), "CONSOLE_VISIBILITY", {
+				.bSameLine = true,
+			});
+			guiConsoleVisibility->SetCallback([]() {
+				Cheat::console->ToggleVisibility();
+			});
+			guiCheat->AddElement(static_cast<ElementBase*>(guiLocalization.get()), "LANGUAGE", {});
+			guiLocalization->SetCallback([]() {
+				for (LocalizationData Locale : Cheat::Locales)
+				{
+					bool bSelected = Cheat::CurrentLocale.LocaleCode == Locale.LocaleCode;
+					if (ImGui::Selectable(Locale.Name.c_str(), bSelected))
+					{
+						Cheat::CurrentLocale = Locale;
+						Cheat::localization->SetLocale(Locale.LocaleCode);
+					}
+					if (bSelected)
+						ImGui::SetItemDefaultFocus();
+				}
+			});
+			guiCheat->AddElement(static_cast<ElementBase*>(guiWatermark.get()), "WATER_MARK", {});
+			guiCheat->AddElement(static_cast<ElementBase*>(guiWatermarkFPS.get()), "WATER_MARK_FPS", {});
+			guiCheat->AddElement(static_cast<ElementBase*>(guiSaveConfig.get()), "SAVE_CONFIG", {});
+			guiSaveConfig->SetCallback([]() {
+				Cheat::config->SaveConfig();
+			});
+			guiCheat->AddElement(static_cast<ElementBase*>(guiLoadConfig.get()), "LOAD_CONFIG", {
+				.bSameLine = true,
+			});
+			guiLoadConfig->SetCallback([]() {
+				Cheat::config->LoadConfig();
+			});
+		});
+
+
+		if (!guiCheat->HasParent())
+		{
+			Cheat::menu->AddElement(static_cast<ElementBase*>(guiCheat.get()), "Cheat", {
+				.iFlags = ImGuiChildFlags_Border,
+			});
+		}
 
 		for (size_t i = 0; i < Features.size(); i++)
 		{
-			Features[i]->PopulateMenu();
+			Features[i]->HandleMenu();
 		}
 
 		Cheat::menu->Render();

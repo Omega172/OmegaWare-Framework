@@ -26,5 +26,18 @@ namespace GUI
 	inline float sWIDTH = float(GetSystemMetrics(SM_CXSCREEN));
 	inline float sHEIGHT = float(GetSystemMetrics(SM_CYSCREEN));
 
+
+	inline std::unique_ptr<Child> guiCheat = std::make_unique<Child>([]() { return ImVec2(ImGui::GetContentRegionAvail().x / 3, ImGui::GetContentRegionAvail().y / 2); });
+	inline std::unique_ptr<Text> guiCheatText = std::make_unique<Text>();
+	inline std::unique_ptr<Spacing> guiCheatSpacing1 = std::make_unique<Spacing>();
+	inline std::unique_ptr<Button> guiUnloadButton = std::make_unique<Button>();
+	inline std::unique_ptr<Button> guiConsoleVisibility = std::make_unique<Button>();
+	inline std::unique_ptr<Combo> guiLocalization = std::make_unique<Combo>("Cheat::CurrentLocale.Name");
+	inline std::unique_ptr<Checkbox> guiWatermark = std::make_unique<Checkbox>();
+	inline std::unique_ptr<Checkbox> guiWatermarkFPS = std::make_unique<Checkbox>();
+	inline std::unique_ptr<Button> guiSaveConfig = std::make_unique<Button>();
+	inline std::unique_ptr<Button> guiLoadConfig = std::make_unique<Button>();
+
+
 	void Render();
 }
