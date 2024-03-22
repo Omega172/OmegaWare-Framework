@@ -38,10 +38,10 @@ public:
 
 	ElementBase() = default;
 	
-	void AddElement(ElementBase* pElement)
+	void AddElement(void* pElement)
 	{
-		pElement->m_pParent = this;
-		m_Children.push_back(pElement);
+		static_cast<ElementBase*>(pElement)->m_pParent = this;
+		m_Children.push_back(static_cast<ElementBase*>(pElement));
 	};
 
 	void RemoveElement(std::string sUnique)

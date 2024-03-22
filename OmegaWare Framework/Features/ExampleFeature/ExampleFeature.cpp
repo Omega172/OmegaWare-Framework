@@ -47,14 +47,14 @@ void ExampleFeature::HandleMenu()
 	std::call_once(onceflag, [this]() {
 		guiSection->SetCallback([]() { return ImVec2(ImGui::GetContentRegionAvail().x / 2, ImGui::GetContentRegionAvail().y / 2); });
 
-		guiSection->AddElement(static_cast<ElementBase*>(guiCheckboxText.get()));
-		guiSection->AddElement(static_cast<ElementBase*>(guiCheckbox.get()));
-		guiSection->AddElement(static_cast<ElementBase*>(guiEnabledText.get()));
+		guiSection->AddElement(guiCheckboxText.get());
+		guiSection->AddElement(guiCheckbox.get());
+		guiSection->AddElement(guiEnabledText.get());
 	});
 
 	if (!guiSection->HasParent())
 	{
-		Cheat::menu->AddElement(static_cast<ElementBase*>(guiSection.get()));
+		Cheat::menu->AddElement(guiSection.get());
 	}
 
 	guiEnabledText->SetVisible(guiCheckbox->GetValue());

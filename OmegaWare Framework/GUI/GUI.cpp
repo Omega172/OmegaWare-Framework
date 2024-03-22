@@ -37,19 +37,19 @@ void GUI::Render()
 		std::call_once(onceflag, []() {
 			guiCheat->SetCallback([]() { return ImVec2(ImGui::GetContentRegionAvail().x / 3, ImGui::GetContentRegionAvail().y / 2); });
 
-			guiCheat->AddElement(static_cast<ElementBase*>(guiCheatText.get()));
-			guiCheat->AddElement(static_cast<ElementBase*>(guiCheatSpacing1.get()));
-			guiCheat->AddElement(static_cast<ElementBase*>(guiUnloadButton.get()));
+			guiCheat->AddElement(guiCheatText.get());
+			guiCheat->AddElement(guiCheatSpacing1.get());
+			guiCheat->AddElement(guiUnloadButton.get());
 			guiUnloadButton->SetCallback([]() {
 				Cheat::bShouldRun = false;
 			});
-			guiCheat->AddElement(static_cast<ElementBase*>(guiConsoleVisibility.get()));
+			guiCheat->AddElement(guiConsoleVisibility.get());
 			guiConsoleVisibility->SetCallback([]() {
 				Cheat::console->ToggleVisibility();
 
 				guiConsoleVisibility->SetName(Cheat::console->GetVisibility() ? "CONSOLE_HIDE"_hash : "CONSOLE_SHOW"_hash);
 			});
-			guiCheat->AddElement(static_cast<ElementBase*>(guiLocalization.get()));
+			guiCheat->AddElement(guiLocalization.get());
 			guiLocalization->SetCallback([]() {
 				for (LocalizationData Locale : Cheat::Locales)
 				{
@@ -63,13 +63,13 @@ void GUI::Render()
 						ImGui::SetItemDefaultFocus();
 				}
 			});
-			guiCheat->AddElement(static_cast<ElementBase*>(guiWatermark.get()));
-			guiCheat->AddElement(static_cast<ElementBase*>(guiWatermarkFPS.get()));
-			guiCheat->AddElement(static_cast<ElementBase*>(guiSaveConfig.get()));
+			guiCheat->AddElement(guiWatermark.get());
+			guiCheat->AddElement(guiWatermarkFPS.get());
+			guiCheat->AddElement(guiSaveConfig.get());
 			guiSaveConfig->SetCallback([]() {
 				Cheat::config->SaveConfig();
 			});
-			guiCheat->AddElement(static_cast<ElementBase*>(guiLoadConfig.get()));
+			guiCheat->AddElement(guiLoadConfig.get());
 			guiLoadConfig->SetCallback([]() {
 				Cheat::config->LoadConfig();
 			});
@@ -78,7 +78,7 @@ void GUI::Render()
 
 		if (!guiCheat->HasParent())
 		{
-			Cheat::menu->AddElement(static_cast<ElementBase*>(guiCheat.get()));
+			Cheat::menu->AddElement(guiCheat.get());
 		}
 
 		for (size_t i = 0; i < Features.size(); i++)
