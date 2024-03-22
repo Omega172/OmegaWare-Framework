@@ -2,15 +2,15 @@
 #include "../LocaleStructs.h"
 
 std::vector<LocaleData> EnglishLocales = {
-	{HASH("CHEAT"), "Cheat"},
-	{HASH("UNLOAD_BTN"), "Unload"},
-	{HASH("CONSOLE_SHOW"), "Show Console"},
-	{HASH("CONSOLE_HIDE"), "Hide Console"},
-	{HASH("WATER_MARK"), "Watermark"},
-	{HASH("WATER_MARK_FPS"), "Watermark FPS"},
-	{HASH("SAVE_CONFIG"), "Save Config"},
-	{HASH("LOAD_CONFIG"), "Load Config"},
-	{HASH("LANGUAGE"), "Language"}
+	{"CHEAT"_hash, "Cheat"},
+	{"UNLOAD_BTN"_hash, "Unload"},
+	{"CONSOLE_SHOW"_hash, "Show Console"},
+	{"CONSOLE_HIDE"_hash, "Hide Console"},
+	{"WATER_MARK"_hash, "Watermark"},
+	{"WATER_MARK_FPS"_hash, "Watermark FPS"},
+	{"SAVE_CONFIG"_hash, "Save Config"},
+	{"LOAD_CONFIG"_hash, "Load Config"},
+	{"LANGUAGE"_hash, "Language"}
 };
 
-LocalizationData English{ "English", HASH("ENG"), &TahomaFont, &TahomaFontESP, EnglishLocales };
+LocalizationData English{ "English", "ENG"_hash, &TahomaFont, &TahomaFontESP, EnglishLocales };

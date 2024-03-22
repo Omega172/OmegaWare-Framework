@@ -19,11 +19,16 @@ public:
 
 	} Style_t;
 
+	
+protected:
 	Style_t m_stStyle;
 
+	// used to display a custom or unlocalized name for elements like buttons
+	bool m_bUnlocalizedName = false;
+	std::string m_sUnlocalizedName = "";
+	std::size_t m_ullLocalizedNameHash = 0;
 
-
-protected:
+	// used for internal reference for removing elements or config handling
 	std::string m_sUnique = "INVALID_UNIQUE";
 	
 	ElementBase* m_pParent = nullptr;
@@ -33,10 +38,8 @@ public:
 
 	ElementBase() = default;
 	
-	void AddElement(ElementBase* pElement, std::string sUnique, Style_t stStyle)
+	void AddElement(ElementBase* pElement)
 	{
-		pElement->m_sUnique = sUnique;
-		pElement->m_stStyle = stStyle;
 		pElement->m_pParent = this;
 		m_Children.push_back(pElement);
 	};
@@ -79,7 +82,30 @@ public:
 	// Gets localized element name
 	inline const std::string GetName() const
 	{
-		return GetUnique();//"NOT_IMPLEMENTED_YET_KEKW";
+		if (m_bUnlocalizedName)
+			return m_sUnlocalizedName;
+		
+		return Localization::StaticGet(m_ullLocalizedNameHash);
+	};
+
+	// Sets that we want an unlocalized name and replaces the internal unlocalized name string
+	inline void SetName(std::string s)
+	{
+		m_bUnlocalizedName = true;
+		m_sUnlocalizedName = s;
+	};
+
+	// Sets that we want to use a localized name and overrides the used localized name
+	inline void SetName(size_t ullHash)
+	{
+		m_bUnlocalizedName = false;
+		m_ullLocalizedNameHash = ullHash;
+	};
+
+	// Sets if we want to use the localized name or not
+	inline void SetName(bool bUseUnlocalized = false)
+	{
+		m_bUnlocalizedName = bUseUnlocalized;
 	};
 
 	inline ElementBase* GetParent() const
@@ -157,10 +183,128 @@ public:
 	};
 };
 
+template<typename T>
+class ElementInput : public ElementBase
+{
+protected:
+	bool m_bOverride = false;
+	T m_ValueOverride{};
+
+	T m_Value{};
+
+	inline std::string ConvertToString() const
+	{
+		return std::to_string(m_Value);
+	};
+
+	inline T ConvertFromString(const std::string& str) const
+	{
+		return std::stoi(str);
+	};
+
+public:
+	void ConfigSave(nlohmann::json& jsonParent) const override
+	{
+		nlohmann::json& jsonEntry = jsonParent[m_sUnique.c_str()] = nlohmann::json();
+
+		jsonEntry["Value"] = ConvertToString();
+
+		if (!HasChildren())
+			return;
+
+		jsonEntry["Children"] = nlohmann::json();
+
+		ConfigSaveChildren(jsonEntry["Children"]);
+	};
+
+	void ConfigLoad(nlohmann::json& jsonParent) override
+	{
+		if (!jsonParent.contains(m_sUnique.c_str()))
+			return;
+
+		nlohmann::json& jsonEntry = jsonParent[m_sUnique.c_str()];
+
+		if (jsonEntry.contains("Value"))
+			m_Value = ConvertFromString(jsonEntry["Value"].get<std::string>());
+
+		if (jsonEntry.contains("Children"))
+			ConfigLoadChildren(jsonEntry["Children"]);
+	};
+
+	inline T GetValue() const
+	{
+		return m_bOverride ? m_ValueOverride : m_Value;
+	};
+
+	inline void SetValue(const T& Value)
+	{
+		m_Value = Value;
+	};
+
+	inline T GetOverride() const
+	{
+		return m_ValueOverride;
+	};
+
+	inline const bool GetOverrideActive() const
+	{
+		return m_bOverride;
+	};
+
+	inline void SetOverride(const T& Value) const
+	{
+		m_bOverride = true;
+		m_ValueOverride = Value;
+	};
+
+	inline void SetOverride() const
+	{
+		m_bOverride = false;
+	};
+};
+
+inline std::string ElementInput<ImVec4>::ConvertToString() const
+{
+	return std::to_string(ImGui::ColorConvertFloat4ToU32(m_Value));
+};
+
+inline std::string ElementInput<std::string>::ConvertToString() const
+{
+	return m_Value;
+};
+
+inline ImVec4 ElementInput<ImVec4>::ConvertFromString(const std::string& str) const
+{
+	return ImGui::ColorConvertU32ToFloat4(std::stoul(str));
+};
+
+inline std::string ElementInput<std::string>::ConvertFromString(const std::string& str) const
+{
+	return str;
+};
+
+inline float ElementInput<float>::ConvertFromString(const std::string& str) const
+{
+	return std::stof(str);
+};
+
 class Spacing : public ElementBase
 {
 public:
-	Spacing() {};
+	Spacing(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {})
+	{
+		m_sUnique = sUnique;
+		m_ullLocalizedNameHash = ullLocalizedNameHash;
+		m_stStyle = stStyle;
+	};
+
+	Spacing(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle = {})
+	{
+		m_sUnique = sUnique;
+		m_bUnlocalizedName = true;
+		m_sUnlocalizedName = sUnlocalizedName;
+		m_stStyle = stStyle;
+	};
 
 	void Render() override
 	{ 
@@ -173,9 +317,18 @@ class Menu : public ElementBase
 protected:
 
 public:
-	Menu(std::string sUnique, Style_t stStyle)
+	Menu(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {})
 	{
 		m_sUnique = sUnique;
+		m_ullLocalizedNameHash = ullLocalizedNameHash;
+		m_stStyle = stStyle;
+	};
+
+	Menu(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle = {})
+	{
+		m_sUnique = sUnique;
+		m_bUnlocalizedName = true;
+		m_sUnlocalizedName = sUnlocalizedName;
 		m_stStyle = stStyle;
 	};
 
@@ -204,17 +357,25 @@ class Child : public ElementBase
 {
 protected:
 	ImGuiWindowFlags m_WindowFlags;
-	std::function<ImVec2()> m_funcCallback = nullptr;
+	std::function<ImVec2()> m_Callback = nullptr;
 
 public:
-	Child(ImGuiWindowFlags WindowFlags = 0)
+	Child(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {}, ImGuiWindowFlags WindowFlags = 0)
 	{
+		m_sUnique = sUnique;
+		m_ullLocalizedNameHash = ullLocalizedNameHash;
+		m_stStyle = stStyle;
+
 		m_WindowFlags = WindowFlags;
 	};
 
-	Child(std::function<ImVec2()> funcCallback = nullptr, ImGuiWindowFlags WindowFlags = 0)
+	Child(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle = {}, ImGuiWindowFlags WindowFlags = 0)
 	{
-		m_funcCallback = funcCallback;
+		m_sUnique = sUnique;
+		m_bUnlocalizedName = true;
+		m_sUnlocalizedName = sUnlocalizedName;
+		m_stStyle = stStyle;
+
 		m_WindowFlags = WindowFlags;
 	};
 
@@ -226,12 +387,17 @@ public:
 		if (m_stStyle.bSameLine)
 			ImGui::SameLine(0.f, m_stStyle.flSpacing);
 
-		if (m_funcCallback)
-			m_stStyle.vec2Size = m_funcCallback();
+		if (m_Callback)
+			m_stStyle.vec2Size = m_Callback();
 
 		ImGui::BeginChild(GetName().c_str(), m_stStyle.vec2Size, m_stStyle.iFlags, m_WindowFlags);
 		RenderChildren();
 		ImGui::EndChild();
+	};
+
+	void SetCallback(std::function<ImVec2()> Callback)
+	{
+		m_Callback = Callback;
 	};
 };
 
@@ -240,8 +406,20 @@ class Text : public ElementBase
 protected:
 
 public:
-	Text()
-	{};
+	Text(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {})
+	{
+		m_sUnique = sUnique;
+		m_ullLocalizedNameHash = ullLocalizedNameHash;
+		m_stStyle = stStyle;
+	};
+
+	Text(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle = {})
+	{
+		m_sUnique = sUnique;
+		m_bUnlocalizedName = true;
+		m_sUnlocalizedName = sUnlocalizedName;
+		m_stStyle = stStyle;
+	};
 
 	void Render() override
 	{
@@ -262,8 +440,20 @@ protected:
 	std::function<void()> m_Callback = nullptr;
 
 public:
-	Button()
-	{};
+	Button(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {})
+	{
+		m_sUnique = sUnique;
+		m_ullLocalizedNameHash = ullLocalizedNameHash;
+		m_stStyle = stStyle;
+	};
+
+	Button(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle = {})
+	{
+		m_sUnique = sUnique;
+		m_bUnlocalizedName = true;
+		m_sUnlocalizedName = sUnlocalizedName;
+		m_stStyle = stStyle;
+	};
 
 	void Render() override
 	{
@@ -290,13 +480,24 @@ public:
 class Combo : public ElementBase
 {
 protected:
-	std::string m_sPreviewlabel;
+	std::string m_sPreviewlabel = "NotImplYet";
 	std::function<void()> m_Callback;
 
 public:
-	Combo(std::string sPreviewlabel) :
-		m_sPreviewlabel(sPreviewlabel)
-	{};
+	Combo(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {})
+	{
+		m_sUnique = sUnique;
+		m_ullLocalizedNameHash = ullLocalizedNameHash;
+		m_stStyle = stStyle;
+	};
+
+	Combo(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle = {})
+	{
+		m_sUnique = sUnique;
+		m_bUnlocalizedName = true;
+		m_sUnlocalizedName = sUnlocalizedName;
+		m_stStyle = stStyle;
+	};
 
 	void Render() override
 	{
@@ -323,41 +524,24 @@ public:
 	};
 };
 
-class Checkbox : public ElementBase
+class Checkbox : public ElementInput<bool>
 {
 protected:
-	bool m_Value;
 
 public:
-	Checkbox(bool Value = false) : m_Value(Value)
-	{};
-
-	void ConfigSave(nlohmann::json& jsonParent) const override
+	Checkbox(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {})
 	{
-		nlohmann::json& jsonEntry = jsonParent[m_sUnique.c_str()] = nlohmann::json();
-
-		jsonEntry["Value"] = std::to_string(m_Value);
-
-		if (!HasChildren())
-			return;
-
-		jsonEntry["Children"] = nlohmann::json();
-
-		ConfigSaveChildren(jsonEntry["Children"]);
+		m_sUnique = sUnique;
+		m_ullLocalizedNameHash = ullLocalizedNameHash;
+		m_stStyle = stStyle;
 	};
 
-	void ConfigLoad(nlohmann::json& jsonParent) override
+	Checkbox(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle = {})
 	{
-		if (!jsonParent.contains(m_sUnique.c_str()))
-			return;
-
-		nlohmann::json& jsonEntry = jsonParent[m_sUnique.c_str()];
-
-		if (jsonEntry.contains("Value"))
-			m_Value = std::stoi(jsonEntry["Value"].get<std::string>());
-
-		if (jsonEntry.contains("Children"))
-			ConfigLoadChildren(jsonEntry["Children"]);
+		m_sUnique = sUnique;
+		m_bUnlocalizedName = true;
+		m_sUnlocalizedName = sUnlocalizedName;
+		m_stStyle = stStyle;
 	};
 
 	void Render() override
@@ -372,26 +556,29 @@ public:
 
 		RenderChildren();
 	};
-
-	inline bool GetValue() const
-	{
-		return m_Value;
-	};
-
-	inline void SetValue(const bool& n)
-	{
-		m_Value = n;
-	};
 };
 
+// Not implemented yet
 class Hotkey : public ElementBase
 {
 protected:
 	KeyBind* m_Key;
 
 public:
-	Hotkey(KeyBind* Key) : m_Key(Key)
-	{};
+	Hotkey(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {})
+	{
+		m_sUnique = sUnique;
+		m_ullLocalizedNameHash = ullLocalizedNameHash;
+		m_stStyle = stStyle;
+	};
+
+	Hotkey(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle = {})
+	{
+		m_sUnique = sUnique;
+		m_bUnlocalizedName = true;
+		m_sUnlocalizedName = sUnlocalizedName;
+		m_stStyle = stStyle;
+	};
 
 	void Render() override
 	{
@@ -407,45 +594,33 @@ public:
 	};
 };
 
-class SliderFloat : public ElementBase
+class SliderFloat : public ElementInput<float>
 {
 protected:
-	float m_Value;
 	float m_Min;
 	float m_Max;
 	const char* m_sFormat;
 
 public:
-	SliderFloat(float Value, float Min, float Max, const char* sFormat = "%.3f") :
-		m_Value(Value), m_Min(Min), m_Max(Max), m_sFormat(sFormat)
-	{};
-
-	void ConfigSave(nlohmann::json& jsonParent) const override
+	SliderFloat(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {}, float Value = 0.f, float Min = -FLT_MAX, float Max = FLT_MAX, const char* sFormat = "%.3f") :
+		m_Min(Min), m_Max(Max), m_sFormat(sFormat)
 	{
-		nlohmann::json& jsonEntry = jsonParent[m_sUnique.c_str()] = nlohmann::json();
+		m_sUnique = sUnique;
+		m_ullLocalizedNameHash = ullLocalizedNameHash;
+		m_stStyle = stStyle;
 
-		jsonEntry["Value"] = std::to_string(m_Value);
-
-		if (!HasChildren())
-			return;
-
-		jsonEntry["Children"] = nlohmann::json();
-
-		ConfigSaveChildren(jsonEntry["Children"]);
+		SetValue(Value);
 	};
 
-	void ConfigLoad(nlohmann::json& jsonParent) override
+	SliderFloat(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle = {}, float Value = 0.f, float Min = -FLT_MAX, float Max = FLT_MAX, const char* sFormat = "%.3f") :
+		m_Min(Min), m_Max(Max), m_sFormat(sFormat)
 	{
-		if (!jsonParent.contains(m_sUnique.c_str()))
-			return;
+		m_sUnique = sUnique;
+		m_bUnlocalizedName = true;
+		m_sUnlocalizedName = sUnlocalizedName;
+		m_stStyle = stStyle;
 
-		nlohmann::json& jsonEntry = jsonParent[m_sUnique.c_str()];
-
-		if (jsonEntry.contains("Value"))
-			m_Value = std::stof(jsonEntry["Value"].get<std::string>());
-
-		if (jsonEntry.contains("Children"))
-			ConfigLoadChildren(jsonEntry["Children"]);
+		SetValue(Value);
 	};
 
 	void Render() override
@@ -460,57 +635,35 @@ public:
 
 		RenderChildren();
 	};
-
-	inline float GetValue() const
-	{
-		return m_Value;
-	};
-
-	inline void SetValue(const float& n)
-	{
-		m_Value = n;
-	};
 };
 
-class SliderInt : public ElementBase
+class SliderInt : public ElementInput<int>
 {
 protected:
-	int m_Value;
 	int m_Min;
 	int m_Max;
 	const char* m_sFormat;
 
 public:
-	SliderInt(int Value, int Min, int Max, const char* sFormat = "%d") :
-		m_Value(Value), m_Min(Min), m_Max(Max), m_sFormat(sFormat)
-	{};
-
-	void ConfigSave(nlohmann::json& jsonParent) const override
+	SliderInt(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {}, int Value = 0, int Min = INT_MIN, int Max = INT_MAX, const char* sFormat = "%d") :
+		m_Min(Min), m_Max(Max), m_sFormat(sFormat)
 	{
-		nlohmann::json& jsonEntry = jsonParent[m_sUnique.c_str()] = nlohmann::json();
+		m_sUnique = sUnique;
+		m_ullLocalizedNameHash = ullLocalizedNameHash;
+		m_stStyle = stStyle;
 
-		jsonEntry["Value"] = std::to_string(m_Value);
-
-		if (!HasChildren())
-			return;
-
-		jsonEntry["Children"] = nlohmann::json();
-
-		ConfigSaveChildren(jsonEntry["Children"]);
+		SetValue(Value);
 	};
 
-	void ConfigLoad(nlohmann::json& jsonParent) override
+	SliderInt(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle = {}, int Value = 0, int Min = INT_MIN, int Max = INT_MAX, const char* sFormat = "%d") :
+		m_Min(Min), m_Max(Max), m_sFormat(sFormat)
 	{
-		if (!jsonParent.contains(m_sUnique.c_str()))
-			return;
+		m_sUnique = sUnique;
+		m_bUnlocalizedName = true;
+		m_sUnlocalizedName = sUnlocalizedName;
+		m_stStyle = stStyle;
 
-		nlohmann::json& jsonEntry = jsonParent[m_sUnique.c_str()];
-
-		if (jsonEntry.contains("Value"))
-			m_Value = std::stoi(jsonEntry["Value"].get<std::string>());
-
-		if (jsonEntry.contains("Children"))
-			ConfigLoadChildren(jsonEntry["Children"]);
+		SetValue(Value);
 	};
 
 	void Render() override
@@ -525,30 +678,33 @@ public:
 
 		RenderChildren();
 	};
-
-	inline int GetValue() const
-	{
-		return m_Value;
-	};
-
-	inline void SetValue(const int& n)
-	{
-		m_Value = n;
-	};
 };
 
-class InputText : public ElementBase
+class InputText : public ElementInput<std::string>
 {
 protected:
-	char* m_pBuffer;
-	size_t m_ullBuffSize;
-	ImGuiInputTextCallback m_InputTextCallback;
-	void* m_pUserData;
+	ImGuiInputTextCallback m_Callback = nullptr;
+	void* m_pUserData = nullptr;
 
 public:
-	InputText(char* pBuffer, size_t ullBuffSize, ImGuiInputTextCallback InputTextCallback = (ImGuiInputTextCallback)0, void* pUserData = nullptr) :
-		m_pBuffer(pBuffer), m_ullBuffSize(ullBuffSize), m_InputTextCallback(InputTextCallback), m_pUserData(pUserData)
-	{};
+	InputText(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {}, size_t ullBufferSize = 1024)
+	{
+		m_sUnique = sUnique;
+		m_ullLocalizedNameHash = ullLocalizedNameHash;
+		m_stStyle = stStyle;
+
+		m_Value.reserve(ullBufferSize);
+	};
+
+	InputText(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle = {}, size_t ullBufferSize = 1024)
+	{
+		m_sUnique = sUnique;
+		m_bUnlocalizedName = true;
+		m_sUnlocalizedName = sUnlocalizedName;
+		m_stStyle = stStyle;
+
+		m_Value.resize(ullBufferSize);
+	};
 
 	void Render() override
 	{
@@ -558,47 +714,40 @@ public:
 		if (m_stStyle.bSameLine)
 			ImGui::SameLine(0.f, m_stStyle.flSpacing);
 
-		ImGui::InputText(GetName().c_str(), m_pBuffer, m_ullBuffSize, m_stStyle.iFlags, m_InputTextCallback, m_pUserData);
+		ImGui::InputText(GetName().c_str(), m_Value.data(), m_Value.capacity(), m_stStyle.iFlags, m_Callback, m_pUserData);
 
 		RenderChildren();
 	};
-};
 
-class ColorPicker : public ElementBase
-{
-protected:
-	ImVec4 m_Value;
-
-public:
-	ColorPicker()
-	{};
-
-	void ConfigSave(nlohmann::json& jsonParent) const override
+	inline void Resize(const size_t& n)
 	{
-		nlohmann::json& jsonEntry = jsonParent[m_sUnique.c_str()] = nlohmann::json();
-
-		jsonEntry["Value"] = std::to_string(ImGui::ColorConvertFloat4ToU32(m_Value));
-
-		if (!HasChildren())
-			return;
-
-		jsonEntry["Children"] = nlohmann::json();
-
-		ConfigSaveChildren(jsonEntry["Children"]);
+		m_Value.resize(n);
 	};
 
-	void ConfigLoad(nlohmann::json& jsonParent) override
+	void SetCallback(ImGuiInputTextCallback Callback)
 	{
-		if (!jsonParent.contains(m_sUnique.c_str()))
-			return;
+		m_Callback = Callback;
+	};
+};
 
-		nlohmann::json& jsonEntry = jsonParent[m_sUnique.c_str()];
+class ColorPicker : public ElementInput<ImVec4>
+{
+protected:
 
-		if (jsonEntry.contains("Value"))
-			m_Value = ImGui::ColorConvertU32ToFloat4(std::stoul(jsonEntry["Value"].get<std::string>()));
+public:
+	ColorPicker(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {})
+	{
+		m_sUnique = sUnique;
+		m_ullLocalizedNameHash = ullLocalizedNameHash;
+		m_stStyle = stStyle;
+	};
 
-		if (jsonEntry.contains("Children"))
-			ConfigLoadChildren(jsonEntry["Children"]);
+	ColorPicker(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle = {})
+	{
+		m_sUnique = sUnique;
+		m_bUnlocalizedName = true;
+		m_sUnlocalizedName = sUnlocalizedName;
+		m_stStyle = stStyle;
 	};
 
 	void Render() override
@@ -612,15 +761,5 @@ public:
 		ImGui::ColorEdit4(GetName().c_str(), reinterpret_cast<float*>(&m_Value), m_stStyle.iFlags);
 
 		RenderChildren();
-	};
-
-	inline ImVec4 GetValue() const
-	{
-		return m_Value;
-	};
-
-	inline void SetValue(const ImVec4& n)
-	{
-		m_Value = n;
 	};
 };

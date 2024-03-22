@@ -97,6 +97,7 @@
     <ClInclude Include="Mono\utils\mono-logger.h" />
     <ClInclude Include="Mono\utils\mono-publib.h" />
     <ClInclude Include="Mono\jit\jit.h" />
+    <ClInclude Include="Libs\CRC64\CRC64.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

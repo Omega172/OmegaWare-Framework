@@ -23,62 +23,73 @@ bool Localization::IsInitialized() { return bInitialized; }
 
 std::string Localization::Get(std::string Key)
 {
+	return Get(CRC64::hash(Key));
+}
+
+std::string Localization::Get(size_t ullKeyHash)
+{
 	for (LocaleData Entry : Cheat::CurrentLocale.Locales)
 	{
-		if (Entry.Key == HASH(Key))
+		if (Entry.Key == ullKeyHash)
 			return Entry.Value;
 	}
 
-	// If not foun in the current locale, try to find it in the default locale
+	// If not foun in the current locale, try to find it in the english (the default locale)
+	constexpr size_t ullENGHash = "ENG"_hash;
 	for (LocalizationData Locale : Cheat::Locales)
 	{
-		if (Locale.LocaleCode == HASH("ENG"))
+		if (Locale.LocaleCode != ullENGHash)
+			continue;
+
+		for (LocaleData Entry : Locale.Locales)
 		{
-			for (LocaleData Entry : Locale.Locales)
-			{
-				if (Entry.Key == HASH(Key))
-					return Entry.Value;
-			}
+			if (Entry.Key == ullKeyHash)
+				return Entry.Value;
 		}
 	}
 
 	return "NOT_FOUND"; // If not found in any locale, return NOT_FOUND
 }
 
+std::string Localization::StaticGet(size_t ullKeyHash)
+{
+	return Cheat::localization->Get(ullKeyHash);
+}
+
 void Localization::LoadLocale(LocalizationData Locale) { Cheat::Locales.push_back(Locale); }
 
 bool Localization::SetLocale(std::string LocaleCode)
 {
-	size_t LocaleCodeHash = HASH(LocaleCode);
+	size_t ullLocaleCodeHash = CRC64::hash(LocaleCode);
 	for (LocalizationData Locale : Cheat::Locales)
 	{
-		if (Locale.LocaleCode == LocaleCodeHash)
-		{
-			Cheat::CurrentLocale = Locale;
+		if (Locale.LocaleCode != ullLocaleCodeHash)
+			continue;
 
-			CurrentFont = *Locale.Font;
-			CurrentFontESP = *Locale.FontESP;
+		Cheat::CurrentLocale = Locale;
 
-			return true;
-		}
+		CurrentFont = *Locale.Font;
+		CurrentFontESP = *Locale.FontESP;
+
+		return true;
 	}
 
 	return false;
 }
 
-bool Localization::SetLocale(size_t LocaleCodeHash)
+bool Localization::SetLocale(size_t ullLocaleCodeHash)
 {
 	for (LocalizationData Locale : Cheat::Locales)
 	{
-		if (Locale.LocaleCode == LocaleCodeHash)
-		{
-			Cheat::CurrentLocale = Locale;
+		if (Locale.LocaleCode != ullLocaleCodeHash)
+			continue;
 
-			CurrentFont = *Locale.Font;
-			CurrentFontESP = *Locale.FontESP;
+		Cheat::CurrentLocale = Locale;
 
-			return true;
-		}
+		CurrentFont = *Locale.Font;
+		CurrentFontESP = *Locale.FontESP;
+
+		return true;
 	}
 
 	return false;
@@ -88,12 +99,12 @@ std::vector<LocalizationData> Localization::GetLocales() { return Cheat::Locales
 
 bool Localization::AddToLocale(std::string LocaleCode, std::string Key, std::string Value)
 {
+	size_t ullLocaleCodeHash = CRC64::hash(LocaleCode);
 	for (LocalizationData& Locale : Cheat::Locales)
 	{
-		size_t LocaleCodeHash = HASH(LocaleCode);
-		if (Locale.LocaleCode == LocaleCodeHash)
+		if (Locale.LocaleCode == ullLocaleCodeHash)
 		{
-			Locale.Locales.push_back({ HASH(Key), Value });
+			Locale.Locales.push_back({ CRC64::hash(Key), Value });
 			return true;
 		}
 	}
@@ -103,9 +114,10 @@ bool Localization::AddToLocale(std::string LocaleCode, std::string Key, std::str
 
 bool Localization::AddToLocale(std::string LocaleCode, std::vector<LocaleData> arrLocaleData)
 {
+	size_t ullLocaleCodeHash = CRC64::hash(LocaleCode);
 	for (LocalizationData& Locale : Cheat::Locales)
 	{
-		if (Locale.LocaleCode == HASH(LocaleCode))
+		if (Locale.LocaleCode == ullLocaleCodeHash)
 		{
 			for (LocaleData LocaleData : arrLocaleData)
 				Locale.Locales.push_back(LocaleData);

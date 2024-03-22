@@ -26,17 +26,23 @@ namespace GUI
 	inline float sWIDTH = float(GetSystemMetrics(SM_CXSCREEN));
 	inline float sHEIGHT = float(GetSystemMetrics(SM_CYSCREEN));
 
-
-	inline std::unique_ptr<Child> guiCheat = std::make_unique<Child>([]() { return ImVec2(ImGui::GetContentRegionAvail().x / 3, ImGui::GetContentRegionAvail().y / 2); });
-	inline std::unique_ptr<Text> guiCheatText = std::make_unique<Text>();
-	inline std::unique_ptr<Spacing> guiCheatSpacing1 = std::make_unique<Spacing>();
-	inline std::unique_ptr<Button> guiUnloadButton = std::make_unique<Button>();
-	inline std::unique_ptr<Button> guiConsoleVisibility = std::make_unique<Button>();
-	inline std::unique_ptr<Combo> guiLocalization = std::make_unique<Combo>("Cheat::CurrentLocale.Name");
-	inline std::unique_ptr<Checkbox> guiWatermark = std::make_unique<Checkbox>();
-	inline std::unique_ptr<Checkbox> guiWatermarkFPS = std::make_unique<Checkbox>();
-	inline std::unique_ptr<Button> guiSaveConfig = std::make_unique<Button>();
-	inline std::unique_ptr<Button> guiLoadConfig = std::make_unique<Button>();
+	
+	inline std::unique_ptr<Child> guiCheat = std::make_unique<Child>(std::string("CHEAT"), "CHEAT"_hash, ElementBase::Style_t{
+		.iFlags = ImGuiChildFlags_Border,
+	});
+	inline std::unique_ptr<Text> guiCheatText = std::make_unique<Text>(std::string("CHEAT"), "CHEAT"_hash);
+	inline std::unique_ptr<Spacing> guiCheatSpacing1 = std::make_unique<Spacing>(std::string("SPACING_1"), "SPACING_1"_hash);
+	inline std::unique_ptr<Button> guiUnloadButton = std::make_unique<Button>(std::string("UNLOAD_BTN"), "UNLOAD_BTN"_hash);
+	inline std::unique_ptr<Button> guiConsoleVisibility = std::make_unique<Button>(std::string("CONSOLE_VISIBILITY"), "CONSOLE_HIDE"_hash, ElementBase::Style_t{
+		.bSameLine = true,
+	});
+	inline std::unique_ptr<Combo> guiLocalization = std::make_unique<Combo>(std::string("LANGUAGE"), "LANGUAGE"_hash);
+	inline std::unique_ptr<Checkbox> guiWatermark = std::make_unique<Checkbox>(std::string("WATER_MARK"), "WATER_MARK"_hash);
+	inline std::unique_ptr<Checkbox> guiWatermarkFPS = std::make_unique<Checkbox>(std::string("WATER_MARK_FPS"), "WATER_MARK_FPS"_hash);
+	inline std::unique_ptr<Button> guiSaveConfig = std::make_unique<Button>(std::string("SAVE_CONFIG"), "SAVE_CONFIG"_hash);
+	inline std::unique_ptr<Button> guiLoadConfig = std::make_unique<Button>(std::string("LOAD_CONFIG"), "LOAD_CONFIG"_hash, ElementBase::Style_t{
+		.bSameLine = true,
+	});
 
 
 	void Render();

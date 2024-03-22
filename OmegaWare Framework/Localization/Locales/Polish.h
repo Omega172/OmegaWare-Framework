@@ -2,15 +2,15 @@
 #include "../LocaleStructs.h"
 
 std::vector<LocaleData> PolishLocales = {
-	{HASH("CHEAT"), "Oszustwo"},
-	{HASH("UNLOAD_BTN"), "Wyłacz"},
-	{HASH("CONSOLE_SHOW"), "Pokaż Konsole"},
-	{HASH("CONSOLE_HIDE"), "Schowaj Konsole"},
-	{HASH("WATER_MARK"), "Znak wodny"},
-	{HASH("WATER_MARK_FPS"), "Widoczność FPS na Znaku Wodnym"},
-	{HASH("SAVE_CONFIG"), "Zapisz Konfiguracje"},
-	{HASH("LOAD_CONFIG"), "Wczytaj Konfiguracje"},
-	{HASH("LANGUAGE"), "Język"}
+	{"CHEAT"_hash, "Oszustwo"},
+	{"UNLOAD_BTN"_hash, "Wyłacz"},
+	{"CONSOLE_SHOW"_hash, "Pokaż Konsole"},
+	{"CONSOLE_HIDE"_hash, "Schowaj Konsole"},
+	{"WATER_MARK"_hash, "Znak wodny"},
+	{"WATER_MARK_FPS"_hash, "Widoczność FPS na Znaku Wodnym"},
+	{"SAVE_CONFIG"_hash, "Zapisz Konfiguracje"},
+	{"LOAD_CONFIG"_hash, "Wczytaj Konfiguracje"},
+	{"LANGUAGE"_hash, "Język"}
 };
 
-LocalizationData Polish{ "Polski", HASH("POL"), &TahomaFontPolish, &TahomaFontPolishESP, PolishLocales };
+LocalizationData Polish{ "Polski", "POL"_hash, &TahomaFontPolish, &TahomaFontPolishESP, PolishLocales };

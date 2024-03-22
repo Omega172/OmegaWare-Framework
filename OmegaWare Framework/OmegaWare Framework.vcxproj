@@ -231,6 +231,7 @@
     <ClInclude Include="GUI\Watermark.h" />
     <ClInclude Include="Hooks\Renderer\RendererHooks.h" />
     <ClInclude Include="Hooks\WndProc\WndProcHooks.h" />
+    <ClInclude Include="Libs\CRC64\CRC64.h" />
     <ClInclude Include="Libs\ImGui\imconfig.h" />
     <ClInclude Include="Libs\ImGui\imgui.h" />
     <ClInclude Include="Libs\ImGui\imgui_impl_dx11.h" />

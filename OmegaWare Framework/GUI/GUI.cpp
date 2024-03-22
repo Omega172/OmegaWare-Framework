@@ -35,19 +35,21 @@ void GUI::Render()
 		static std::once_flag onceflag;
 
 		std::call_once(onceflag, []() {
-			guiCheat->AddElement(static_cast<ElementBase*>(guiCheatText.get()), "CHEAT", {});
-			guiCheat->AddElement(static_cast<ElementBase*>(guiCheatSpacing1.get()), "SPACING_1", {});
-			guiCheat->AddElement(static_cast<ElementBase*>(guiUnloadButton.get()), "UNLOAD_BTN", {});
+			guiCheat->SetCallback([]() { return ImVec2(ImGui::GetContentRegionAvail().x / 3, ImGui::GetContentRegionAvail().y / 2); });
+
+			guiCheat->AddElement(static_cast<ElementBase*>(guiCheatText.get()));
+			guiCheat->AddElement(static_cast<ElementBase*>(guiCheatSpacing1.get()));
+			guiCheat->AddElement(static_cast<ElementBase*>(guiUnloadButton.get()));
 			guiUnloadButton->SetCallback([]() {
 				Cheat::bShouldRun = false;
 			});
-			guiCheat->AddElement(static_cast<ElementBase*>(guiConsoleVisibility.get()), "CONSOLE_VISIBILITY", {
-				.bSameLine = true,
-			});
+			guiCheat->AddElement(static_cast<ElementBase*>(guiConsoleVisibility.get()));
 			guiConsoleVisibility->SetCallback([]() {
 				Cheat::console->ToggleVisibility();
+
+				guiConsoleVisibility->SetName(Cheat::console->GetVisibility() ? "CONSOLE_HIDE"_hash : "CONSOLE_SHOW"_hash);
 			});
-			guiCheat->AddElement(static_cast<ElementBase*>(guiLocalization.get()), "LANGUAGE", {});
+			guiCheat->AddElement(static_cast<ElementBase*>(guiLocalization.get()));
 			guiLocalization->SetCallback([]() {
 				for (LocalizationData Locale : Cheat::Locales)
 				{
@@ -61,15 +63,13 @@ void GUI::Render()
 						ImGui::SetItemDefaultFocus();
 				}
 			});
-			guiCheat->AddElement(static_cast<ElementBase*>(guiWatermark.get()), "WATER_MARK", {});
-			guiCheat->AddElement(static_cast<ElementBase*>(guiWatermarkFPS.get()), "WATER_MARK_FPS", {});
-			guiCheat->AddElement(static_cast<ElementBase*>(guiSaveConfig.get()), "SAVE_CONFIG", {});
+			guiCheat->AddElement(static_cast<ElementBase*>(guiWatermark.get()));
+			guiCheat->AddElement(static_cast<ElementBase*>(guiWatermarkFPS.get()));
+			guiCheat->AddElement(static_cast<ElementBase*>(guiSaveConfig.get()));
 			guiSaveConfig->SetCallback([]() {
 				Cheat::config->SaveConfig();
 			});
-			guiCheat->AddElement(static_cast<ElementBase*>(guiLoadConfig.get()), "LOAD_CONFIG", {
-				.bSameLine = true,
-			});
+			guiCheat->AddElement(static_cast<ElementBase*>(guiLoadConfig.get()));
 			guiLoadConfig->SetCallback([]() {
 				Cheat::config->LoadConfig();
 			});
@@ -78,9 +78,7 @@ void GUI::Render()
 
 		if (!guiCheat->HasParent())
 		{
-			Cheat::menu->AddElement(static_cast<ElementBase*>(guiCheat.get()), "Cheat", {
-				.iFlags = ImGuiChildFlags_Border,
-			});
+			Cheat::menu->AddElement(static_cast<ElementBase*>(guiCheat.get()));
 		}
 
 		for (size_t i = 0; i < Features.size(); i++)

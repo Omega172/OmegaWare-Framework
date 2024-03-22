@@ -1,5 +1,7 @@
 #pragma once
+
 #include "LocaleStructs.h"
+#include "Libs/CRC64/CRC64.h"
 
 class Localization
 {
@@ -12,6 +14,9 @@ public:
 	bool IsInitialized();
 
 	std::string Get(std::string Key);
+	std::string Get(size_t ullKeyHash);
+
+	static std::string StaticGet(size_t ullKeyHash);
 
 	void LoadLocale(LocalizationData Locale);
 

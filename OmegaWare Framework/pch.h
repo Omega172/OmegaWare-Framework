@@ -45,6 +45,9 @@ static_assert((FRAMEWORK_RENDER_DYNAMIC + FRAMEWORK_RENDER_D3D11 + FRAMEWORK_REN
 static_assert(!(FRAMEWORK_RENDER_DYNAMIC || FRAMEWORK_RENDER_D3D12), "This does NOT work right now, please dont use ;3");
 
 #include "Libs/MinHook/include/MinHook.h"
+#include "Libs/CRC64/CRC64.h"
+
+using namespace std::literals;
 
 #endif
 
@@ -122,6 +125,9 @@ static_assert(!(FRAMEWORK_RENDER_DYNAMIC || FRAMEWORK_RENDER_D3D12), "This does 
 
 #include "GUI/Styles.h" // Include the Styles.h file that contains the ImGui styles for the framework
 
+#include "Localization/Localization.h"
+#include "Config/Config.h"
+
 #include "GUI/Custom.h" // Include the Custom.h file that contains the custom ImGui widgets for the framework
 #include "GUI/GUI.h" // Include the GUI.h file that contains the GUI class that is used to create the framework's menu
 
@@ -131,8 +137,8 @@ static_assert(!(FRAMEWORK_RENDER_DYNAMIC || FRAMEWORK_RENDER_D3D12), "This does 
 #define DEG2RAD(deg) deg * M_PI / 180 // A macro to convert degrees to radians
 #define RAD2DEG(rad) rad * 180.0 / M_PI; // A macro to convert radians to degrees
 
-#include "Config/Config.h"
-#include "Localization/Localization.h"
+
+
 
 #endif
 
@@ -162,7 +168,7 @@ namespace Cheat
 
 	inline std::unique_ptr<Console> console = std::make_unique<Console>(false, Title);  // A unique pointer to the console class that is used to create the console for the framework
 
-	inline std::unique_ptr<Menu> menu = std::make_unique<Menu>(Cheat::Title, ElementBase::Style_t({
+	inline std::unique_ptr<Menu> menu = std::make_unique<Menu>(Cheat::Title, Cheat::Title, ElementBase::Style_t({
 		.vec2Size = { GUI::WIDTH, GUI::HEIGHT },
 		.iFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoCollapse,
 	}));
