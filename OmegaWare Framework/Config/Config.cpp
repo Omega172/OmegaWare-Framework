@@ -16,11 +16,11 @@ Config::Config()
 
 	if (!std::filesystem::exists(ConfigPath))
 	{
-		//SaveConfig();
+		SaveConfig();
 		return;
 	}
 
-	//LoadConfig();
+	LoadConfig();
 	return;
 }
 
@@ -59,28 +59,4 @@ bool Config::LoadConfig()
 	Cheat::menu->ConfigLoad(jsonConfig);
 
 	return true;
-}
-
-void Config::PushEntry(std::string Name, std::string Type, std::string Value)
-{
-	ConfigEntry Entry;
-	Entry.Name = Name;
-	Entry.Type = Type;
-	Entry.Value = Value;
-	Cheat::Entries.push_back(Entry);
-}
-
-ConfigEntry Config::GetEntryByName(std::string Name)
-{
-	for (ConfigEntry Entry : Cheat::Entries)
-	{
-		if (Entry.Name == Name)
-			return Entry;
-	}
-
-	ConfigEntry Entry;
-	Entry.Name = "NULL";
-	Entry.Type = "NULL";
-	Entry.Value = "NULL";
-	return Entry;
 }

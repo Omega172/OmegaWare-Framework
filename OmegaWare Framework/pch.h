@@ -179,7 +179,6 @@ namespace Cheat
 #endif
 
 	inline std::unique_ptr<Config> config;
-	inline std::vector<ConfigEntry> Entries;
 
 	inline std::vector<LocalizationData> Locales;
 	inline LocalizationData CurrentLocale;
