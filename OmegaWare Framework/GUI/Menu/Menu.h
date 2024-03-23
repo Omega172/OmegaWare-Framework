@@ -272,26 +272,31 @@ public:
 	};
 };
 
+template<>
 inline std::string ElementInput<ImVec4>::ConvertToString() const
 {
 	return std::to_string(ImGui::ColorConvertFloat4ToU32(m_Value));
 };
 
+template<>
 inline std::string ElementInput<std::string>::ConvertToString() const
 {
 	return m_Value;
 };
 
+template<>
 inline ImVec4 ElementInput<ImVec4>::ConvertFromString(const std::string& str) const
 {
 	return ImGui::ColorConvertU32ToFloat4(std::stoul(str));
 };
 
+template<>
 inline std::string ElementInput<std::string>::ConvertFromString(const std::string& str) const
 {
 	return str;
 };
 
+template<>
 inline float ElementInput<float>::ConvertFromString(const std::string& str) const
 {
 	return std::stof(str);

@@ -35,7 +35,7 @@ void GUI::Render()
 		static std::once_flag onceflag;
 
 		std::call_once(onceflag, []() {
-			guiCheat->SetCallback([]() { return ImVec2(ImGui::GetContentRegionAvail().x / 3, ImGui::GetContentRegionAvail().y / 2); });
+			guiCheat->SetCallback([]() { return ImVec2(ImGui::GetContentRegionAvail().x / 2, ImGui::GetContentRegionAvail().y / 2); });
 
 			guiCheat->AddElement(guiCheatText.get());
 			guiCheat->AddElement(guiCheatSpacing1.get());

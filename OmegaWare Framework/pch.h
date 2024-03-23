@@ -170,7 +170,7 @@ namespace Cheat
 
 	inline std::unique_ptr<Menu> menu = std::make_unique<Menu>(Cheat::Title, Cheat::Title, ElementBase::Style_t({
 		.vec2Size = { GUI::WIDTH, GUI::HEIGHT },
-		.iFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoCollapse,
+		.iFlags = ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoCollapse,
 	}));
 		
 	inline std::unique_ptr<WndProcHooks> wndproc = std::make_unique<WndProcHooks>();

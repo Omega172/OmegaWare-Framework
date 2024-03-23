@@ -28,8 +28,9 @@ namespace GUI
 
 	
 	inline std::unique_ptr<Child> guiCheat = std::make_unique<Child>(std::string("CHEAT"), "CHEAT"_hash, ElementBase::Style_t{
-		.iFlags = ImGuiChildFlags_Border,
-	});
+		.bSameLine = true,
+		.iFlags = ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeX,
+	}, ImGuiWindowFlags_HorizontalScrollbar);
 	inline std::unique_ptr<Text> guiCheatText = std::make_unique<Text>(std::string("CHEAT"), "CHEAT"_hash);
 	inline std::unique_ptr<Spacing> guiCheatSpacing1 = std::make_unique<Spacing>(std::string("SPACING_1"), "SPACING_1"_hash);
 	inline std::unique_ptr<Button> guiUnloadButton = std::make_unique<Button>(std::string("UNLOAD_BTN"), "UNLOAD_BTN"_hash);
