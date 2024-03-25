@@ -169,7 +169,7 @@ namespace Cheat
 	inline std::unique_ptr<Console> console = std::make_unique<Console>(false, Title);  // A unique pointer to the console class that is used to create the console for the framework
 
 	inline std::unique_ptr<Menu> menu = std::make_unique<Menu>(Cheat::Title, Cheat::Title, ElementBase::Style_t({
-		.vec2Size = { GUI::WIDTH, GUI::HEIGHT },
+		.vec2Size = ImVec2{ 800.f, 600.f },
 		.iFlags = ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoCollapse,
 	}));
 		

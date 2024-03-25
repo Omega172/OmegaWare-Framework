@@ -8,8 +8,7 @@ private:
 	std::mutex Mutex;
 
 	std::unique_ptr<Child> guiSection = std::make_unique<Child>("EXAMPLE_FEATURE", "EXAMPLE_FEATURE", ElementBase::Style_t{
-		.bSameLine = true,
-		.iFlags = ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeX,
+		.iFlags = ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeX | ImGuiChildFlags_AutoResizeY,
 	}, ImGuiWindowFlags_HorizontalScrollbar);
 	std::unique_ptr<Text> guiCheckboxText = std::make_unique<Text>("CHECKBOX_TEXT", "EXAMPLE_FEATURE"_hash);
 	std::unique_ptr<Checkbox> guiCheckbox = std::make_unique<Checkbox>("CHECKBOX", "EXAMPLE_FEATURE"_hash);
@@ -18,8 +17,7 @@ private:
 
 
 	std::unique_ptr<Child> guiSectionDos = std::make_unique<Child>("EXAMPLE_FEATURE2", "EXAMPLE_FEATURE2", ElementBase::Style_t{
-		.bSameLine = true,
-		.iFlags = ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeX,
+		.iFlags = ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeX | ImGuiChildFlags_AutoResizeY,
 	}, ImGuiWindowFlags_HorizontalScrollbar);
 
 	std::unique_ptr<ColorPicker> guiColorPicker = std::make_unique<ColorPicker>("EXAMPLE_COLORPICKER", "EXAMPLE_COLORPICKER"_hash);

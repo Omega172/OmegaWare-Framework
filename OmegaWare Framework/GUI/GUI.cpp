@@ -35,7 +35,20 @@ void GUI::Render()
 		static std::once_flag onceflag;
 
 		std::call_once(onceflag, []() {
-			guiCheat->SetCallback([]() { return ImVec2(ImGui::GetContentRegionAvail().x / 2, ImGui::GetContentRegionAvail().y / 2); });
+			guiCheat->SetCallback([]() { 
+				ImGuiContext* pContext = ImGui::GetCurrentContext();
+
+				ImVec2 vec2Size = (Cheat::menu->m_stStyle.vec2Size / ImVec2{ 3.f, 2.f }) - pContext->Style.ItemSpacing;
+				ImVec2 vec2MaxSize = ImGui::GetContentRegionAvail();
+
+				if (vec2Size.x > vec2MaxSize.x)
+					vec2Size.x = vec2MaxSize.x;
+
+				if (vec2Size.y > vec2MaxSize.y)
+					vec2Size.y = vec2MaxSize.y;
+
+				return vec2Size;
+			});
 
 			guiCheat->AddElement(guiCheatText.get());
 			guiCheat->AddElement(guiCheatSpacing1.get());

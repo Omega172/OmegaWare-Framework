@@ -7,23 +7,45 @@
 class ElementBase
 {
 public:
+	enum class EElementType : uint8_t
+	{
+		None,
+		Button,
+		Checkbox,
+		Child,
+		ColorPicker,
+		Combo,
+		Hotkey,
+		InputText,
+		Menu,
+		SliderFloat,
+		SliderInt,
+		Spacing,
+		Text,
+	};
+
+	enum class ESameLine : uint8_t
+	{
+		New,      // Force element to be on a new line
+		Same,     // Force element to be on the same line
+		Dynamic,  // Potentially buggy, only use if you know what you are doing
+	};
+
 	typedef struct Style_t
 	{
-		bool bVisible = true;
-		bool bChildrenVisible = true;
+		bool bVisible : 1 = true;
+		bool bChildrenVisible : 1 = true;
+		ESameLine eSameLine : 2 = ESameLine::Dynamic;
 
-		bool bSameLine = false;
 		float flSpacing = -1.f;
 
 		ImVec2 vec2Size = { 100.f, 0.f };
 		ImDrawFlags iFlags = 0;
-
 	} Style_t;
-
+	
+	Style_t m_stStyle;
 	
 protected:
-	Style_t m_stStyle;
-
 	// used to display a custom or unlocalized name for elements like buttons
 	bool m_bUnlocalizedName = false;
 	std::string m_sUnlocalizedName = "";
@@ -34,6 +56,49 @@ protected:
 	
 	ElementBase* m_pParent = nullptr;
 	std::vector<ElementBase*> m_Children;
+
+	inline void SameLine()
+	{
+		switch (m_stStyle.eSameLine)
+		{
+		// Force draw on the same line
+		case(ESameLine::Same):
+			ImGui::SameLine(0.f, m_stStyle.flSpacing);
+			break;
+
+		// Ask our parent if we should draw on the same line or not
+		case(ESameLine::Dynamic):
+			if (m_pParent != nullptr)
+				m_pParent->RequestSameLine(this);
+			break;
+
+		// Draw on a new line
+		case(ESameLine::New):
+		default:
+			break;
+		}
+	};
+
+	void ConfigSaveChildren(nlohmann::json& jsonParent) const
+	{
+		for (ElementBase* const pElement : m_Children)
+			pElement->ConfigSave(jsonParent);
+	};
+
+	void ConfigLoadChildren(nlohmann::json& jsonParent)
+	{
+		for (ElementBase* const pElement : m_Children)
+			pElement->ConfigLoad(jsonParent);
+	};
+
+	void RenderChildren()
+	{
+		if (!m_stStyle.bChildrenVisible)
+			return;
+
+		for (ElementBase* const pElement : m_Children)
+			pElement->Render();
+	};
 
 public:
 
@@ -144,6 +209,15 @@ public:
 		return m_stStyle.bChildrenVisible;
 	};
 
+	virtual constexpr EElementType GetType() const
+	{
+		return EElementType::None;
+	};
+
+	// Will determine if elements should be placed on the same line or not
+	virtual void RequestSameLine(ElementBase* pChild)
+	{};
+
 	virtual void ConfigSave(nlohmann::json& jsonParent) const
 	{
 		if (!HasChildren())
@@ -154,12 +228,6 @@ public:
 		ConfigSaveChildren(jsonEntry);
 	};
 
-	virtual void ConfigSaveChildren(nlohmann::json& jsonParent) const
-	{
-		for (ElementBase* const pElement : m_Children)
-			pElement->ConfigSave(jsonParent);
-	};
-
 	virtual void ConfigLoad(nlohmann::json& jsonParent)
 	{
 		if (!HasChildren() || !jsonParent.contains(m_sUnique.c_str()))
@@ -168,27 +236,12 @@ public:
 		ConfigLoadChildren(jsonParent[m_sUnique.c_str()]);
 	};
 
-	virtual void ConfigLoadChildren(nlohmann::json& jsonParent)
-	{
-		for (ElementBase* const pElement : m_Children)
-			pElement->ConfigLoad(jsonParent);
-	};
-
 	virtual void Render()
 	{
 		if (!m_stStyle.bVisible)
 			return;
 
 		RenderChildren();
-	};
-
-	virtual void RenderChildren()
-	{
-		if (!m_stStyle.bChildrenVisible)
-			return;
-
-		for (ElementBase* const pElement : m_Children)
-			pElement->Render();
 	};
 };
 
@@ -320,6 +373,11 @@ public:
 		m_stStyle = stStyle;
 	};
 
+	constexpr EElementType GetType() const override
+	{
+		return EElementType::Spacing;
+	};
+
 	void Render() override
 	{ 
 		ImGui::Spacing(); 
@@ -329,13 +387,22 @@ public:
 class Menu : public ElementBase
 {
 protected:
+	uint8_t m_ucSameLinedElements = 1;
+	EElementType m_eLastSameLinedElement = EElementType::None;
+
+	ImVec2 m_vec2MinSize = { 0.f, 0.f };
+	ImVec2 m_vec2MaxSize = { 9999.f, 9999.f };
 
 public:
+
 	Menu(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {})
 	{
 		m_sUnique = sUnique;
 		m_ullLocalizedNameHash = ullLocalizedNameHash;
 		m_stStyle = stStyle;
+
+		m_vec2MinSize = m_stStyle.vec2Size * 0.75f;
+		m_vec2MaxSize = m_stStyle.vec2Size * 2.f;
 	};
 
 	Menu(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle = {})
@@ -344,25 +411,65 @@ public:
 		m_bUnlocalizedName = true;
 		m_sUnlocalizedName = sUnlocalizedName;
 		m_stStyle = stStyle;
+
+		m_vec2MinSize = m_stStyle.vec2Size * 0.75f;
+		m_vec2MaxSize = m_stStyle.vec2Size * 2.f;
+	};
+
+	constexpr EElementType GetType() const override
+	{
+		return EElementType::Menu;
+	};
+
+	// Will determine if elements should be placed on the same line or not
+	void RequestSameLine(ElementBase* pChild) override
+	{
+		if (!pChild)
+			return;
+
+		EElementType eChildType = pChild->GetType();
+
+		// Using the same line for multiple different element types should be done manually
+		if (eChildType != m_eLastSameLinedElement)
+		{
+			m_ucSameLinedElements = 1;
+			m_eLastSameLinedElement = eChildType;
+			return;
+		}
+
+		switch (eChildType)
+		{
+		case(EElementType::Button):
+		case(EElementType::Child):
+		{
+			if (m_ucSameLinedElements >= 3)
+			{
+				m_ucSameLinedElements = 1;
+				break;
+			}
+
+			++m_ucSameLinedElements;
+			ImGui::SameLine(0.f, pChild->m_stStyle.flSpacing);
+
+			break;
+		}
+		default:
+			break;
+		}
 	};
 
 	void Render() override
 	{
-		ImGui::SetNextWindowSize(m_stStyle.vec2Size);
-		ImGui::Begin(GetName().c_str(), &m_stStyle.bVisible, m_stStyle.iFlags);
-		RenderChildren();
-		ImGui::End();
-	}
+		m_ucSameLinedElements = 1;
+		m_eLastSameLinedElement = EElementType::None;
 
-	void StartRender()
-	{
+		
 		ImGui::SetNextWindowSize(m_stStyle.vec2Size);
-		ImGui::Begin(GetName().c_str(), &m_stStyle.bVisible, m_stStyle.iFlags);
-		RenderChildren();
-	}
+		ImGui::SetNextWindowSizeConstraints(m_vec2MinSize, m_vec2MaxSize);
+		ImGui::Begin(GetName().c_str(), NULL, m_stStyle.iFlags);
+		m_stStyle.vec2Size = ImGui::GetWindowSize();
 
-	void EndRender()
-	{
+		RenderChildren();
 		ImGui::End();
 	}
 };
@@ -393,13 +500,17 @@ public:
 		m_WindowFlags = WindowFlags;
 	};
 
+	constexpr EElementType GetType() const override
+	{
+		return EElementType::Child;
+	};
+
 	void Render() override
 	{
 		if (!m_stStyle.bVisible)
 			return;
 
-		if (m_stStyle.bSameLine)
-			ImGui::SameLine(0.f, m_stStyle.flSpacing);
+		SameLine();
 
 		if (m_Callback)
 			m_stStyle.vec2Size = m_Callback();
@@ -435,13 +546,17 @@ public:
 		m_stStyle = stStyle;
 	};
 
+	constexpr EElementType GetType() const override
+	{
+		return EElementType::Text;
+	};
+
 	void Render() override
 	{
 		if (!m_stStyle.bVisible)
 			return;
 
-		if (m_stStyle.bSameLine)
-			ImGui::SameLine(0.f, m_stStyle.flSpacing);
+		SameLine();
 
 		ImGui::Text(GetName().c_str());
 	};
@@ -469,13 +584,17 @@ public:
 		m_stStyle = stStyle;
 	};
 
+	constexpr EElementType GetType() const override
+	{
+		return EElementType::Button;
+	};
+
 	void Render() override
 	{
 		if (!m_stStyle.bVisible)
 			return;
 
-		if (m_stStyle.bSameLine)
-			ImGui::SameLine(0.f, m_stStyle.flSpacing);
+		SameLine();
 
 		if (ImGui::Button(GetName().c_str()))
 			if (m_Callback)
@@ -513,13 +632,17 @@ public:
 		m_stStyle = stStyle;
 	};
 
+	constexpr EElementType GetType() const override
+	{
+		return EElementType::Combo;
+	};
+
 	void Render() override
 	{
 		if (!m_stStyle.bVisible)
 			return;
 
-		if (m_stStyle.bSameLine)
-			ImGui::SameLine(0.f, m_stStyle.flSpacing);
+		SameLine();
 
 		if (ImGui::BeginCombo(GetName().c_str(), m_sPreviewlabel.c_str(), m_stStyle.iFlags))
 		{
@@ -558,13 +681,17 @@ public:
 		m_stStyle = stStyle;
 	};
 
+	constexpr EElementType GetType() const override
+	{
+		return EElementType::Checkbox;
+	};
+
 	void Render() override
 	{
 		if (!m_stStyle.bVisible)
 			return;
 
-		if (m_stStyle.bSameLine)
-			ImGui::SameLine(0.f, m_stStyle.flSpacing);
+		SameLine();
 
 		ImGui::Checkbox(GetName().c_str(), &m_Value);
 
@@ -594,13 +721,17 @@ public:
 		m_stStyle = stStyle;
 	};
 
+	constexpr EElementType GetType() const override
+	{
+		return EElementType::Hotkey;
+	};
+
 	void Render() override
 	{
 		if (!m_stStyle.bVisible)
 			return;
 
-		if (m_stStyle.bSameLine)
-			ImGui::SameLine(0.f, m_stStyle.flSpacing);
+		SameLine();
 
 		ImGui::Hotkey(GetName().c_str(), m_Key, m_stStyle.vec2Size);
 
@@ -637,13 +768,17 @@ public:
 		SetValue(Value);
 	};
 
+	constexpr EElementType GetType() const override
+	{
+		return EElementType::SliderFloat;
+	};
+
 	void Render() override
 	{
 		if (!m_stStyle.bVisible)
 			return;
 
-		if (m_stStyle.bSameLine)
-			ImGui::SameLine(0.f, m_stStyle.flSpacing);
+		SameLine();
 
 		ImGui::SliderFloat(GetName().c_str(), &m_Value, m_Min, m_Max, m_sFormat, m_stStyle.iFlags);
 
@@ -680,13 +815,17 @@ public:
 		SetValue(Value);
 	};
 
+	constexpr EElementType GetType() const override
+	{
+		return EElementType::SliderInt;
+	};
+
 	void Render() override
 	{
 		if (!m_stStyle.bVisible)
 			return;
 
-		if (m_stStyle.bSameLine)
-			ImGui::SameLine(0.f, m_stStyle.flSpacing);
+		SameLine();
 
 		ImGui::SliderInt(GetName().c_str(), &m_Value, m_Min, m_Max, m_sFormat, m_stStyle.iFlags);
 
@@ -720,13 +859,17 @@ public:
 		m_Value.resize(ullBufferSize);
 	};
 
+	constexpr EElementType GetType() const override
+	{
+		return EElementType::InputText;
+	};
+
 	void Render() override
 	{
 		if (!m_stStyle.bVisible)
 			return;
 
-		if (m_stStyle.bSameLine)
-			ImGui::SameLine(0.f, m_stStyle.flSpacing);
+		SameLine();
 
 		ImGui::InputText(GetName().c_str(), m_Value.data(), m_Value.capacity(), m_stStyle.iFlags, m_Callback, m_pUserData);
 
@@ -764,13 +907,17 @@ public:
 		m_stStyle = stStyle;
 	};
 
+	constexpr EElementType GetType() const override
+	{
+		return EElementType::ColorPicker;
+	};
+
 	void Render() override
 	{
 		if (!m_stStyle.bVisible)
 			return;
 
-		if (m_stStyle.bSameLine)
-			ImGui::SameLine(0.f, m_stStyle.flSpacing);
+		SameLine();
 
 		ImGui::ColorEdit4(GetName().c_str(), reinterpret_cast<float*>(&m_Value), m_stStyle.iFlags);
 
