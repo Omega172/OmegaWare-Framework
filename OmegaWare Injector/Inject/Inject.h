@@ -3,6 +3,9 @@
 #include <string>
 #include <fstream>
 
+#include <thread>
+#include <chrono>
+
 namespace Inject
 {
 	inline bool BypassVAC(HANDLE hProc)
