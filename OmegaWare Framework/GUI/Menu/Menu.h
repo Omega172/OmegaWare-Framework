@@ -151,7 +151,7 @@ public:
 		if (m_bUnlocalizedName)
 			return m_sUnlocalizedName;
 		
-		return Localization::StaticGet(m_ullLocalizedNameHash);
+		return Localization::Get(m_ullLocalizedNameHash);
 	};
 
 	// Sets that we want an unlocalized name and replaces the internal unlocalized name string

@@ -4,11 +4,13 @@
 #pragma warning(disable : 4312)
 #include "pch.h"
 
+#define FRAMEWORK_UNITY 1
+
 // This is where the magic happens, for unity games running mono anyway.
 #if FRAMEWORK_UNITY
 
-#include "..\mono\metadata\threads.h"
-#include "..\mono\metadata\object.h"
+#include "Mono\metadata\threads.h"
+#include "Mono\metadata\object.h"
 
 // https://github.com/mono/mono/
 // https://learn.microsoft.com/en-us/dotnet/standard/native-interop/type-marshalling
@@ -29,7 +31,7 @@ typedef void (*t_mono_field_set_value)(MonoObject* obj, MonoClassField* field, v
 typedef MonoClass* (*t_mono_method_get_class)(MonoMethod* method);
 typedef MonoVTable* (*t_mono_class_vtable)(MonoDomain* domain, MonoClass* klass);
 typedef void* (*t_mono_vtable_get_static_field_data)(MonoVTable* vt);
-typedef uint32_t (*t_mono_field_get_offset)(MonoClassField* field);
+typedef uint32_t(*t_mono_field_get_offset)(MonoClassField* field);
 
 class Mono
 {
@@ -76,7 +78,7 @@ private:
 		mono_class_vtable = reinterpret_cast<t_mono_class_vtable>(GetProcAddress(hMono, "mono_class_vtable"));
 		mono_vtable_get_static_field_data = reinterpret_cast<t_mono_vtable_get_static_field_data>(GetProcAddress(hMono, "mono_vtable_get_static_field_data"));
 		mono_field_get_offset = reinterpret_cast<t_mono_field_get_offset>(GetProcAddress(hMono, "mono_field_get_offset"));
-		
+
 		// Attach thread to prevent crashes
 		mono_thread_attach = reinterpret_cast<t_mono_thread_attach>(GetProcAddress(hMono, "mono_thread_attach"));
 		mono_get_root_domain = reinterpret_cast<t_mono_get_root_domain>(GetProcAddress(hMono, "mono_get_root_domain"));
@@ -186,7 +188,7 @@ public:
 		MonoClassField* pField = mono_class_get_field_from_name(pKlass, fieldName);
 		return pField;
 	}
-	
+
 	MonoClassField* GetField(MonoClass* pKlass, const char* fieldName)
 	{
 		MonoClassField* pField = mono_class_get_field_from_name(pKlass, fieldName);
@@ -241,7 +243,7 @@ public:
 		uint32_t offset = GetFieldOffset(pField);
 
 		void* value = reinterpret_cast<void*>(addr + offset);
-		
+
 		return value;
 	}
 

@@ -61,7 +61,7 @@ void Memory::EnumerateHandles(EnumerateHandlesFunc fn)
 HANDLE Memory::GetPrivilegedHandleToProcess(DWORD dwProcessId)
 {
 	if (!dwProcessId)
-		dwProcessId = Cheat::wndproc->dwProcessId;
+		dwProcessId = Framework::wndproc->dwProcessId;
 
 	HANDLE rv = nullptr;
 

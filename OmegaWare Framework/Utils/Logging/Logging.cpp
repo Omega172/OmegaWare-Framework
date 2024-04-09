@@ -29,7 +29,7 @@ void Utils::LogError(Location stLocation, int iErrorCode)
 {
 #ifdef _DEBUG
 	std::stringstream SS;
-	SS << Utils::GetDocumentsFolder() << "\\\\" << Cheat::Framework << "\\\\";
+	SS << Utils::GetDocumentsFolder() << "\\\\" << Framework::Framework << "\\\\";
 	if (!std::filesystem::exists(SS.str()))
 		std::filesystem::create_directory(SS.str());
 
@@ -64,7 +64,7 @@ void Utils::LogError(Location stLocation, std::string sErrorMessage)
 {
 #ifdef _DEBUG
 	std::stringstream SS;
-	SS << Utils::GetDocumentsFolder() << "\\\\" << Cheat::Framework << "\\\\";
+	SS << Utils::GetDocumentsFolder() << "\\\\" << Framework::Framework << "\\\\";
 	if (!std::filesystem::exists(SS.str()))
 		std::filesystem::create_directory(SS.str());
 

@@ -4,10 +4,10 @@
 
 void GUI::Render()
 {
-	if (!Cheat::bInitalized)
+	if (!Framework::bInitalized)
 		return;
 
-	if (ImGui::IsKeyPressed(Cheat::keyMenuKey) || ImGui::IsKeyPressed(ImGuiKey_GamepadStart))
+	if (ImGui::IsKeyPressed(Framework::keyMenuKey) || ImGui::IsKeyPressed(ImGuiKey_GamepadStart))
 	{
 		bMenuOpen = !bMenuOpen;
 		ImGui::GetIO().MouseDrawCursor = GUI::bMenuOpen;
@@ -16,11 +16,11 @@ void GUI::Render()
 			SetCursor(NULL);
 	}
 
-	if (ImGui::IsKeyPressed(Cheat::keyConsoleKey))
-		Cheat::console->ToggleVisibility();
+	if (ImGui::IsKeyPressed(Framework::keyConsoleKey))
+		Framework::console->ToggleVisibility();
 
-	if (ImGui::IsKeyPressed(Cheat::keyUnloadKey1) || ImGui::IsKeyPressed(Cheat::keyUnloadKey2))
-		Cheat::bShouldRun = false;
+	if (ImGui::IsKeyPressed(Framework::keyUnloadKey1) || ImGui::IsKeyPressed(Framework::keyUnloadKey2))
+		Framework::bShouldRun = false;
 
 	for (size_t i = 0; i < Features.size(); i++)
 	{
@@ -28,7 +28,7 @@ void GUI::Render()
 	}
 
 	if (guiWatermark->GetValue())
-		showWatermark(guiWatermarkFPS->GetValue(), Cheat::Title.c_str(), ImVec4(255, 255, 255, 255), ImVec4(255, 255, 255, 0));
+		showWatermark(guiWatermarkFPS->GetValue(), Framework::Title.c_str(), ImVec4(255, 255, 255, 255), ImVec4(255, 255, 255, 0));
 
 	if (bMenuOpen)
 	{
@@ -38,7 +38,7 @@ void GUI::Render()
 			guiCheat->SetCallback([]() { 
 				ImGuiContext* pContext = ImGui::GetCurrentContext();
 
-				ImVec2 vec2Size = (Cheat::menu->m_stStyle.vec2Size / ImVec2{ 3.f, 2.f }) - pContext->Style.ItemSpacing;
+				ImVec2 vec2Size = (Framework::menu->m_stStyle.vec2Size / ImVec2{ 3.f, 2.f }) - pContext->Style.ItemSpacing;
 				ImVec2 vec2MaxSize = ImGui::GetContentRegionAvail();
 
 				if (vec2Size.x > vec2MaxSize.x)
@@ -54,24 +54,26 @@ void GUI::Render()
 			guiCheat->AddElement(guiCheatSpacing1.get());
 			guiCheat->AddElement(guiUnloadButton.get());
 			guiUnloadButton->SetCallback([]() {
-				Cheat::bShouldRun = false;
+				Framework::bShouldRun = false;
 			});
 			guiCheat->AddElement(guiConsoleVisibility.get());
 			guiConsoleVisibility->SetCallback([]() {
-				Cheat::console->ToggleVisibility();
+				Framework::console->ToggleVisibility();
 
-				guiConsoleVisibility->SetName(Cheat::console->GetVisibility() ? "CONSOLE_HIDE"_hash : "CONSOLE_SHOW"_hash);
+				guiConsoleVisibility->SetName(Framework::console->GetVisibility() ? "CONSOLE_HIDE"_hash : "CONSOLE_SHOW"_hash);
 			});
 			guiCheat->AddElement(guiLocalization.get());
 			guiLocalization->SetCallback([]() {
-				for (LocalizationData Locale : Cheat::Locales)
+				std::vector<Locale_t> vecLocales = Localization::GetLocales();
+				for (size_t i = 0; i < vecLocales.size(); ++i)
 				{
-					bool bSelected = Cheat::CurrentLocale.LocaleCode == Locale.LocaleCode;
-					if (ImGui::Selectable(Locale.Name.c_str(), bSelected))
+					bool bSelected = Localization::GetCurrentLocaleIndex() == i;
+					Locale_t stLocale = vecLocales.at(i);
+					if (ImGui::Selectable(stLocale.sKey.c_str(), bSelected))
 					{
-						Cheat::CurrentLocale = Locale;
-						Cheat::localization->SetLocale(Locale.LocaleCode);
+						Localization::SetLocale(stLocale.ullKeyHash);
 					}
+
 					if (bSelected)
 						ImGui::SetItemDefaultFocus();
 				}
@@ -80,18 +82,19 @@ void GUI::Render()
 			guiCheat->AddElement(guiWatermarkFPS.get());
 			guiCheat->AddElement(guiSaveConfig.get());
 			guiSaveConfig->SetCallback([]() {
-				Cheat::config->SaveConfig();
+				Framework::config->SaveConfig();
 			});
 			guiCheat->AddElement(guiLoadConfig.get());
 			guiLoadConfig->SetCallback([]() {
-				Cheat::config->LoadConfig();
+				Framework::config->LoadConfig();
 			});
 		});
 
+		guiWatermarkFPS->SetVisible(guiWatermark->GetValue());
 
 		if (!guiCheat->HasParent())
 		{
-			Cheat::menu->AddElement(guiCheat.get());
+			Framework::menu->AddElement(guiCheat.get());
 		}
 
 		for (size_t i = 0; i < Features.size(); i++)
@@ -99,7 +102,7 @@ void GUI::Render()
 			Features[i]->HandleMenu();
 		}
 
-		Cheat::menu->Render();
+		Framework::menu->Render();
 	}
 
 	//

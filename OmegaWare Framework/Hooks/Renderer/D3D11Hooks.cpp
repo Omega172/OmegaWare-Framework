@@ -187,7 +187,7 @@ static HRESULT WINAPI hkCreateSwapChainForComposition(IDXGIFactory* pFactory, IU
 
 bool RendererHooks::D3D11Setup()
 {
-	if (!CreateDevice(Cheat::wndproc.get()->hwndWindow)) {
+	if (!CreateDevice(Framework::wndproc.get()->hwndWindow)) {
 		LogErrorHere("Unable to create dx11 device!");
 		return false;
 	}

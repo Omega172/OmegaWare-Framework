@@ -4,30 +4,22 @@ ExampleFeature::ExampleFeature() {};
 
 bool ExampleFeature::Setup()
 {
-	std::vector<LocaleData> EnglishLocale = {
+	Localization::AddToLocale("ENG", std::initializer_list<std::pair<size_t, std::string>>{
 		{ "EXAMPLE_FEATURE"_hash, "Example Feature" },
 		{ "EXAMPLE_FEATURE_HW"_hash, "Hello, World!" },
 		{ "EXAMPLE_FEATURE_SLIDER"_hash, "Cool slider boi?" },
-		{ "EXAMPLE_COLORPICKER"_hash, "Color pickah!" }
-	};
-	if (!Cheat::localization->AddToLocale("ENG", EnglishLocale))
-		return false;
+		{ "EXAMPLE_COLORPICKER"_hash, "Color pickah!" },
+	});
 
-	std::vector<LocaleData> GermanLocale = {
+	Localization::AddToLocale("GER", std::initializer_list<std::pair<size_t, std::string>>{
 		{ "EXAMPLE_FEATURE"_hash, "Beispielfunktion" },
 		{ "EXAMPLE_FEATURE_HW"_hash, "Hallo Welt!" }
-	};
-	if (!Cheat::localization->AddToLocale("GER", GermanLocale))
-		return false;
+	});
 
-	std::vector<LocaleData> PolishLocale = {
+	Localization::AddToLocale("POL", std::initializer_list<std::pair<size_t, std::string>>{
 		{ "EXAMPLE_FEATURE"_hash, "Przykładowa Funkcja" },
 		{ "EXAMPLE_FEATURE_HW"_hash, "Cześć Świecie!" }
-	};
-	if (!Cheat::localization->AddToLocale("POL", PolishLocale))
-		return false;
-
-	Cheat::localization->UpdateLocale();
+	});
 
 	LogDebugHere("Feature: ExampleFeature Initialized");
 
@@ -50,7 +42,7 @@ void ExampleFeature::HandleMenu()
 		guiSection->SetCallback([]() {
 			ImGuiContext* pContext = ImGui::GetCurrentContext();
 
-			ImVec2 vec2Size = (Cheat::menu->m_stStyle.vec2Size / ImVec2{ 3.f, 2.f }) - pContext->Style.ItemSpacing;
+			ImVec2 vec2Size = (Framework::menu->m_stStyle.vec2Size / ImVec2{ 3.f, 2.f }) - pContext->Style.ItemSpacing;
 			ImVec2 vec2MaxSize = ImGui::GetContentRegionAvail();
 
 			if (vec2Size.x > vec2MaxSize.x)
@@ -71,7 +63,7 @@ void ExampleFeature::HandleMenu()
 		guiSectionDos->SetCallback([]() {
 			ImGuiContext* pContext = ImGui::GetCurrentContext();
 
-			ImVec2 vec2Size = (Cheat::menu->m_stStyle.vec2Size / ImVec2{ 3.f, 2.f }) - pContext->Style.ItemSpacing;
+			ImVec2 vec2Size = (Framework::menu->m_stStyle.vec2Size / ImVec2{ 3.f, 2.f }) - pContext->Style.ItemSpacing;
 			ImVec2 vec2MaxSize = ImGui::GetContentRegionAvail();
 
 			if (vec2Size.x > vec2MaxSize.x)
@@ -86,10 +78,10 @@ void ExampleFeature::HandleMenu()
 	});
 
 	if (!guiSection->HasParent())
-		Cheat::menu->AddElement(guiSection.get());
+		Framework::menu->AddElement(guiSection.get());
 
 	if (!guiSectionDos->HasParent())
-		Cheat::menu->AddElement(guiSectionDos.get());
+		Framework::menu->AddElement(guiSectionDos.get());
 
 	guiCheckbox->SetChildrenVisible(guiCheckbox->GetValue());
 }

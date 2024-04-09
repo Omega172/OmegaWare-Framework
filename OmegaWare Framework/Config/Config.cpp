@@ -5,7 +5,7 @@
 Config::Config()
 {
 	std::stringstream SS;
-	SS << Utils::GetDocumentsFolder() << "\\" << Cheat::Framework << "\\";
+	SS << Utils::GetDocumentsFolder() << "\\" << Framework::Framework << "\\";
 	if (!std::filesystem::exists(SS.str()))
 		std::filesystem::create_directory(SS.str());
 
@@ -34,7 +34,7 @@ bool Config::SaveConfig()
 	}
 
 	nlohmann::json jsonConfig;
-	Cheat::menu->ConfigSave(jsonConfig);
+	Framework::menu->ConfigSave(jsonConfig);
 
 	fileConfig << jsonConfig.dump(4);
 	fileConfig.close();
@@ -56,7 +56,7 @@ bool Config::LoadConfig()
 	nlohmann::json jsonConfig(nlohmann::json::parse(ssContainer.str()));
 	fileConfig.close();
 
-	Cheat::menu->ConfigLoad(jsonConfig);
+	Framework::menu->ConfigLoad(jsonConfig);
 
 	return true;
 }
