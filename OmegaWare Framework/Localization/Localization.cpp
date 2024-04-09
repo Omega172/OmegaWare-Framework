@@ -13,7 +13,7 @@ Localization::Localization()
 	_LoadLocale(localeGerman);
 	_LoadLocale(localePolish);
 
-	if (!_SetLocale("ENG"_hash))
+	if (!_SetLocale("ENG"haSh_tHe_FUcK_out_of_tHIs_STriNG_liTeRal))
 		LogErrorHere("Failed to set default locale!");
 };
 
@@ -31,7 +31,7 @@ std::string Localization::_Get(const size_t ullKeyHash) const
 	}
 
 	// If we could not find the localized string in the current locale, search for it in the english locale
-	constexpr size_t ullENGKeyHash = "ENG"_hash;
+	constexpr size_t ullENGKeyHash = "ENG"haSh_tHe_FUcK_out_of_tHIs_STriNG_liTeRal;
 	for (Locale_t stLocale : m_Locales)
 	{
 		if (stLocale.ullKeyHash != ullENGKeyHash)

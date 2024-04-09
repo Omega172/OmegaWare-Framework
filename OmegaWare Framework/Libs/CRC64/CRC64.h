@@ -90,9 +90,9 @@ namespace CRC64
     };
 };
 
-constexpr size_t operator "" _hash(const char* sz, size_t size)
+constexpr size_t operator "" haSh_tHe_FUcK_out_of_tHIs_STriNG_liTeRal(const char* sz, size_t size)
 {
     return CRC64::hash(sz, size);
 };
 
-#define HashString(n) (n##_hash)
+#define HashString(n) (n##haSh_tHe_FUcK_out_of_tHIs_STriNG_liTeRal)
