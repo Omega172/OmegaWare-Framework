@@ -19,7 +19,7 @@ inline ImU32 Gray = ImGui::ColorConvertFloat4ToU32({ .8f, .8f, .8f, 1.f });
 
 namespace GUI
 {
-	inline bool bMenuOpen = false;
+	inline bool bMenuOpen = true;
 
 	inline float sWIDTH = float(GetSystemMetrics(SM_CXSCREEN));
 	inline float sHEIGHT = float(GetSystemMetrics(SM_CYSCREEN));

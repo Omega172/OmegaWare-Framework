@@ -122,10 +122,17 @@ void GUI::Render()
 	Cheat::unreal->ActorLock.unlock();
 #endif
 
+	// Load config on startup
+	if (Framework::menu->HasChildren())
+	{
+		std::call_once(LoadFlag, []() {
+			Framework::config->LoadConfig();
+			ImGui::GetIO().MouseDrawCursor = GUI::bMenuOpen;
 
-	std::call_once(LoadFlag, []() {
-		Framework::config->LoadConfig();
-	});
+			if (ImGui::GetIO().MouseDrawCursor)
+				SetCursor(NULL);
+		});
+	}
 	//
 	// End Other Render Stuff
 	//
