@@ -1,8 +1,7 @@
 #include <Windows.h>
 #include <filesystem>
 
-#include "../OmegaWare Framework/FrameworkConfig.h"
-#include "../OmegaWare Framework/PCH/pch.h"
+#include "../OmegaWare Internal Framework/FrameworkConfig.h"
 #include "Parse/Parse.h"
 #include "Utils/Utils.h"
 #include "Inject/Inject.h"
@@ -19,7 +18,11 @@ enum ERROR_CODES
 
 int main(int argc, char** argv, char** envp)
 {
-	SetConsoleTitleA(Framework::Title.c_str());
+	const std::string Framework = FRAMEWORK_CODENAME;
+	const std::string Game = FRAMEWORK_TARGET_GAME;
+	const std::string Title = Framework + " (" + Game + ")";
+
+	SetConsoleTitleA(Title.c_str());
 	Parse ArgParser(argc, argv);
 
 	if (argc < 2 || ArgParser.FindValue("--help").bFound || ArgParser.FindValue("-h").bFound)
