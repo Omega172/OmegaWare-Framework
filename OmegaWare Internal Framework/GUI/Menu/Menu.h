@@ -613,7 +613,7 @@ public:
 class Combo : public ElementBase
 {
 protected:
-	std::string m_sPreviewlabel = "NotImplYet";
+	std::string m_sPreviewlabel = "PreviewNotSet";
 	std::function<void()> m_Callback;
 
 public:
@@ -658,6 +658,11 @@ public:
 	void SetCallback(std::function<void()> Callback)
 	{
 		m_Callback = Callback;
+	};
+
+	void SetPreviewLabel(std::string s)
+	{
+		m_sPreviewlabel = s;
 	};
 };
 

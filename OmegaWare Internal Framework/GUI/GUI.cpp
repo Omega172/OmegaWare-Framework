@@ -72,6 +72,7 @@ void GUI::Render()
 					if (ImGui::Selectable(stLocale.sKey.c_str(), bSelected))
 					{
 						Localization::SetLocale(stLocale.ullKeyHash);
+						GuiLocalization->SetPreviewLabel(stLocale.sKey.c_str());
 					}
 
 					if (bSelected)
@@ -122,15 +123,20 @@ void GUI::Render()
 	Cheat::unreal->ActorLock.unlock();
 #endif
 
-	// Load config on startup
+	// Gui init shit 
 	if (Framework::menu->HasChildren())
 	{
 		std::call_once(LoadFlag, []() {
-			Framework::config->LoadConfig();
+			// The menu is opened on load so spawn the mouse
 			ImGui::GetIO().MouseDrawCursor = GUI::bMenuOpen;
-
 			if (ImGui::GetIO().MouseDrawCursor)
 				SetCursor(NULL);
+
+			// Set localization preview to the loaded locale
+			GuiLocalization->SetPreviewLabel((Localization::GetInstance())->GetLocales()[(Localization::GetInstance())->GetCurrentLocaleIndex()].sKey.c_str());
+
+			// Load the config
+			Framework::config->LoadConfig();
 		});
 	}
 	//
