@@ -124,7 +124,7 @@ void GUI::Render()
 #endif
 
 	// Gui init shit 
-	if (Framework::menu->HasChildren())
+	if (Framework::menu->HasChildren()) // We have to wait till the menu has children to do the init
 	{
 		std::call_once(LoadFlag, []() {
 			// The menu is opened on load so spawn the mouse

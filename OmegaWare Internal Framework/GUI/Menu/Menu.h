@@ -209,6 +209,16 @@ public:
 		return m_stStyle.bChildrenVisible;
 	};
 
+	inline Style_t GetStyle() const
+	{
+		return m_stStyle;
+	};
+
+	inline void SetStyle(Style_t stStyle)
+	{
+		m_stStyle = stStyle;
+	};
+
 	virtual constexpr EElementType GetType() const
 	{
 		return EElementType::None;

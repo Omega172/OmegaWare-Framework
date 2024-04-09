@@ -31,7 +31,8 @@ namespace GUI
 	inline std::unique_ptr<Button> GuiUnloadButton = std::make_unique<Button>(std::string("UNLOAD_BTN"), "UNLOAD_BTN"Hashed);
 	inline std::unique_ptr<Button> GuiConsoleVisibility = std::make_unique<Button>(std::string("CONSOLE_VISIBILITY"), "CONSOLE_HIDE"Hashed, ElementBase::Style_t{
 		.eSameLine = ElementBase::ESameLine::Same });
-	inline std::unique_ptr<Combo> GuiLocalization = std::make_unique<Combo>(std::string("LANGUAGE"), "LANGUAGE"Hashed);
+	inline std::unique_ptr<Combo> GuiLocalization = std::make_unique<Combo>(std::string("LANGUAGE"), "LANGUAGE"Hashed, ElementBase::Style_t{
+		.iFlags = ImGuiComboFlags_WidthFitPreview });
 	inline std::unique_ptr<Checkbox> GuiWatermark = std::make_unique<Checkbox>(std::string("WATER_MARK"), "WATER_MARK"Hashed);
 	inline std::unique_ptr<Checkbox> GuiWatermarkFPS = std::make_unique<Checkbox>(std::string("WATER_MARK_FPS"), "WATER_MARK_FPS"Hashed);
 	inline std::unique_ptr<Button> GuiSaveConfig = std::make_unique<Button>(std::string("SAVE_CONFIG"), "SAVE_CONFIG"Hashed);
