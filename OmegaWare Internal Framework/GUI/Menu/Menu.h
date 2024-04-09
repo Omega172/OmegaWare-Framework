@@ -714,11 +714,37 @@ public:
 	};
 };
 
-// Not implemented yet
 class Hotkey : public ElementBase
 {
+public:
+	enum class EHotkeyMode : uint8_t
+	{
+		AlwaysOn,
+		Hold,
+		Toggle,
+		HoldOff,
+	};
+
 protected:
-	KeyBind* m_Key;
+	ImGuiKey m_eKey = ImGuiKey_None;
+	EHotkeyMode m_eMode = EHotkeyMode::Hold;
+
+	bool m_bSetting = false;
+	bool m_bActive = false;
+
+	bool SetKey() noexcept
+	{
+		for (int i = ImGuiKey_NamedKey_BEGIN; i < ImGuiKey_NamedKey_END; ++i) {
+			ImGuiKey _key = static_cast<ImGuiKey>(i);
+			if (!ImGui::IsKeyPressed(_key))
+				continue;
+
+			m_eKey = _key;
+			return true;
+		}
+
+		return false;
+	}
 
 public:
 	Hotkey(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {})
@@ -748,9 +774,147 @@ public:
 
 		SameLine();
 
-		ImGui::Hotkey(GetName().c_str(), m_Key, m_stStyle.vec2Size);
+		if (ImGui::BeginCombo(("##CMB" + GetName()).c_str(), "##", ImGuiComboFlags_NoPreview))
+		{
+			bool bSelected;
+
+			bSelected = m_eMode == EHotkeyMode::AlwaysOn;
+			if (ImGui::Selectable("Always On", bSelected))
+				m_eMode = EHotkeyMode::AlwaysOn;
+
+			if (bSelected)
+				ImGui::SetItemDefaultFocus();
+
+			bSelected = m_eMode == EHotkeyMode::Hold;
+			if (ImGui::Selectable("Hold", bSelected))
+				m_eMode = EHotkeyMode::Hold;
+
+			if (bSelected)
+				ImGui::SetItemDefaultFocus();
+
+			bSelected = m_eMode == EHotkeyMode::Toggle;
+			if (ImGui::Selectable("Toggle", bSelected))
+				m_eMode = EHotkeyMode::Toggle;
+
+			if (bSelected)
+				ImGui::SetItemDefaultFocus();
+
+			bSelected = m_eMode == EHotkeyMode::HoldOff;
+			if (ImGui::Selectable("Hold Off", bSelected))
+				m_eMode = EHotkeyMode::HoldOff;
+
+			if (bSelected)
+				ImGui::SetItemDefaultFocus();
+
+			ImGui::EndCombo();
+		}
+
+		ImGui::SameLine(0.f, 2.f);
+
+		const char* szLabel = GetName().c_str();
+		const auto id = ImGui::GetID(szLabel);
+		ImGui::PushID(szLabel);
+
+		std::string BtnName = (m_bSetting) ? "..." : ImGui::GetKeyName(m_eKey);
+
+		if (ImGui::GetActiveID() == id) {
+			ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetColorU32(ImGuiCol_ButtonActive));
+			ImGui::Button("...", m_stStyle.vec2Size);
+			ImGui::PopStyleColor();
+
+			ImGui::GetCurrentContext()->ActiveIdAllowOverlap = true;
+			if (!ImGui::IsItemHovered() && !ImGui::IsItemFocused() && SetKey())
+			{
+				ImGui::ClearActiveID();
+				m_bSetting = false;
+			}
+		}
+		else if (ImGui::Button(BtnName.c_str(), m_stStyle.vec2Size) || m_bSetting) {
+			ImGui::SetActiveID(id, ImGui::GetCurrentWindow());
+			m_bSetting = true;
+		}
+
+		ImGui::SameLine(0.f, 4.f);
+
+		ImGui::Text("%s", GetName().c_str());
+
+		ImGui::PopID();
 
 		RenderChildren();
+	};
+
+	void ConfigSave(nlohmann::json& jsonParent) const override
+	{
+		nlohmann::json& jsonEntry = jsonParent[m_sUnique.c_str()] = nlohmann::json();
+
+		unsigned int v = 0;
+		v |= static_cast<unsigned int>(m_eKey) << 2;
+		v |= static_cast<unsigned int>(m_eMode);
+		jsonEntry["Value"] = std::to_string(v);
+
+		if (!HasChildren())
+			return;
+
+		jsonEntry["Children"] = nlohmann::json();
+
+		ConfigSaveChildren(jsonEntry["Children"]);
+	};
+
+	void ConfigLoad(nlohmann::json& jsonParent) override
+	{
+		if (!jsonParent.contains(m_sUnique.c_str()))
+			return;
+
+		nlohmann::json& jsonEntry = jsonParent[m_sUnique.c_str()];
+
+		if (jsonEntry.contains("Value"))
+		{
+			unsigned int v = std::stoi(jsonEntry["Value"].get<std::string>());
+			m_eMode = static_cast<EHotkeyMode>(v & 0b11);
+			m_eKey = static_cast<ImGuiKey>(v >> 2);
+		}
+
+		if (jsonEntry.contains("Children"))
+			ConfigLoadChildren(jsonEntry["Children"]);
+	};
+
+	void Update()
+	{
+		if (m_bSetting && m_eMode != EHotkeyMode::AlwaysOn)
+		{
+			m_bActive = false;
+			return;
+		}
+
+		switch (m_eMode)
+		{
+		case (EHotkeyMode::AlwaysOn):
+		{
+			m_bActive = true;
+			return;
+		}
+		case (EHotkeyMode::Hold):
+		{
+			m_bActive = ImGui::IsKeyDown(m_eKey);
+			return;
+		}
+		case (EHotkeyMode::HoldOff):
+		{
+			m_bActive = !ImGui::IsKeyDown(m_eKey);
+			return;
+		}
+		default:
+		{
+			if (ImGui::IsKeyPressed(m_eKey, false))
+				m_bActive = !m_bActive;
+			return;
+		}
+		};
+	}
+
+	inline bool GetValue() const
+	{
+		return m_bActive;
 	};
 };
 
