@@ -94,3 +94,5 @@ constexpr size_t operator "" _hash(const char* sz, size_t size)
 {
     return CRC64::hash(sz, size);
 };
+
+#define HashString(n) (n##_hash)

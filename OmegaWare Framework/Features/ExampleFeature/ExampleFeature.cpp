@@ -5,20 +5,20 @@ ExampleFeature::ExampleFeature() {};
 bool ExampleFeature::Setup()
 {
 	Localization::AddToLocale("ENG", std::initializer_list<std::pair<size_t, std::string>>{
-		{ "EXAMPLE_FEATURE"_hash, "Example Feature" },
-		{ "EXAMPLE_FEATURE_HW"_hash, "Hello, World!" },
-		{ "EXAMPLE_FEATURE_SLIDER"_hash, "Cool slider boi?" },
-		{ "EXAMPLE_COLORPICKER"_hash, "Color pickah!" },
+		{ HashString("EXAMPLE_FEATURE"), "Example Feature" },
+		{ HashString("EXAMPLE_FEATURE_HW"), "Hello, World!" },
+		{ HashString("EXAMPLE_FEATURE_SLIDER"), "Cool slider boi?" },
+		{ HashString("EXAMPLE_COLORPICKER"), "Color pickah!" },
 	});
 
 	Localization::AddToLocale("GER", std::initializer_list<std::pair<size_t, std::string>>{
-		{ "EXAMPLE_FEATURE"_hash, "Beispielfunktion" },
-		{ "EXAMPLE_FEATURE_HW"_hash, "Hallo Welt!" }
+		{ HashString("EXAMPLE_FEATURE"), "Beispielfunktion" },
+		{ HashString("EXAMPLE_FEATURE_HW"), "Hallo Welt!" }
 	});
 
 	Localization::AddToLocale("POL", std::initializer_list<std::pair<size_t, std::string>>{
-		{ "EXAMPLE_FEATURE"_hash, "Przykładowa Funkcja" },
-		{ "EXAMPLE_FEATURE_HW"_hash, "Cześć Świecie!" }
+		{ HashString("EXAMPLE_FEATURE"), "Przykładowa Funkcja" },
+		{ HashString("EXAMPLE_FEATURE_HW"), "Cześć Świecie!" }
 	});
 
 	LogDebugHere("Feature: ExampleFeature Initialized");
