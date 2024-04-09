@@ -39,4 +39,6 @@ namespace GUI
 		.eSameLine = ElementBase::ESameLine::Same });
 
 	void Render();
+
+	inline std::once_flag LoadFlag;
 }

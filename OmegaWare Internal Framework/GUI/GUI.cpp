@@ -111,13 +111,21 @@ void GUI::Render()
 
 #if FRAMEWORK_UNREAL
 	Cheat::unreal->ActorLock.lock();
+#endif
+
 	for (size_t i = 0; i < Features.size(); i++)
 	{
 		Features[i]->Render();
 	}
+
+#if FRAMEWORK_UNREAL
 	Cheat::unreal->ActorLock.unlock();
 #endif
 
+
+	std::call_once(LoadFlag, []() {
+		Framework::config->LoadConfig();
+	});
 	//
 	// End Other Render Stuff
 	//
