@@ -54,7 +54,6 @@ void ExampleFeature::HandleMenu()
 			return vec2Size;
 		});
 
-		GuiSection->AddElement(GuiCheckboxText.get());
 		GuiSection->AddElement(GuiCheckbox.get());
 
 		GuiCheckbox->AddElement(GuiEnabledText.get());

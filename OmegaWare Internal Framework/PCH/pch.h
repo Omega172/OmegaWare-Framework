@@ -76,6 +76,7 @@ namespace Framework
 #if FRAMEWORK_UNITY
 	inline Mono mono = Mono::Instance();
 #endif
+
 }
 
 // Framework Features

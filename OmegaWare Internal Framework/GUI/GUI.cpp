@@ -50,7 +50,6 @@ void GUI::Render()
 				return vec2Size;
 			});
 
-			GuiCheat->AddElement(GuiCheatText.get());
 			GuiCheat->AddElement(GuiCheatSpacing1.get());
 			GuiCheat->AddElement(GuiUnloadButton.get());
 			GuiUnloadButton->SetCallback([]() {
