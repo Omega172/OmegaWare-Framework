@@ -4,28 +4,22 @@ ExampleFeature::ExampleFeature() {};
 
 bool ExampleFeature::Setup()
 {
-	std::vector<LocaleData> EnglishLocale = {
-		{ HASH("EXAMPLE_FEATURE"), "Example Feature" },
-		{ HASH("EXAMPLE_FEATURE_HW"), "Hello, World!" }
-	};
-	if (!Framework::localization->AddToLocale("ENG", EnglishLocale))
-		return false;
+	Localization::AddToLocale("ENG", std::initializer_list<std::pair<size_t, std::string>>{
+		{ "EXAMPLE_FEATURE"Hashed, "Example Feature" },
+		{ "EXAMPLE_FEATURE_HW"Hashed, "Hello, World!" },
+		{ "EXAMPLE_FEATURE_SLIDER"Hashed, "Ex Slider" },
+		{ "EXAMPLE_COLORPICKER"Hashed, "Example Color Picker" },
+	});
 
-	std::vector<LocaleData> GermanLocale = {
-		{ HASH("EXAMPLE_FEATURE"), "Beispielfunktion" },
-		{ HASH("EXAMPLE_FEATURE_HW"), "Hallo Welt!" }
-	};
-	if (!Framework::localization->AddToLocale("GER", GermanLocale))
-		return false;
+	Localization::AddToLocale("GER", std::initializer_list<std::pair<size_t, std::string>>{
+		{ "EXAMPLE_FEATURE"Hashed, "Beispielfunktion" },
+		{ "EXAMPLE_FEATURE_HW"Hashed, "Hallo Welt!" }
+	});
 
-	std::vector<LocaleData> PolishLocale = {
-		{ HASH("EXAMPLE_FEATURE"), "Przykładowa Funkcja" },
-		{ HASH("EXAMPLE_FEATURE_HW"), "Cześć Świecie!" }
-	};
-	if (!Framework::localization->AddToLocale("POL", PolishLocale))
-		return false;
-
-	Framework::localization->UpdateLocale();
+	Localization::AddToLocale("POL", std::initializer_list<std::pair<size_t, std::string>>{
+		{ "EXAMPLE_FEATURE"Hashed, "Przykładowa Funkcja" },
+		{ "EXAMPLE_FEATURE_HW"Hashed, "Cześć Świecie!" }
+	});
 
 	LogDebugHere("Feature: ExampleFeature Initialized");
 
@@ -37,29 +31,40 @@ void ExampleFeature::Destroy() { Initialized = false; }
 
 void ExampleFeature::HandleKeys() {}
 
-void ExampleFeature::PopulateMenu()
-{
-	if (!Initialized)
-		return;
-
-	auto ExampleFeature = std::make_unique<Child>("ExampleFeature", []() { return ImVec2(ImGui::GetContentRegionAvail().x / 2, ImGui::GetContentRegionAvail().y / 2); }, ImGuiChildFlags_Border);
-	ExampleFeature->AddElement(std::make_unique<Text>(Framework::localization->Get("EXAMPLE_FEATURE")));
-	ExampleFeature->AddElement(std::make_unique<Checkbox>(Framework::localization->Get("EXAMPLE_FEATURE"), &bExampleFeature));
-	if (bExampleFeature)
-		ExampleFeature->AddElement(std::make_unique<Text>(Framework::localization->Get("EXAMPLE_FEATURE_HW")));
-
-	Framework::menu->AddElement(std::move(ExampleFeature), true);
-}
-
 void ExampleFeature::Render() {}
 
 void ExampleFeature::Run() {}
 
-void ExampleFeature::SaveConfig() { Framework::config->PushEntry("ExampleFeature", "bool", std::to_string(bExampleFeature)); }
-
-void ExampleFeature::LoadConfig()
+void ExampleFeature::HandleMenu()
 {
-	ConfigEntry entry = Framework::config->GetEntryByName("ExampleFeature");
-	if (entry.Name == "ExampleFeature")
-		bExampleFeature = std::stoi(entry.Value);
+	static std::once_flag onceflag;
+	std::call_once(onceflag, [this]() {
+		GuiSection->SetCallback([]() {
+			ImGuiContext* pContext = ImGui::GetCurrentContext();
+
+			ImVec2 vec2Size = (Framework::menu->m_stStyle.vec2Size / ImVec2{ 3.f, 2.f }) - pContext->Style.ItemSpacing;
+			ImVec2 vec2MaxSize = ImGui::GetContentRegionAvail();
+
+			if (vec2Size.x > vec2MaxSize.x)
+				vec2Size.x = vec2MaxSize.x;
+
+			if (vec2Size.y > vec2MaxSize.y)
+				vec2Size.y = vec2MaxSize.y;
+
+			return vec2Size;
+		});
+
+		GuiSection->AddElement(GuiCheckbox.get());
+
+		GuiCheckbox->AddElement(GuiEnabledText.get());
+		GuiCheckbox->AddElement(GuiEnabledSlider.get());
+
+		GuiSection->AddElement(GuiColorPickerLabel.get());
+		GuiSection->AddElement(GuiColorPicker.get());
+	});
+
+	if (!GuiSection->HasParent())
+		Framework::menu->AddElement(GuiSection.get());
+
+	GuiCheckbox->SetChildrenVisible(GuiCheckbox->GetValue());
 }

@@ -4,131 +4,179 @@
 #include "Locales/German.h"
 #include "Locales/Polish.h"
 
+// Private functions
+
 Localization::Localization()
 {
-	LoadLocale(English);
-	LoadLocale(German);
-	LoadLocale(Polish);
+	_LoadLocale(localeEnglish);
+	_LoadLocale(localeGerman);
+	_LoadLocale(localePolish);
 
-	if (!SetLocale("ENG"))
-	{
+	if (!_SetLocale("ENG"Hashed))
 		LogErrorHere("Failed to set default locale!");
+};
+
+std::string Localization::_Get(const size_t ullKeyHash) const
+{
+	// Check that the current locale index is within the bounds of the locale vector
+	if (m_iCurrentLocale < m_Locales.size())
+	{
+		Locale_t stCurrentLocale = m_Locales.at(m_iCurrentLocale);
+
+		// Look into the currently active locale's unordered_map of localized strings for this entry
+		auto itrLocalizedStrings = stCurrentLocale.umLocalizedStrings.find(ullKeyHash);
+		if (itrLocalizedStrings != stCurrentLocale.umLocalizedStrings.end())
+			return itrLocalizedStrings->second;
+	}
+
+	// If we could not find the localized string in the current locale, search for it in the english locale
+	constexpr size_t ullENGKeyHash = "ENG"Hashed;
+	for (Locale_t stLocale : m_Locales)
+	{
+		if (stLocale.ullKeyHash != ullENGKeyHash)
+			continue;
+
+		auto itrLocalizedStrings = stLocale.umLocalizedStrings.find(ullKeyHash);
+		if (itrLocalizedStrings != stLocale.umLocalizedStrings.end())
+			return itrLocalizedStrings->second;
+
+	}
+
+	// If we couldnt find the localized string, we return "NOT_FOUND"
+	// @TODO make this return the string we are trying to lookup
+	return "NOT_FOUND";
+}
+
+void Localization::_LoadLocale(Locale_t& _stLocale)
+{
+	// If this locale already exists, we just transfer the data to the already existing entry
+	for (Locale_t& stLocale : m_Locales)
+	{
+		if (stLocale.ullKeyHash != _stLocale.ullKeyHash)
+			continue;
+
+		stLocale.hMenuFont = _stLocale.hMenuFont;
+		stLocale.hFeatureFont = _stLocale.hFeatureFont;
+
+		for (auto pair : _stLocale.umLocalizedStrings)
+			stLocale.umLocalizedStrings.try_emplace(pair.first, pair.second);
+
 		return;
 	}
 
-	bInitialized = true;
-};
-
-bool Localization::IsInitialized() { return bInitialized; }
-
-std::string Localization::Get(std::string Key)
-{
-	for (LocaleData Entry : Framework::CurrentLocale.Locales)
-	{
-		if (Entry.Key == HASH(Key))
-			return Entry.Value;
-	}
-
-	// If not foun in the current locale, try to find it in the default locale
-	for (LocalizationData Locale : Framework::Locales)
-	{
-		if (Locale.LocaleCode == HASH("ENG"))
-		{
-			for (LocaleData Entry : Locale.Locales)
-			{
-				if (Entry.Key == HASH(Key))
-					return Entry.Value;
-			}
-		}
-	}
-
-	return "NOT_FOUND"; // If not found in any locale, return NOT_FOUND
+	// Otherwise we just append this new locale to the vector of locales
+	m_Locales.push_back(_stLocale);
 }
 
-void Localization::LoadLocale(LocalizationData Locale) { Framework::Locales.push_back(Locale); }
-
-bool Localization::SetLocale(std::string LocaleCode)
+bool Localization::_SetLocale(size_t ullKeyHash)
 {
-	size_t LocaleCodeHash = HASH(LocaleCode);
-	for (LocalizationData Locale : Framework::Locales)
+
+	// Iterate through our locales using a for loop so we can use the index of the locale in the vector for our current locale value
+	for (size_t i = 0; i < m_Locales.size(); ++i)
 	{
-		if (Locale.LocaleCode == LocaleCodeHash)
-		{
-			Framework::CurrentLocale = Locale;
+		Locale_t& stLocale = m_Locales.at(i);
 
-			CurrentFont = *Locale.Font;
-			CurrentFontESP = *Locale.FontESP;
+		if (stLocale.ullKeyHash != ullKeyHash)
+			continue;
 
-			return true;
-		}
+		m_iCurrentLocale = i;
+
+		CurrentFont = *stLocale.hMenuFont;
+		CurrentFontESP = *stLocale.hFeatureFont;
+
+		return true;
 	}
 
 	return false;
 }
 
-bool Localization::SetLocale(size_t LocaleCodeHash)
+const std::vector<Locale_t> Localization::_GetLocales() const
 {
-	for (LocalizationData Locale : Framework::Locales)
-	{
-		if (Locale.LocaleCode == LocaleCodeHash)
-		{
-			Framework::CurrentLocale = Locale;
-
-			CurrentFont = *Locale.Font;
-			CurrentFontESP = *Locale.FontESP;
-
-			return true;
-		}
-	}
-
-	return false;
+	return m_Locales;
 }
 
-std::vector<LocalizationData> Localization::GetLocales() { return Framework::Locales; }
-
-bool Localization::AddToLocale(std::string LocaleCode, std::string Key, std::string Value)
+const size_t Localization::_GetCurrentLocaleIndex() const
 {
-	for (LocalizationData& Locale : Framework::Locales)
-	{
-		size_t LocaleCodeHash = HASH(LocaleCode);
-		if (Locale.LocaleCode == LocaleCodeHash)
-		{
-			Locale.Locales.push_back({ HASH(Key), Value });
-			return true;
-		}
-	}
-
-	return false;
+	return m_iCurrentLocale;
 }
 
-bool Localization::AddToLocale(std::string LocaleCode, std::vector<LocaleData> arrLocaleData)
+void Localization::_AddToLocale(std::string sLocaleKey, size_t ullKeyHash, std::string sLocalizedString)
 {
-	for (LocalizationData& Locale : Framework::Locales)
+	size_t ullLocaleKeyHash = CRC64::hash(sLocaleKey);
+	for (Locale_t& stLocale : m_Locales)
 	{
-		if (Locale.LocaleCode == HASH(LocaleCode))
-		{
-			for (LocaleData LocaleData : arrLocaleData)
-				Locale.Locales.push_back(LocaleData);
+		if (stLocale.ullKeyHash != ullLocaleKeyHash)
+			continue;
 
-			return true;
-		}
+		stLocale.umLocalizedStrings.try_emplace(ullKeyHash, sLocalizedString);
+		return;
 	}
 
-	return false;
+	// If we find that the current locale was not **yet** created, we just create a dummy locale and add this localized string
+	m_Locales.emplace_back(Locale_t({
+		.sKey = sLocaleKey,
+		.ullKeyHash = ullKeyHash,
+
+		.hMenuFont = &TahomaFont,
+		.hFeatureFont = &TahomaFontESP,
+
+		.umLocalizedStrings = std::unordered_map<size_t, std::string>({
+			{ ullKeyHash, sLocalizedString },
+		}),
+		}));
 }
 
-bool Localization::UpdateLocale()
+void Localization::_AddToLocale(std::string sLocaleKey, std::initializer_list<std::pair<size_t, std::string>> ilLocalizedStrings)
 {
-	Framework::CurrentLocale.LocaleCode;
+	// Lazy solution that does alot of extra redundant work...
+	for (auto itr = ilLocalizedStrings.begin(); itr != ilLocalizedStrings.end(); ++itr)
+		_AddToLocale(sLocaleKey, itr->first, itr->second);
+}
 
-	for (LocalizationData Locale : Framework::Locales)
-	{
-		if (Locale.LocaleCode == Framework::CurrentLocale.LocaleCode)
-		{
-			Framework::CurrentLocale = Locale;
-			return true;
-		}
-	}
 
-	return false;
+// public functions
+
+std::string Localization::Get(const std::string sKey)
+{
+	return Get(CRC64::hash(sKey));
+}
+
+std::string Localization::Get(const size_t ullKeyHash)
+{
+	return GetInstance()->_Get(ullKeyHash);
+}
+
+void Localization::LoadLocale(Locale_t& stLocale)
+{
+	GetInstance()->_LoadLocale(stLocale);
+}
+
+bool Localization::SetLocale(const std::string sKey)
+{
+	return SetLocale(CRC64::hash(sKey));
+}
+
+bool Localization::SetLocale(const size_t ullKeyHash)
+{
+	return GetInstance()->_SetLocale(ullKeyHash);
+}
+
+const std::vector<Locale_t> Localization::GetLocales()
+{
+	return GetInstance()->_GetLocales();
+}
+
+const size_t Localization::GetCurrentLocaleIndex()
+{
+	return GetInstance()->_GetCurrentLocaleIndex();
+}
+
+void Localization::AddToLocale(std::string sLocaleKey, size_t ullKeyHash, std::string sLocalizedString)
+{
+	GetInstance()->_AddToLocale(sLocaleKey, ullKeyHash, sLocalizedString);
+}
+
+void Localization::AddToLocale(std::string sLocaleKey, std::initializer_list<std::pair<size_t, std::string>> ilLocalizedStrings)
+{
+	GetInstance()->_AddToLocale(sLocaleKey, ilLocalizedStrings);
 }

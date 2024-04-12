@@ -19,16 +19,11 @@ public:
 	// Handle checking for any key/hotkey presses or holds needed for features
 	virtual void HandleKeys() = 0;
 
-	virtual void PopulateMenu() = 0;
-
 	virtual void Render() = 0;
 
 	// This should be run in the feature loop, used to run any acutal feature code like setting a value for godmode
 	virtual void Run() = 0;
 
-	// Save the feature's config to the config file
-	virtual void SaveConfig() = 0;
-
-	// Load the feature's config from the config file
-	virtual void LoadConfig() = 0;
+	// Called every frame before any ImGui elements
+	virtual void HandleMenu() = 0;
 };

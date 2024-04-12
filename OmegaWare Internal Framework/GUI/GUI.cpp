@@ -26,48 +26,79 @@ void GUI::Render()
 		Features[i]->HandleKeys();
 	}
 
-	if (Framework::bWatermark)
-		showWatermark(Framework::bWatermarkFPS, Framework::Title.c_str(), ImVec4(255, 255, 255, 255), ImVec4(255, 255, 255, 0));
+	if (GuiWatermark->GetValue())
+		ShowWatermark(GuiWatermarkFPS->GetValue(), Framework::Title.c_str(), ImVec4(255, 255, 255, 255), ImVec4(255, 255, 255, 0));
 
 	if (bMenuOpen)
 	{
-		auto child = std::make_unique<Child>("Cheat", []() { return ImVec2(ImGui::GetContentRegionAvail().x / 3, ImGui::GetContentRegionAvail().y / 2); }, ImGuiChildFlags_Border);
-		child->AddElement(std::make_unique<Text>(Framework::localization->Get("CHEAT")));
-		child->AddElement(std::make_unique<Spacing>());
-		child->AddElement(std::make_unique<Button>(Framework::localization->Get("UNLOAD_BTN"), []() {
-			Framework::bShouldRun = false;
-		}));
-		child->AddElement(std::make_unique<Button>(Framework::console->GetVisibility() ? Framework::localization->Get("CONSOLE_HIDE") : Framework::localization->Get("CONSOLE_SHOW"), []() {
-			Framework::console->ToggleVisibility();
-		}), true);
-		child->AddElement(std::make_unique<Combo>(Framework::localization->Get("LANGUAGE"), Framework::CurrentLocale.Name, NULL, []() {
-			for (LocalizationData Locale : Framework::Locales)
-			{
-				bool bSelected = Framework::CurrentLocale.LocaleCode == Locale.LocaleCode;
-				if (ImGui::Selectable(Locale.Name.c_str(), bSelected))
-				{
-					Framework::CurrentLocale = Locale;
-					Framework::localization->SetLocale(Locale.LocaleCode);
-				}
-				if (bSelected)
-					ImGui::SetItemDefaultFocus();
-			}
-		}));
-		child->AddElement(std::make_unique<Checkbox>(Framework::localization->Get("WATER_MARK"), &Framework::bWatermark));
-		if (Framework::bWatermark)
-			child->AddElement(std::make_unique<Checkbox>(Framework::localization->Get("WATER_MARK_FPS"), &Framework::bWatermarkFPS));
-		child->AddElement(std::make_unique<Button>(Framework::localization->Get("SAVE_CONFIG"), []() {
-			Framework::config->SaveConfig();
-		}));
-		child->AddElement(std::make_unique<Button>(Framework::localization->Get("LOAD_CONFIG"), []() {
-			Framework::config->LoadConfig();
-		}), true);
+		static std::once_flag onceflag;
 
-		Framework::menu->AddElement(std::move(child));
+		std::call_once(onceflag, []() {
+			GuiCheat->SetCallback([]() {
+				ImGuiContext* pContext = ImGui::GetCurrentContext();
+
+				ImVec2 vec2Size = (Framework::menu->m_stStyle.vec2Size / ImVec2{ 3.f, 2.f }) - pContext->Style.ItemSpacing;
+				ImVec2 vec2MaxSize = ImGui::GetContentRegionAvail();
+
+				if (vec2Size.x > vec2MaxSize.x)
+					vec2Size.x = vec2MaxSize.x;
+
+				if (vec2Size.y > vec2MaxSize.y)
+					vec2Size.y = vec2MaxSize.y;
+
+				return vec2Size;
+			});
+
+			GuiCheat->AddElement(GuiCheatSpacing1.get());
+			GuiCheat->AddElement(GuiUnloadButton.get());
+			GuiUnloadButton->SetCallback([]() {
+				Framework::bShouldRun = false;
+			});
+			GuiCheat->AddElement(GuiConsoleVisibility.get());
+			GuiConsoleVisibility->SetCallback([]() {
+				Framework::console->ToggleVisibility();
+
+				GuiConsoleVisibility->SetName(Framework::console->GetVisibility() ? "CONSOLE_HIDE"Hashed : "CONSOLE_SHOW"Hashed);
+			});
+			GuiCheat->AddElement(GuiLocalization.get());
+			GuiLocalization->SetCallback([]() {
+				std::vector<Locale_t> vecLocales = Localization::GetLocales();
+				for (size_t i = 0; i < vecLocales.size(); ++i)
+				{
+					bool bSelected = Localization::GetCurrentLocaleIndex() == i;
+					Locale_t stLocale = vecLocales.at(i);
+					if (ImGui::Selectable(stLocale.sKey.c_str(), bSelected))
+					{
+						Localization::SetLocale(stLocale.ullKeyHash);
+						GuiLocalization->SetPreviewLabel(stLocale.sKey.c_str());
+					}
+
+					if (bSelected)
+						ImGui::SetItemDefaultFocus();
+				}
+			});
+			GuiCheat->AddElement(GuiWatermark.get());
+			GuiCheat->AddElement(GuiWatermarkFPS.get());
+			GuiCheat->AddElement(GuiSaveConfig.get());
+			GuiSaveConfig->SetCallback([]() {
+				Framework::config->SaveConfig();
+			});
+			GuiCheat->AddElement(GuiLoadConfig.get());
+			GuiLoadConfig->SetCallback([]() {
+				Framework::config->LoadConfig();
+			});
+		});
+
+		GuiWatermarkFPS->SetVisible(GuiWatermark->GetValue());
+
+		if (!GuiCheat->HasParent())
+		{
+			Framework::menu->AddElement(GuiCheat.get());
+		}
 
 		for (size_t i = 0; i < Features.size(); i++)
 		{
-			Features[i]->PopulateMenu();
+			Features[i]->HandleMenu();
 		}
 
 		Framework::menu->Render();
@@ -78,14 +109,35 @@ void GUI::Render()
 	//
 
 #if FRAMEWORK_UNREAL
-	Framework::unreal->ActorLock.lock();
+	Cheat::unreal->ActorLock.lock();
+#endif
+
 	for (size_t i = 0; i < Features.size(); i++)
 	{
 		Features[i]->Render();
 	}
-	Framework::unreal->ActorLock.unlock();
+
+#if FRAMEWORK_UNREAL
+	Cheat::unreal->ActorLock.unlock();
 #endif
 
+	// Gui init shit 
+	if (Framework::menu->HasChildren()) // We have to wait till the menu has children to do the init
+	{
+		std::call_once(LoadFlag, []() {
+			// The menu is opened on load so spawn the mouse
+			ImGui::GetIO().MouseDrawCursor = GUI::bMenuOpen;
+			if (ImGui::GetIO().MouseDrawCursor)
+				SetCursor(NULL);
+
+			// Set localization preview to the loaded locale
+			GuiLocalization->SetPreviewLabel((Localization::GetInstance())->GetLocales()[(Localization::GetInstance())->GetCurrentLocaleIndex()].sKey.c_str());
+
+			// Load the config
+			Framework::config->LoadConfig();
+		});
+	}
+  
 	//
 	// End Other Render Stuff
 	//

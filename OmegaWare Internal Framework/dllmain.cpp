@@ -30,11 +30,6 @@ DWORD __stdcall FrameworkInit(LPVOID lpParam)
 	if (pPrivilagedHandle)
 		LogDebugStreamHere("PrivilagedHandle: 0x" << std::hex << pPrivilagedHandle);
 
-
-	Framework::localization = std::make_unique<Localization>();
-	if (!Framework::localization->IsInitialized())
-		return false;
-
 	AddFeatures();
 
 	try {

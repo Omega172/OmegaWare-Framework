@@ -5,7 +5,6 @@ bool RendererHooks::Setup()
 #if FRAMEWORK_RENDER_DYNAMIC
 	if (Memory::GetModule("d3d12.dll"))
 	{
-		
 		iActiveRendererType = D3D12;
 		Utils::LogError(Utils::GetLocation(CurrentLoc), (std::stringstream() << "D3D12 Found @ " << Memory::GetModule("d3d12.dll")).str());
 	}
@@ -18,7 +17,7 @@ bool RendererHooks::Setup()
 	{
 		Utils::LogError(Utils::GetLocation(CurrentLoc), "Couldnt find renderer LAWL!");
 	}
-	
+
 	switch (iActiveRendererType) {
 	default:
 		return false;

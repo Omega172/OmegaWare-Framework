@@ -94,7 +94,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -114,7 +114,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -258,6 +258,7 @@
     <ClInclude Include="Interfaces\Unreal\UnrealConfig.h" />
     <ClInclude Include="Interfaces\Unreal\FNames.h" />
     <ClInclude Include="Interfaces\Unreal\Unreal.h" />
+    <ClInclude Include="Libs\CRC64\CRC64.h" />
     <ClInclude Include="Libs\ImGUI\imconfig.h" />
     <ClInclude Include="Libs\ImGUI\imgui.h" />
     <ClInclude Include="Libs\ImGUI\imgui_impl_dx11.h" />
@@ -269,7 +270,6 @@
     <ClInclude Include="Libs\ImGUI\imstb_truetype.h" />
     <ClInclude Include="Libs\MinHook\include\MinHook.h" />
     <ClInclude Include="Libs\StringToBytes\stb.h" />
-    <ClInclude Include="Localization\LocaleStructs.h" />
     <ClInclude Include="Localization\Locales\English.h" />
     <ClInclude Include="Localization\Locales\German.h" />
     <ClInclude Include="Localization\Locales\Polish.h" />

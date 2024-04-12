@@ -87,7 +87,6 @@
     <ClInclude Include="Localization\Locales\English.h" />
     <ClInclude Include="Localization\Locales\German.h" />
     <ClInclude Include="Localization\Locales\Polish.h" />
-    <ClInclude Include="Localization\LocaleStructs.h" />
     <ClInclude Include="Localization\Localization.h" />
     <ClInclude Include="Memory\Windows\WindowsMemory.h" />
     <ClInclude Include="Memory\Windows\WindowsTypes.h" />
@@ -100,6 +99,7 @@
     <ClInclude Include="GUI\GUI.h" />
     <ClInclude Include="GUI\Styles.h" />
     <ClInclude Include="GUI\Watermark.h" />
+    <ClInclude Include="Libs\CRC64\CRC64.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

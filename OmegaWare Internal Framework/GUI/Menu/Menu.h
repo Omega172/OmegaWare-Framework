@@ -2,328 +2,1105 @@
 #include "pch.h"
 #include <functional>
 
-class Element
+#include <nlohmann/json.hpp>
+#include <fstream>
+
+class ElementBase
 {
 public:
-
-	bool m_bSameLine = false;
-	float m_flSpacing = -1.f;
-
-	std::vector<std::unique_ptr<Element>> Elements;
-	
-	Element() {}
-
-	virtual void Render() = 0;
-
-	void AddElement(std::unique_ptr<Element> pElement, bool bSameLine = false, float flSpacing = -1.f)
+	enum class EElementType : uint8_t
 	{
-		pElement.get()->m_bSameLine = bSameLine;
-		pElement.get()->m_flSpacing = flSpacing;
-		Elements.push_back(std::move(pElement));
-	}
-};
+		None,
+		Button,
+		Checkbox,
+		Child,
+		ColorPicker,
+		Combo,
+		Hotkey,
+		InputText,
+		Menu,
+		SliderFloat,
+		SliderInt,
+		Spacing,
+		Text,
+	};
 
-class Spacing : public Element
-{
+	enum class ESameLine : uint8_t
+	{
+		New,      // Force element to be on a new line
+		Same,     // Force element to be on the same line
+		Dynamic,  // Potentially buggy, only use if you know what you are doing
+	};
+
+	typedef struct Style_t
+	{
+		bool bVisible : 1 = true;
+		bool bChildrenVisible : 1 = true;
+		ESameLine eSameLine : 2 = ESameLine::Dynamic;
+
+		float flSpacing = -1.f;
+
+		ImVec2 vec2Size = { 100.f, 0.f };
+		ImDrawFlags iFlags = 0;
+	} Style_t;
+
+	Style_t m_stStyle;
+
+protected:
+	// used to display a custom or unlocalized name for elements like buttons
+	bool m_bUnlocalizedName = false;
+	std::string m_sUnlocalizedName = "";
+	std::size_t m_ullLocalizedNameHash = 0;
+
+	// used for internal reference for removing elements or config handling
+	std::string m_sUnique = "INVALID_UNIQUE";
+
+	ElementBase* m_pParent = nullptr;
+	std::vector<ElementBase*> m_Children;
+
+	inline void SameLine()
+	{
+		switch (m_stStyle.eSameLine)
+		{
+			// Force draw on the same line
+		case(ESameLine::Same):
+			ImGui::SameLine(0.f, m_stStyle.flSpacing);
+			break;
+
+			// Ask our parent if we should draw on the same line or not
+		case(ESameLine::Dynamic):
+			if (m_pParent != nullptr)
+				m_pParent->RequestSameLine(this);
+			break;
+
+			// Draw on a new line
+		case(ESameLine::New):
+		default:
+			break;
+		}
+	};
+
+	void ConfigSaveChildren(nlohmann::json& jsonParent) const
+	{
+		for (ElementBase* const pElement : m_Children)
+			pElement->ConfigSave(jsonParent);
+	};
+
+	void ConfigLoadChildren(nlohmann::json& jsonParent)
+	{
+		for (ElementBase* const pElement : m_Children)
+			pElement->ConfigLoad(jsonParent);
+	};
+
+	void RenderChildren()
+	{
+		if (!m_stStyle.bChildrenVisible)
+			return;
+
+		for (ElementBase* const pElement : m_Children)
+			pElement->Render();
+	};
+
 public:
-	Spacing() {};
 
-	void Render() { ImGui::Spacing(); }
-};
+	ElementBase() = default;
 
-class Menu : public Element
-{
-private:
-	ImVec2 m_Size;
-	std::string m_sName;
-	bool* m_pOpen;
-	ImGuiWindowFlags m_Flags;
+	void AddElement(void* pElement)
+	{
+		static_cast<ElementBase*>(pElement)->m_pParent = this;
+		m_Children.push_back(static_cast<ElementBase*>(pElement));
+	};
 
-public:
-	Menu(ImVec2 Size, std::string sName, bool* pOpen = (bool*)0, ImGuiWindowFlags Flags = 0) :
-		m_Size(Size), m_sName(sName), m_pOpen(pOpen), m_Flags(Flags)
+	void RemoveElement(std::string sUnique)
+	{
+		for (auto it = m_Children.begin(); it != m_Children.end(); ++it)
+		{
+			if ((*it)->m_sUnique != sUnique)
+				continue;
+
+			m_Children.erase(it);
+			break;
+		}
+	};
+
+	void LeaveParent()
+	{
+		if (!m_pParent)
+			return;
+
+		for (auto it = m_pParent->m_Children.begin(); it != m_pParent->m_Children.end(); ++it)
+		{
+			if (*it != this)
+				continue;
+
+			m_pParent->m_Children.erase(it);
+			break;
+		}
+
+		m_pParent = nullptr;
+	};
+
+	// Gets internal element name
+	inline const std::string GetUnique() const
+	{
+		return m_sUnique;
+	};
+
+	// Gets localized element name
+	inline const std::string GetName() const
+	{
+		if (m_bUnlocalizedName)
+			return m_sUnlocalizedName;
+
+		return Localization::Get(m_ullLocalizedNameHash);
+	};
+
+	// Sets that we want an unlocalized name and replaces the internal unlocalized name string
+	inline void SetName(std::string s)
+	{
+		m_bUnlocalizedName = true;
+		m_sUnlocalizedName = s;
+	};
+
+	// Sets that we want to use a localized name and overrides the used localized name
+	inline void SetName(size_t ullHash)
+	{
+		m_bUnlocalizedName = false;
+		m_ullLocalizedNameHash = ullHash;
+	};
+
+	// Sets if we want to use the localized name or not
+	inline void SetName(bool bUseUnlocalized = false)
+	{
+		m_bUnlocalizedName = bUseUnlocalized;
+	};
+
+	inline ElementBase* GetParent() const
+	{
+		return m_pParent;
+	};
+
+	inline const bool HasParent() const
+	{
+		return m_pParent != nullptr;
+	};
+
+	inline const bool HasChildren() const
+	{
+		return m_Children.size() > 0;
+	};
+
+	inline void SetVisible(bool vis)
+	{
+		m_stStyle.bVisible = vis;
+	};
+
+	inline bool IsVisible() const
+	{
+		return m_stStyle.bVisible;
+	};
+
+	inline void SetChildrenVisible(bool vis)
+	{
+		m_stStyle.bChildrenVisible = vis;
+	};
+
+	inline bool IsChildrenVisible() const
+	{
+		return m_stStyle.bChildrenVisible;
+	};
+
+	inline Style_t GetStyle() const
+	{
+		return m_stStyle;
+	};
+
+	inline void SetStyle(Style_t stStyle)
+	{
+		m_stStyle = stStyle;
+	};
+
+	virtual constexpr EElementType GetType() const
+	{
+		return EElementType::None;
+	};
+
+	// Will determine if elements should be placed on the same line or not
+	virtual void RequestSameLine(ElementBase* pChild)
 	{};
 
+	virtual void ConfigSave(nlohmann::json& jsonParent) const
+	{
+		if (!HasChildren())
+			return;
+
+		nlohmann::json& jsonEntry = jsonParent[m_sUnique.c_str()] = nlohmann::json();
+
+		ConfigSaveChildren(jsonEntry);
+	};
+
+	virtual void ConfigLoad(nlohmann::json& jsonParent)
+	{
+		if (!HasChildren() || !jsonParent.contains(m_sUnique.c_str()))
+			return;
+
+		ConfigLoadChildren(jsonParent[m_sUnique.c_str()]);
+	};
+
+	virtual void Render()
+	{
+		if (!m_stStyle.bVisible)
+			return;
+
+		RenderChildren();
+	};
+};
+
+template<typename T>
+class ElementInput : public ElementBase
+{
+protected:
+	bool m_bOverride = false;
+	T m_ValueOverride{};
+
+	T m_Value{};
+
+	inline std::string ConvertToString() const
+	{
+		return std::to_string(m_Value);
+	};
+
+	inline T ConvertFromString(const std::string& str) const
+	{
+		return std::stoi(str);
+	};
+
+public:
+	void ConfigSave(nlohmann::json& jsonParent) const override
+	{
+		nlohmann::json& jsonEntry = jsonParent[m_sUnique.c_str()] = nlohmann::json();
+
+		jsonEntry["Value"] = ConvertToString();
+
+		if (!HasChildren())
+			return;
+
+		jsonEntry["Children"] = nlohmann::json();
+
+		ConfigSaveChildren(jsonEntry["Children"]);
+	};
+
+	void ConfigLoad(nlohmann::json& jsonParent) override
+	{
+		if (!jsonParent.contains(m_sUnique.c_str()))
+			return;
+
+		nlohmann::json& jsonEntry = jsonParent[m_sUnique.c_str()];
+
+		if (jsonEntry.contains("Value"))
+			m_Value = ConvertFromString(jsonEntry["Value"].get<std::string>());
+
+		if (jsonEntry.contains("Children"))
+			ConfigLoadChildren(jsonEntry["Children"]);
+	};
+
+	inline T GetValue() const
+	{
+		return m_bOverride ? m_ValueOverride : m_Value;
+	};
+
+	inline void SetValue(const T& Value)
+	{
+		m_Value = Value;
+	};
+
+	inline T GetOverride() const
+	{
+		return m_ValueOverride;
+	};
+
+	inline const bool GetOverrideActive() const
+	{
+		return m_bOverride;
+	};
+
+	inline void SetOverride(const T& Value) const
+	{
+		m_bOverride = true;
+		m_ValueOverride = Value;
+	};
+
+	inline void SetOverride() const
+	{
+		m_bOverride = false;
+	};
+};
+
+template<>
+inline std::string ElementInput<ImVec4>::ConvertToString() const
+{
+	return std::to_string(ImGui::ColorConvertFloat4ToU32(m_Value));
+};
+
+template<>
+inline std::string ElementInput<std::string>::ConvertToString() const
+{
+	return m_Value;
+};
+
+template<>
+inline ImVec4 ElementInput<ImVec4>::ConvertFromString(const std::string& str) const
+{
+	return ImGui::ColorConvertU32ToFloat4(std::stoul(str));
+};
+
+template<>
+inline std::string ElementInput<std::string>::ConvertFromString(const std::string& str) const
+{
+	return str;
+};
+
+template<>
+inline float ElementInput<float>::ConvertFromString(const std::string& str) const
+{
+	return std::stof(str);
+};
+
+class Spacing : public ElementBase
+{
+public:
+	Spacing(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {})
+	{
+		m_sUnique = sUnique;
+		m_ullLocalizedNameHash = ullLocalizedNameHash;
+		m_stStyle = stStyle;
+	};
+
+	Spacing(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle = {})
+	{
+		m_sUnique = sUnique;
+		m_bUnlocalizedName = true;
+		m_sUnlocalizedName = sUnlocalizedName;
+		m_stStyle = stStyle;
+	};
+
+	constexpr EElementType GetType() const override
+	{
+		return EElementType::Spacing;
+	};
+
 	void Render() override
 	{
-		ImGui::SetNextWindowSize(m_Size);
-		ImGui::Begin(m_sName.c_str(), m_pOpen, m_Flags);
-		{
-			for (const std::unique_ptr<Element>& pElement : Elements)
-				pElement->Render();
-		}
-		ImGui::End();
-
-		Elements.clear();
-	}
-
-	void StartRender()
-	{
-		ImGui::SetNextWindowSize(m_Size);
-		ImGui::Begin(m_sName.c_str(), m_pOpen, m_Flags);
-		{
-			for (const std::unique_ptr<Element>& pElement : Elements)
-				pElement->Render();
-		}
-	}
-
-	void EndRender()
-	{
-		ImGui::End();
-
-		Elements.clear();
+		ImGui::Spacing();
 	}
 };
 
-class Child : public Element
+class Menu : public ElementBase
 {
-private:
-	std::string m_sID;
-	ImVec2 m_Size;
-	ImGuiChildFlags m_ChildFlags;
-	ImGuiWindowFlags m_WindowFlags;
-	std::function<ImVec2()> m_funcCallback = nullptr;
+protected:
+	uint8_t m_ucSameLinedElements = 1;
+	EElementType m_eLastSameLinedElement = EElementType::None;
+
+	ImVec2 m_vec2MinSize = { 0.f, 0.f };
+	ImVec2 m_vec2MaxSize = { 9999.f, 9999.f };
 
 public:
-	Child(std::string sID, ImVec2 Size = ImVec2(0, 0), ImGuiChildFlags ChildFlags = 0, ImGuiWindowFlags WindowFlags = 0)
+
+	Menu(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {})
 	{
-		m_sID = sID;
-		m_Size = Size;
-		m_ChildFlags = ChildFlags;
-		m_WindowFlags = WindowFlags;
+		m_sUnique = sUnique;
+		m_ullLocalizedNameHash = ullLocalizedNameHash;
+		m_stStyle = stStyle;
+
+		m_vec2MinSize = m_stStyle.vec2Size * 0.75f;
+		m_vec2MaxSize = m_stStyle.vec2Size * 2.f;
 	};
 
-	Child(std::string sID, std::function<ImVec2()> funcCallback = nullptr, ImGuiChildFlags ChildFlags = 0, ImGuiWindowFlags WindowFlags = 0)
+	Menu(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle = {})
 	{
-		m_sID = sID;
-		m_funcCallback = funcCallback;
-		m_ChildFlags = ChildFlags;
-		m_WindowFlags = WindowFlags;
+		m_sUnique = sUnique;
+		m_bUnlocalizedName = true;
+		m_sUnlocalizedName = sUnlocalizedName;
+		m_stStyle = stStyle;
+
+		m_vec2MinSize = m_stStyle.vec2Size * 0.75f;
+		m_vec2MaxSize = m_stStyle.vec2Size * 2.f;
+	};
+
+	constexpr EElementType GetType() const override
+	{
+		return EElementType::Menu;
+	};
+
+	// Will determine if elements should be placed on the same line or not
+	void RequestSameLine(ElementBase* pChild) override
+	{
+		if (!pChild)
+			return;
+
+		EElementType eChildType = pChild->GetType();
+
+		// Using the same line for multiple different element types should be done manually
+		if (eChildType != m_eLastSameLinedElement)
+		{
+			m_ucSameLinedElements = 1;
+			m_eLastSameLinedElement = eChildType;
+			return;
+		}
+
+		switch (eChildType)
+		{
+		case(EElementType::Button):
+		case(EElementType::Child):
+		{
+			if (m_ucSameLinedElements >= 3)
+			{
+				m_ucSameLinedElements = 1;
+				break;
+			}
+
+			++m_ucSameLinedElements;
+			ImGui::SameLine(0.f, pChild->m_stStyle.flSpacing);
+
+			break;
+		}
+		default:
+			break;
+		}
 	};
 
 	void Render() override
 	{
-		if (m_bSameLine)
-			ImGui::SameLine(0.f, m_flSpacing);
+		m_ucSameLinedElements = 1;
+		m_eLastSameLinedElement = EElementType::None;
 
-		if (m_funcCallback)
-			m_Size = m_funcCallback();
 
-		ImGui::BeginChild(m_sID.c_str(), m_Size, m_ChildFlags, m_WindowFlags);
-		{
-			for (const std::unique_ptr<Element>& pElement : Elements)
-				pElement->Render();
-		}
+		ImGui::SetNextWindowSize(m_stStyle.vec2Size);
+		ImGui::SetNextWindowSizeConstraints(m_vec2MinSize, m_vec2MaxSize);
+		ImGui::Begin(GetName().c_str(), NULL, m_stStyle.iFlags);
+		m_stStyle.vec2Size = ImGui::GetWindowSize();
+
+		RenderChildren();
+		ImGui::End();
+	}
+};
+
+class Child : public ElementBase
+{
+protected:
+	ImGuiWindowFlags m_WindowFlags;
+	std::function<ImVec2()> m_Callback = nullptr;
+
+public:
+	Child(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {}, ImGuiWindowFlags WindowFlags = 0)
+	{
+		m_sUnique = sUnique;
+		m_ullLocalizedNameHash = ullLocalizedNameHash;
+		m_stStyle = stStyle;
+
+		m_WindowFlags = WindowFlags;
+	};
+
+	Child(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle = {}, ImGuiWindowFlags WindowFlags = 0)
+	{
+		m_sUnique = sUnique;
+		m_bUnlocalizedName = true;
+		m_sUnlocalizedName = sUnlocalizedName;
+		m_stStyle = stStyle;
+
+		m_WindowFlags = WindowFlags;
+	};
+
+	constexpr EElementType GetType() const override
+	{
+		return EElementType::Child;
+	};
+
+	void Render() override
+	{
+		if (!m_stStyle.bVisible)
+			return;
+
+		SameLine();
+
+		if (m_Callback)
+			m_stStyle.vec2Size = m_Callback();
+
+		ImGui::BeginChild(GetName().c_str(), m_stStyle.vec2Size, m_stStyle.iFlags, m_WindowFlags);
+		RenderChildren();
 		ImGui::EndChild();
 	};
+
+	void SetCallback(std::function<ImVec2()> Callback)
+	{
+		m_Callback = Callback;
+	};
 };
 
-class Text : public Element
+class Text : public ElementBase
 {
-private:
-	std::string m_sText;
+protected:
 
 public:
-	Text(std::string sText) :
-		m_sText(sText)
-	{};
+	Text(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {})
+	{
+		m_sUnique = sUnique;
+		m_ullLocalizedNameHash = ullLocalizedNameHash;
+		m_stStyle = stStyle;
+	};
+
+	Text(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle = {})
+	{
+		m_sUnique = sUnique;
+		m_bUnlocalizedName = true;
+		m_sUnlocalizedName = sUnlocalizedName;
+		m_stStyle = stStyle;
+	};
+
+	constexpr EElementType GetType() const override
+	{
+		return EElementType::Text;
+	};
 
 	void Render() override
 	{
-		if (m_bSameLine)
-			ImGui::SameLine(0.f, m_flSpacing);
+		if (!m_stStyle.bVisible)
+			return;
 
-		ImGui::Text(m_sText.c_str());
-	}
+		SameLine();
 
-	constexpr std::string GetText(std::string& sText) { return m_sText; }
+		ImGui::Text(GetName().c_str());
+	};
 
-	void SetText(std::string sText) { m_sText = sText; }
 };
 
-class Button : public Element
+class Button : public ElementBase
 {
-private:
-	std::string m_sLabel;
-	std::function<void()> m_funcCallback;
+protected:
+	std::function<void()> m_Callback = nullptr;
 
 public:
-	Button(std::string sLabel, std::function<void()> funcCallback = nullptr) :
-		m_sLabel(sLabel), m_funcCallback(funcCallback)
-	{};
+	Button(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {})
+	{
+		m_sUnique = sUnique;
+		m_ullLocalizedNameHash = ullLocalizedNameHash;
+		m_stStyle = stStyle;
+	};
+
+	Button(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle = {})
+	{
+		m_sUnique = sUnique;
+		m_bUnlocalizedName = true;
+		m_sUnlocalizedName = sUnlocalizedName;
+		m_stStyle = stStyle;
+	};
+
+	constexpr EElementType GetType() const override
+	{
+		return EElementType::Button;
+	};
 
 	void Render() override
 	{
-		if (m_bSameLine)
-			ImGui::SameLine(0.f, m_flSpacing);
+		if (!m_stStyle.bVisible)
+			return;
 
-		if (ImGui::Button(m_sLabel.c_str()))
-			if (m_funcCallback)
-				m_funcCallback();
-	}
+		SameLine();
 
-	constexpr std::string GetLabel() { return m_sLabel; }
-	void SetLabel(std::string sLabel) { m_sLabel = sLabel; }
+		if (ImGui::Button(GetName().c_str()))
+			if (m_Callback)
+				m_Callback();
+
+		RenderChildren();
+	};
+
+
+	void SetCallback(std::function<void()> Callback)
+	{
+		m_Callback = Callback;
+	};
 };
 
-class Combo : public Element
+class Combo : public ElementBase
 {
-private:
-	std::string m_sLabel;
-	std::string m_sPreviewlabel;
-	ImGuiComboFlags m_ComboFlags;
-	std::function<void()> m_funcCallback;
+protected:
+	std::string m_sPreviewlabel = "PreviewNotSet";
+	std::function<void()> m_Callback;
 
 public:
-	Combo(std::string sLabel, std::string sPreviewlabel, ImGuiComboFlags ComboFlags = 0, std::function<void()> funcCallback = nullptr) :
-		m_sLabel(sLabel), m_sPreviewlabel(sPreviewlabel), m_ComboFlags(ComboFlags), m_funcCallback(funcCallback)
-	{};
+	Combo(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {})
+	{
+		m_sUnique = sUnique;
+		m_ullLocalizedNameHash = ullLocalizedNameHash;
+		m_stStyle = stStyle;
+	};
+
+	Combo(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle = {})
+	{
+		m_sUnique = sUnique;
+		m_bUnlocalizedName = true;
+		m_sUnlocalizedName = sUnlocalizedName;
+		m_stStyle = stStyle;
+	};
+
+	constexpr EElementType GetType() const override
+	{
+		return EElementType::Combo;
+	};
 
 	void Render() override
 	{
-		if (m_bSameLine)
-			ImGui::SameLine(0.f, m_flSpacing);
+		if (!m_stStyle.bVisible)
+			return;
 
-		if (ImGui::BeginCombo(m_sLabel.c_str(), m_sPreviewlabel.c_str(), m_ComboFlags))
+		SameLine();
+
+		if (ImGui::BeginCombo(GetName().c_str(), m_sPreviewlabel.c_str(), m_stStyle.iFlags))
 		{
-			if (m_funcCallback)
-				m_funcCallback();
+			if (m_Callback)
+				m_Callback();
 
 			ImGui::EndCombo();
 		}
-	}
+
+		RenderChildren();
+	};
+
+	void SetCallback(std::function<void()> Callback)
+	{
+		m_Callback = Callback;
+	};
+
+	void SetPreviewLabel(std::string s)
+	{
+		m_sPreviewlabel = s;
+	};
 };
 
-class Checkbox : public Element
+class Checkbox : public ElementInput<bool>
 {
-private:
-	std::string m_sLabel;
-	bool* m_pValue;
+protected:
 
 public:
-	Checkbox(std::string sLabel, bool* pValue) :
-		m_sLabel(sLabel), m_pValue(pValue)
-	{};
+	Checkbox(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {})
+	{
+		m_sUnique = sUnique;
+		m_ullLocalizedNameHash = ullLocalizedNameHash;
+		m_stStyle = stStyle;
+	};
+
+	Checkbox(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle = {})
+	{
+		m_sUnique = sUnique;
+		m_bUnlocalizedName = true;
+		m_sUnlocalizedName = sUnlocalizedName;
+		m_stStyle = stStyle;
+	};
+
+	constexpr EElementType GetType() const override
+	{
+		return EElementType::Checkbox;
+	};
 
 	void Render() override
 	{
-		if (m_bSameLine)
-			ImGui::SameLine(0.f, m_flSpacing);
+		if (!m_stStyle.bVisible)
+			return;
 
-		ImGui::Checkbox(m_sLabel.c_str(), m_pValue);
-	}
+		SameLine();
+
+		ImGui::Checkbox(GetName().c_str(), &m_Value);
+
+		RenderChildren();
+	};
 };
 
-class Hotkey : public Element
+class Hotkey : public ElementBase
 {
-private:
-	std::string m_sLabel;
-	KeyBind* m_Key;
-	ImVec2 m_Size;
+public:
+	enum class EHotkeyMode : uint8_t
+	{
+		AlwaysOn,
+		Hold,
+		Toggle,
+		HoldOff,
+	};
+
+protected:
+	ImGuiKey m_eKey = ImGuiKey_None;
+	EHotkeyMode m_eMode = EHotkeyMode::Hold;
+
+	bool m_bSetting = false;
+	bool m_bActive = false;
+
+	bool SetKey() noexcept
+	{
+		for (int i = ImGuiKey_NamedKey_BEGIN; i < ImGuiKey_NamedKey_END; ++i) {
+			ImGuiKey _key = static_cast<ImGuiKey>(i);
+			if (!ImGui::IsKeyPressed(_key))
+				continue;
+
+			m_eKey = _key;
+			return true;
+		}
+
+		return false;
+	}
 
 public:
-	Hotkey(std::string sLabel, KeyBind* Key, ImVec2 Size = { 100.0f, 0.0f }) :
-		m_sLabel(sLabel), m_Key(Key), m_Size(Size)
-	{};
+	Hotkey(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {})
+	{
+		m_sUnique = sUnique;
+		m_ullLocalizedNameHash = ullLocalizedNameHash;
+		m_stStyle = stStyle;
+	};
+
+	Hotkey(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle = {})
+	{
+		m_sUnique = sUnique;
+		m_bUnlocalizedName = true;
+		m_sUnlocalizedName = sUnlocalizedName;
+		m_stStyle = stStyle;
+	};
+
+	constexpr EElementType GetType() const override
+	{
+		return EElementType::Hotkey;
+	};
 
 	void Render() override
 	{
-		if (m_bSameLine)
-			ImGui::SameLine(0.f, m_flSpacing);
+		if (!m_stStyle.bVisible)
+			return;
 
-		ImGui::Hotkey(m_sLabel.c_str(), m_Key, m_Size);
+		SameLine();
+
+		if (ImGui::BeginCombo(("##CMB" + GetName()).c_str(), "##", ImGuiComboFlags_NoPreview))
+		{
+			bool bSelected;
+
+			bSelected = m_eMode == EHotkeyMode::AlwaysOn;
+			if (ImGui::Selectable("Always On", bSelected))
+				m_eMode = EHotkeyMode::AlwaysOn;
+
+			if (bSelected)
+				ImGui::SetItemDefaultFocus();
+
+			bSelected = m_eMode == EHotkeyMode::Hold;
+			if (ImGui::Selectable("Hold", bSelected))
+				m_eMode = EHotkeyMode::Hold;
+
+			if (bSelected)
+				ImGui::SetItemDefaultFocus();
+
+			bSelected = m_eMode == EHotkeyMode::Toggle;
+			if (ImGui::Selectable("Toggle", bSelected))
+				m_eMode = EHotkeyMode::Toggle;
+
+			if (bSelected)
+				ImGui::SetItemDefaultFocus();
+
+			bSelected = m_eMode == EHotkeyMode::HoldOff;
+			if (ImGui::Selectable("Hold Off", bSelected))
+				m_eMode = EHotkeyMode::HoldOff;
+
+			if (bSelected)
+				ImGui::SetItemDefaultFocus();
+
+			ImGui::EndCombo();
+		}
+
+		ImGui::SameLine(0.f, 2.f);
+
+		const char* szLabel = GetName().c_str();
+		const auto id = ImGui::GetID(szLabel);
+		ImGui::PushID(szLabel);
+
+		std::string BtnName = (m_bSetting) ? "..." : ImGui::GetKeyName(m_eKey);
+
+		if (ImGui::GetActiveID() == id) {
+			ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetColorU32(ImGuiCol_ButtonActive));
+			ImGui::Button("...", m_stStyle.vec2Size);
+			ImGui::PopStyleColor();
+
+			ImGui::GetCurrentContext()->ActiveIdAllowOverlap = true;
+			if (!ImGui::IsItemHovered() && !ImGui::IsItemFocused() && SetKey())
+			{
+				ImGui::ClearActiveID();
+				m_bSetting = false;
+			}
+		}
+		else if (ImGui::Button(BtnName.c_str(), m_stStyle.vec2Size) || m_bSetting) {
+			ImGui::SetActiveID(id, ImGui::GetCurrentWindow());
+			m_bSetting = true;
+		}
+
+		ImGui::SameLine(0.f, 4.f);
+
+		ImGui::Text("%s", GetName().c_str());
+
+		ImGui::PopID();
+
+		RenderChildren();
+	};
+
+	void ConfigSave(nlohmann::json& jsonParent) const override
+	{
+		nlohmann::json& jsonEntry = jsonParent[m_sUnique.c_str()] = nlohmann::json();
+
+		unsigned int v = 0;
+		v |= static_cast<unsigned int>(m_eKey) << 2;
+		v |= static_cast<unsigned int>(m_eMode);
+		jsonEntry["Value"] = std::to_string(v);
+
+		if (!HasChildren())
+			return;
+
+		jsonEntry["Children"] = nlohmann::json();
+
+		ConfigSaveChildren(jsonEntry["Children"]);
+	};
+
+	void ConfigLoad(nlohmann::json& jsonParent) override
+	{
+		if (!jsonParent.contains(m_sUnique.c_str()))
+			return;
+
+		nlohmann::json& jsonEntry = jsonParent[m_sUnique.c_str()];
+
+		if (jsonEntry.contains("Value"))
+		{
+			unsigned int v = std::stoi(jsonEntry["Value"].get<std::string>());
+			m_eMode = static_cast<EHotkeyMode>(v & 0b11);
+			m_eKey = static_cast<ImGuiKey>(v >> 2);
+		}
+
+		if (jsonEntry.contains("Children"))
+			ConfigLoadChildren(jsonEntry["Children"]);
+	};
+
+	void Update()
+	{
+		if (m_bSetting && m_eMode != EHotkeyMode::AlwaysOn)
+		{
+			m_bActive = false;
+			return;
+		}
+
+		switch (m_eMode)
+		{
+		case (EHotkeyMode::AlwaysOn):
+		{
+			m_bActive = true;
+			return;
+		}
+		case (EHotkeyMode::Hold):
+		{
+			m_bActive = ImGui::IsKeyDown(m_eKey);
+			return;
+		}
+		case (EHotkeyMode::HoldOff):
+		{
+			m_bActive = !ImGui::IsKeyDown(m_eKey);
+			return;
+		}
+		default:
+		{
+			if (ImGui::IsKeyPressed(m_eKey, false))
+				m_bActive = !m_bActive;
+			return;
+		}
+		};
 	}
+
+	inline bool GetValue() const
+	{
+		return m_bActive;
+	};
 };
 
-class SliderFloat : public Element
+class SliderFloat : public ElementInput<float>
 {
-private:
-	std::string m_sLabel;
-	float* m_pValue;
-	float m_fValueMin;
-	float m_fValueMax;
+protected:
+	float m_Min;
+	float m_Max;
 	const char* m_sFormat;
-	ImGuiSliderFlags m_SliderFlags;
 
 public:
-	SliderFloat(std::string sLabel, float* pValue, float fValueMin, float fValueMax, const char* sFormat = "%.3f", ImGuiSliderFlags SliderFlags = 0) :
-		m_sLabel(sLabel), m_pValue(pValue), m_fValueMin(fValueMin), m_fValueMax(fValueMax), m_SliderFlags(SliderFlags)
-	{};
+	SliderFloat(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {}, float Value = 0.f, float Min = -1000.f, float Max = 1000.f, const char* sFormat = "%.3f") :
+		m_Min(Min), m_Max(Max), m_sFormat(sFormat)
+	{
+		m_sUnique = sUnique;
+		m_ullLocalizedNameHash = ullLocalizedNameHash;
+		m_stStyle = stStyle;
+
+		SetValue(Value);
+	};
+
+	SliderFloat(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle = {}, float Value = 0.f, float Min = -1000.f, float Max = 1000.f, const char* sFormat = "%.3f") :
+		m_Min(Min), m_Max(Max), m_sFormat(sFormat)
+	{
+		m_sUnique = sUnique;
+		m_bUnlocalizedName = true;
+		m_sUnlocalizedName = sUnlocalizedName;
+		m_stStyle = stStyle;
+
+		SetValue(Value);
+	};
+
+	constexpr EElementType GetType() const override
+	{
+		return EElementType::SliderFloat;
+	};
 
 	void Render() override
 	{
-		if (m_bSameLine)
-			ImGui::SameLine(0.f, m_flSpacing);
+		if (!m_stStyle.bVisible)
+			return;
 
-		ImGui::SliderFloat(m_sLabel.c_str(), m_pValue, m_fValueMin, m_fValueMax, m_sFormat, m_SliderFlags);
-	}
+		SameLine();
+
+		ImGui::SliderFloat(GetName().c_str(), &m_Value, m_Min, m_Max, m_sFormat, m_stStyle.iFlags);
+
+		RenderChildren();
+	};
 };
 
-class SliderInt : public Element
+class SliderInt : public ElementInput<int>
 {
-private:
-	std::string m_sLabel;
-	int* m_pValue;
-	int m_iValueMin;
-	int m_iValueMax;
+protected:
+	int m_Min;
+	int m_Max;
 	const char* m_sFormat;
-	ImGuiSliderFlags m_SliderFlags;
 
 public:
-	SliderInt(std::string sLabel, int* pValue, int iValueMin, int iValueMax, const char* sFormat = "%d", ImGuiSliderFlags SliderFlags = 0) :
-		m_sLabel(sLabel), m_pValue(pValue), m_iValueMin(iValueMin), m_iValueMax(iValueMax), m_SliderFlags(SliderFlags)
-	{};
+	SliderInt(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {}, int Value = 0, int Min = -1000, int Max = 1000, const char* sFormat = "%d") :
+		m_Min(Min), m_Max(Max), m_sFormat(sFormat)
+	{
+		m_sUnique = sUnique;
+		m_ullLocalizedNameHash = ullLocalizedNameHash;
+		m_stStyle = stStyle;
+
+		SetValue(Value);
+	};
+
+	SliderInt(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle = {}, int Value = 0, int Min = -1000, int Max = 1000, const char* sFormat = "%d") :
+		m_Min(Min), m_Max(Max), m_sFormat(sFormat)
+	{
+		m_sUnique = sUnique;
+		m_bUnlocalizedName = true;
+		m_sUnlocalizedName = sUnlocalizedName;
+		m_stStyle = stStyle;
+
+		SetValue(Value);
+	};
+
+	constexpr EElementType GetType() const override
+	{
+		return EElementType::SliderInt;
+	};
 
 	void Render() override
 	{
-		if (m_bSameLine)
-			ImGui::SameLine(0.f, m_flSpacing);
+		if (!m_stStyle.bVisible)
+			return;
 
-		ImGui::SliderInt(m_sLabel.c_str(), m_pValue, m_iValueMin, m_iValueMax, m_sFormat, m_SliderFlags);
-	}
+		SameLine();
+
+		ImGui::SliderInt(GetName().c_str(), &m_Value, m_Min, m_Max, m_sFormat, m_stStyle.iFlags);
+
+		RenderChildren();
+	};
 };
 
-class InputText : public Element
+class InputText : public ElementInput<std::string>
 {
-private:
-	std::string m_sLabel;
-	char* m_pBuffer;
-	size_t m_ullBuffSize;
-	ImGuiInputTextFlags m_InputTextFlags;
-	ImGuiInputTextCallback m_InputTextCallback;
-	void* m_pUserData;
+protected:
+	ImGuiInputTextCallback m_Callback = nullptr;
+	void* m_pUserData = nullptr;
 
 public:
-	InputText(std::string sLabel, char* pBuffer, size_t ullBuffSize, ImGuiInputTextFlags InputTextFlags = 0, ImGuiInputTextCallback InputTextCallback = (ImGuiInputTextCallback)0, void* pUserData = (void*)0) :
-		m_sLabel(sLabel), m_pBuffer(pBuffer), m_ullBuffSize(ullBuffSize), m_InputTextFlags(InputTextFlags), m_InputTextCallback(InputTextCallback), m_pUserData(pUserData)
-	{};
+	InputText(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {}, size_t ullBufferSize = 1024)
+	{
+		m_sUnique = sUnique;
+		m_ullLocalizedNameHash = ullLocalizedNameHash;
+		m_stStyle = stStyle;
+
+		m_Value.reserve(ullBufferSize);
+	};
+
+	InputText(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle = {}, size_t ullBufferSize = 1024)
+	{
+		m_sUnique = sUnique;
+		m_bUnlocalizedName = true;
+		m_sUnlocalizedName = sUnlocalizedName;
+		m_stStyle = stStyle;
+
+		m_Value.resize(ullBufferSize);
+	};
+
+	constexpr EElementType GetType() const override
+	{
+		return EElementType::InputText;
+	};
 
 	void Render() override
 	{
-		if (m_bSameLine)
-			ImGui::SameLine(0.f, m_flSpacing);
+		if (!m_stStyle.bVisible)
+			return;
 
-		ImGui::InputText(m_sLabel.c_str(), m_pBuffer, m_ullBuffSize, m_InputTextFlags, m_InputTextCallback, m_pUserData);
-	}
+		SameLine();
+
+		ImGui::InputText(GetName().c_str(), m_Value.data(), m_Value.capacity(), m_stStyle.iFlags, m_Callback, m_pUserData);
+
+		RenderChildren();
+	};
+
+	inline void Resize(const size_t& n)
+	{
+		m_Value.resize(n);
+	};
+
+	void SetCallback(ImGuiInputTextCallback Callback)
+	{
+		m_Callback = Callback;
+	};
 };
 
-class ColorPicker : public Element
+class ColorPicker : public ElementInput<ImVec4>
 {
-private:
-	std::string m_sLabel;
-	float* m_pValue;
-	ImGuiColorEditFlags m_ColorEditFlags;
+protected:
 
 public:
-	ColorPicker(std::string sLabel, float* pValue, ImGuiColorEditFlags ColorEditFlags = ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoSidePreview | ImGuiColorEditFlags_AlphaBar) :
-		m_sLabel(sLabel), m_pValue(pValue), m_ColorEditFlags(ColorEditFlags)
-	{};
-
-	void Render() override 
+	ColorPicker(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {})
 	{
-		if (m_bSameLine)
-			ImGui::SameLine(0.f, m_flSpacing);
+		m_sUnique = sUnique;
+		m_ullLocalizedNameHash = ullLocalizedNameHash;
+		m_stStyle = stStyle;
+	};
 
-		ImGui::ColorEdit4(m_sLabel.c_str(), m_pValue, m_ColorEditFlags);
-	}
+	ColorPicker(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle = {})
+	{
+		m_sUnique = sUnique;
+		m_bUnlocalizedName = true;
+		m_sUnlocalizedName = sUnlocalizedName;
+		m_stStyle = stStyle;
+	};
+
+	constexpr EElementType GetType() const override
+	{
+		return EElementType::ColorPicker;
+	};
+
+	void Render() override
+	{
+		if (!m_stStyle.bVisible)
+			return;
+
+		SameLine();
+
+		ImGui::ColorEdit4(GetName().c_str(), reinterpret_cast<float*>(&m_Value), m_stStyle.iFlags);
+
+		RenderChildren();
+	};
 };

@@ -2,6 +2,7 @@
 #pragma execution_character_set("utf-8")
 
 // Universal includes
+#define NOMINMAX
 #include <Windows.h>
 
 #include <iostream>
@@ -61,13 +62,10 @@ namespace Framework
 	inline bool bWatermarkFPS = true;
 
 	inline std::unique_ptr<Config> config;
-	inline std::vector<ConfigEntry> Entries;
 
-	inline std::vector<LocalizationData> Locales;
-	inline LocalizationData CurrentLocale;
-	inline std::unique_ptr<Localization> localization;
-
-	inline std::unique_ptr<Menu> menu = std::make_unique<Menu>(ImVec2(GUI::WIDTH, GUI::HEIGHT), Title.c_str(), (bool*)NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoCollapse);
+	inline std::unique_ptr<Menu> menu = std::make_unique<Menu>(Framework::Title, Framework::Title, ElementBase::Style_t({
+	.vec2Size = ImVec2{ 800.f, 600.f },
+	.iFlags = ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize }));
 	inline std::unique_ptr<WndProcHooks> wndproc = std::make_unique<WndProcHooks>();
 	inline std::unique_ptr<RendererHooks> renderer = std::make_unique<RendererHooks>();
 
@@ -78,6 +76,7 @@ namespace Framework
 #if FRAMEWORK_UNITY
 	inline Mono mono = Mono::Instance();
 #endif
+
 }
 
 // Framework Features

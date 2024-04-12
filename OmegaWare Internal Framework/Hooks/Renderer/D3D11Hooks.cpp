@@ -69,7 +69,7 @@ static void CreateRenderTarget(IDXGISwapChain* pSwapChain)
 
 static void CleanupRenderTarget() {
 	LogDebugHere("DX11 CleanupRenderTarget()");
-	
+
 	if (g_pRenderTargetView) {
 		g_pRenderTargetView->Release();
 		g_pRenderTargetView = NULL;
@@ -206,7 +206,7 @@ bool RendererHooks::D3D11Setup()
 		LogErrorHere("CreateSwapCain hook couldnt be created!");
 		return false;
 	}
-	
+
 	if (oCreateSwapChainForHwnd.HookVirtualMethod(hkCreateSwapChainForHwnd, pIDXGIFactory, 15) != MH_OK) {
 		LogErrorHere("CreateSwapChainForHwnd hook couldnt be created!");
 		return false;

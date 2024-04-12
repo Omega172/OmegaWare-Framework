@@ -204,7 +204,7 @@ static void RenderImGui_DX12(IDXGISwapChain3* pSwapChain) {
     ID3D12CommandAllocator* commandAllocator = g_aCommandAllocators[backBufferIdx];
     commandAllocator->Reset();
 
-    D3D12_RESOURCE_BARRIER barrier = { 
+    D3D12_RESOURCE_BARRIER barrier = {
         .Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION,
         .Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE,
         .Transition = {
@@ -242,9 +242,9 @@ static HRESULT WINAPI hkPresent(IDXGISwapChain3* pSwapChain, UINT SyncInterval, 
         sdesc.OutputWindow = Cheat::wndproc->hwndWindow;
         sdesc.Windowed = ((GetWindowLongPtr(Cheat::wndproc->hwndWindow, GWL_STYLE) & WS_POPUP) != 0) ? false : true;
     });
-    
+
     RenderImGui_DX12(pSwapChain);
- 
+
     return oPresent(pSwapChain, SyncInterval, Flags);
 }
 
@@ -327,7 +327,7 @@ bool RendererHooks::D3D12Setup()
 
     if (!CreateDeviceD3D12(hWindow)) {
         Utils::LogError(Utils::GetLocation(CurrentLoc), "Unable to create dx12 device!");
-        
+      
         DestroyWindow(hWindow);
         UnregisterClassA(WndClass.lpszClassName, WndClass.hInstance);
 

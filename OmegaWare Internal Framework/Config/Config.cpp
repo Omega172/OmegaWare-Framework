@@ -26,102 +26,36 @@ Config::Config()
 
 bool Config::SaveConfig()
 {
-	std::ofstream ConfigFile(ConfigPath);
-	if (ConfigFile.fail())
+	std::ofstream fileConfig(ConfigPath);
+	if (fileConfig.fail())
 	{
 		LogErrorHere("Failed to open config file for writing");
 		return false;
 	}
 
-	nlohmann::json ConfigJson;
-	ConfigJson["Config"] = nlohmann::json::array();
+	nlohmann::json jsonConfig;
+	Framework::menu->ConfigSave(jsonConfig);
 
-	Framework::Entries.clear();
-
-	PushEntry("Watermark", "bool", std::to_string(Framework::bWatermark));
-	PushEntry("WatermarkFPS", "bool", std::to_string(Framework::bWatermarkFPS));
-
-	for (size_t i = 0; i < Features.size(); i++)
-	{
-		Features[i]->SaveConfig();
-	}
-
-	for (ConfigEntry Entry : Framework::Entries)
-	{
-		nlohmann::json EntryJson;
-		EntryJson["Name"] = Entry.Name;
-		EntryJson["Type"] = Entry.Type;
-		EntryJson["Value"] = Entry.Value;
-		ConfigJson["Config"].push_back(EntryJson);
-	}
-
-	ConfigFile << ConfigJson.dump(4);
-	ConfigFile.close();
+	fileConfig << jsonConfig.dump(4);
+	fileConfig.close();
 	return true;
 }
 
 bool Config::LoadConfig()
 {
-	Framework::Entries.clear();
-
-	std::ifstream ConfigFile(ConfigPath);
-	if (ConfigFile.fail())
+	std::ifstream fileConfig(ConfigPath);
+	if (fileConfig.fail())
 	{
 		LogErrorHere("Failed to open config file for reading");
 		return false;
 	}
 
-	std::stringstream Container;
-	Container << ConfigFile.rdbuf();
-	ConfigFile.close();
+	std::stringstream ssContainer;
+	ssContainer << fileConfig.rdbuf();
+	nlohmann::json jsonConfig(nlohmann::json::parse(ssContainer.str()));
+	fileConfig.close();
 
-	nlohmann::json ConfigJson(nlohmann::json::parse(Container.str()));
-
-	for (nlohmann::json Entry : ConfigJson["Config"])
-	{
-		std::string Name = Entry["Name"];
-		std::string Type = Entry["Type"];
-		std::string Value = Entry["Value"];
-
-		PushEntry(Name, Type, Value);
-	}
-
-	ConfigEntry WatermarkEntry = Framework::config->GetEntryByName("Watermark");
-	if (WatermarkEntry.Name == "Watermark")
-		Framework::bWatermark = std::stoi(WatermarkEntry.Value);
-
-	ConfigEntry WatermarkFPSEntry = Framework::config->GetEntryByName("WatermarkFPS");
-	if (WatermarkFPSEntry.Name == "WatermarkFPS")
-		Framework::bWatermarkFPS = std::stoi(WatermarkFPSEntry.Value);
-
-	for (size_t i = 0; i < Features.size(); i++)
-	{
-		Features[i]->LoadConfig();
-	}
+	Framework::menu->ConfigLoad(jsonConfig);
 
 	return true;
-}
-
-void Config::PushEntry(std::string Name, std::string Type, std::string Value)
-{
-	ConfigEntry Entry;
-	Entry.Name = Name;
-	Entry.Type = Type;
-	Entry.Value = Value;
-	Framework::Entries.push_back(Entry);
-}
-
-ConfigEntry Config::GetEntryByName(std::string Name)
-{
-	for (ConfigEntry Entry : Framework::Entries)
-	{
-		if (Entry.Name == Name)
-			return Entry;
-	}
-
-	ConfigEntry Entry;
-	Entry.Name = "NULL";
-	Entry.Type = "NULL";
-	Entry.Value = "NULL";
-	return Entry;
 }

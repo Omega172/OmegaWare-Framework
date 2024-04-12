@@ -1,16 +1,20 @@
 ﻿#pragma once
-#include "../LocaleStructs.h"
+#include "../Localization.h"
 
-std::vector<LocaleData> PolishLocales = {
-	{HASH("CHEAT"), "Oszustwo"},
-	{HASH("UNLOAD_BTN"), "Wyłacz"},
-	{HASH("CONSOLE_SHOW"), "Pokaż Konsole"},
-	{HASH("CONSOLE_HIDE"), "Schowaj Konsole"},
-	{HASH("WATER_MARK"), "Znak wodny"},
-	{HASH("WATER_MARK_FPS"), "Widoczność FPS na Znaku Wodnym"},
-	{HASH("SAVE_CONFIG"), "Zapisz Konfiguracje"},
-	{HASH("LOAD_CONFIG"), "Wczytaj Konfiguracje"},
-	{HASH("LANGUAGE"), "Język"}
+Locale_t localePolish{
+	.sKey = "Polski",
+	.ullKeyHash = "POL"Hashed,
+	.hMenuFont = &TahomaFontPolish,
+	.hFeatureFont = &TahomaFontPolishESP,
+	.umLocalizedStrings = std::unordered_map<size_t, std::string>({
+		{ "CHEAT"Hashed, "Oszustwo" },
+		{ "UNLOAD_BTN"Hashed, "Wyłacz" },
+		{ "CONSOLE_SHOW"Hashed, "Pokaż Konsole" },
+		{ "CONSOLE_HIDE"Hashed, "Schowaj Konsole" },
+		{ "WATER_MARK"Hashed, "Znak wodny" },
+		{ "WATER_MARK_FPS"Hashed, "Widoczność FPS na Znaku Wodnym" },
+		{ "SAVE_CONFIG"Hashed, "Zapisz Konfiguracje" },
+		{ "LOAD_CONFIG"Hashed, "Wczytaj Konfiguracje" },
+		{ "LANGUAGE"Hashed, "Język" },
+	}),
 };
-
-LocalizationData Polish{ "Polski", HASH("POL"), &TahomaFontPolish, &TahomaFontPolishESP, PolishLocales };

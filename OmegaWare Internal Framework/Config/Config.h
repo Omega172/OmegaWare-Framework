@@ -4,13 +4,6 @@
 #include <filesystem>
 #include <shlobj.h>
 
-struct ConfigEntry
-{
-	std::string Name;
-	std::string Type;
-	std::string Value;
-};
-
 class Config
 {
 private:
@@ -22,7 +15,4 @@ public:
 	bool SaveConfig();
 
 	bool LoadConfig();
-
-	void PushEntry(std::string Name, std::string Type, std::string Value);
-	ConfigEntry GetEntryByName(std::string Name);
 };
