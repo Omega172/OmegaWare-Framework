@@ -327,7 +327,7 @@ bool RendererHooks::D3D12Setup()
 
     if (!CreateDeviceD3D12(hWindow)) {
         Utils::LogError(Utils::GetLocation(CurrentLoc), "Unable to create dx12 device!");
-
+      
         DestroyWindow(hWindow);
         UnregisterClassA(WndClass.lpszClassName, WndClass.hInstance);
 

@@ -5,6 +5,7 @@
 // If someone could fix it that would be great I'll give you a cookie and 5 schmeckles
 
 inline void ShowWatermark(bool showFPS, const char* text, ImVec4 color, ImVec4 hoverColor)
+
 {
 	bool open = true;
 	const float distance = 10.0f;

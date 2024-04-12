@@ -1,7 +1,6 @@
 #include "pch.h"
 #include "Watermark.h"
 
-
 void GUI::Render()
 {
 	if (!Framework::bInitalized)
@@ -138,6 +137,7 @@ void GUI::Render()
 			Framework::config->LoadConfig();
 		});
 	}
+  
 	//
 	// End Other Render Stuff
 	//

@@ -38,7 +38,6 @@ bool Config::SaveConfig()
 
 	fileConfig << jsonConfig.dump(4);
 	fileConfig.close();
-
 	return true;
 }
 

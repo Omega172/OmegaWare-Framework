@@ -4,7 +4,6 @@
 #include "Locales/German.h"
 #include "Locales/Polish.h"
 
-
 // Private functions
 
 Localization::Localization()
