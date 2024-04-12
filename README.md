@@ -6,7 +6,6 @@ You can see this framework being used in these places:
 - [Crush Crush Cheat](https://github.com/Omega172/Crush-Crush-Cheat)
 - [Deep Rock Galactic](https://github.com/Omega172/Deep-Rock-Galactic-Cheat)
 - [Dead Island 2 Cheat](https://github.com/Omega172/Dead-Island-2-Cheat) (In progress)
-- ARK Survival Ascended (In progress not published)
 
 Getting moved over SOON TM:
 - [Blush Blush Cheat](https://github.com/Omega172/Blush-Blush-Cheat)
