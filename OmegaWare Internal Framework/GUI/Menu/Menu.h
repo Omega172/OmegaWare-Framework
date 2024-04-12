@@ -122,6 +122,24 @@ public:
 		}
 	};
 
+	ElementBase* FindElement(std::string sUnique)
+	{
+		for (ElementBase* const pElement : m_Children)
+		{
+			if (pElement->m_sUnique == sUnique)
+				return pElement;
+
+			if (pElement->HasChildren())
+			{
+				ElementBase* pFound = pElement->FindElement(sUnique);
+				if (pFound)
+					return pFound;
+			}
+		}
+
+		return nullptr;
+	};
+
 	void LeaveParent()
 	{
 		if (!m_pParent)

@@ -74,19 +74,27 @@
     <OutDir>$(SolutionDir)Build\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>Build\$(Platform)\$(Configuration)\Intermediates\</IntDir>
     <TargetName>DEBUG_$(ProjectName)</TargetName>
+    <IncludePath>$(IncludePath)</IncludePath>
+    <ExternalIncludePath>$(ExternalIncludePath)</ExternalIncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(SolutionDir)Build\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>Build\$(Platform)\$(Configuration)\Intermediates\</IntDir>
+    <IncludePath>$(IncludePath)</IncludePath>
+    <ExternalIncludePath>$(ExternalIncludePath)</ExternalIncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)Build\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>Build\$(Platform)\$(Configuration)\Intermediates\</IntDir>
     <TargetName>DEBUG_$(ProjectName)</TargetName>
+    <IncludePath>$(IncludePath)</IncludePath>
+    <ExternalIncludePath>$(ExternalIncludePath)</ExternalIncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)Build\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>Build\$(Platform)\$(Configuration)\Intermediates\</IntDir>
+    <IncludePath>$(IncludePath)</IncludePath>
+    <ExternalIncludePath>$(ExternalIncludePath)</ExternalIncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -94,16 +102,16 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(ProjectDir)PCH\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)PCH\;$(ProjectDir)Libs\;$(ProjectDir)Libs\Lua;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(ProjectDir)Libs\MinHook\include\minhook.x86d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(ProjectDir)Libs\MinHook\include\minhook.x86d.lib;$(ProjectDir)Libs\Lua\Lib\Lua.x86d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -114,18 +122,18 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(ProjectDir)PCH\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)PCH\;$(ProjectDir)Libs\;$(ProjectDir)Libs\Lua;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(ProjectDir)Libs\MinHook\include\minhook.x86.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(ProjectDir)Libs\MinHook\include\minhook.x86.lib;$(ProjectDir)Libs\Lua\Lib\Lua.x86.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -138,12 +146,12 @@
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(ProjectDir)PCH\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)PCH\;$(ProjectDir)Libs\;$(ProjectDir)Libs\Lua;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(ProjectDir)Libs\MinHook\include\minhook.x64d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(ProjectDir)Libs\MinHook\include\minhook.x64d.lib;$(ProjectDir)Libs\Lua\Lib\Lua.x64d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -158,14 +166,14 @@
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(ProjectDir)PCH\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)PCH\;$(ProjectDir)Libs\;$(ProjectDir)Libs\Lua;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(ProjectDir)Libs\MinHook\include\minhook.x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(ProjectDir)Libs\MinHook\include\minhook.x64.lib;$(ProjectDir)Libs\Lua\Lib\Lua.x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -258,7 +266,6 @@
     <ClInclude Include="Interfaces\Unreal\UnrealConfig.h" />
     <ClInclude Include="Interfaces\Unreal\FNames.h" />
     <ClInclude Include="Interfaces\Unreal\Unreal.h" />
-    <ClInclude Include="Libs\CRC64\CRC64.h" />
     <ClInclude Include="Libs\ImGUI\imconfig.h" />
     <ClInclude Include="Libs\ImGUI\imgui.h" />
     <ClInclude Include="Libs\ImGUI\imgui_impl_dx11.h" />
@@ -268,8 +275,131 @@
     <ClInclude Include="Libs\ImGUI\imstb_rectpack.h" />
     <ClInclude Include="Libs\ImGUI\imstb_textedit.h" />
     <ClInclude Include="Libs\ImGUI\imstb_truetype.h" />
+    <ClInclude Include="Libs\Lua\lauxlib.h" />
+    <ClInclude Include="Libs\Lua\lua.h" />
+    <ClInclude Include="Libs\Lua\lua.hpp" />
+    <ClInclude Include="Libs\Lua\luaconf.h" />
+    <ClInclude Include="Libs\Lua\lualib.h" />
     <ClInclude Include="Libs\MinHook\include\MinHook.h" />
+    <ClInclude Include="Libs\Sol\abort.hpp" />
+    <ClInclude Include="Libs\Sol\assert.hpp" />
+    <ClInclude Include="Libs\Sol\as_args.hpp" />
+    <ClInclude Include="Libs\Sol\as_returns.hpp" />
+    <ClInclude Include="Libs\Sol\base_traits.hpp" />
+    <ClInclude Include="Libs\Sol\bind_traits.hpp" />
+    <ClInclude Include="Libs\Sol\bytecode.hpp" />
+    <ClInclude Include="Libs\Sol\call.hpp" />
+    <ClInclude Include="Libs\Sol\compatibility.hpp" />
+    <ClInclude Include="Libs\Sol\compatibility\compat-5.3.c.h" />
+    <ClInclude Include="Libs\Sol\compatibility\compat-5.3.h" />
+    <ClInclude Include="Libs\Sol\compatibility\compat-5.4.h" />
+    <ClInclude Include="Libs\Sol\compatibility\lua_version.hpp" />
+    <ClInclude Include="Libs\Sol\config.hpp" />
+    <ClInclude Include="Libs\Sol\coroutine.hpp" />
+    <ClInclude Include="Libs\Sol\debug.hpp" />
+    <ClInclude Include="Libs\Sol\demangle.hpp" />
+    <ClInclude Include="Libs\Sol\deprecate.hpp" />
+    <ClInclude Include="Libs\Sol\detail\build_version.hpp" />
+    <ClInclude Include="Libs\Sol\dump_handler.hpp" />
+    <ClInclude Include="Libs\Sol\ebco.hpp" />
+    <ClInclude Include="Libs\Sol\environment.hpp" />
+    <ClInclude Include="Libs\Sol\epilogue.hpp" />
+    <ClInclude Include="Libs\Sol\error.hpp" />
+    <ClInclude Include="Libs\Sol\error_handler.hpp" />
+    <ClInclude Include="Libs\Sol\forward.hpp" />
+    <ClInclude Include="Libs\Sol\forward_as.hpp" />
+    <ClInclude Include="Libs\Sol\forward_detail.hpp" />
+    <ClInclude Include="Libs\Sol\function.hpp" />
+    <ClInclude Include="Libs\Sol\function_result.hpp" />
+    <ClInclude Include="Libs\Sol\function_types.hpp" />
+    <ClInclude Include="Libs\Sol\function_types_core.hpp" />
+    <ClInclude Include="Libs\Sol\function_types_overloaded.hpp" />
+    <ClInclude Include="Libs\Sol\function_types_stateful.hpp" />
+    <ClInclude Include="Libs\Sol\function_types_stateless.hpp" />
+    <ClInclude Include="Libs\Sol\function_types_templated.hpp" />
+    <ClInclude Include="Libs\Sol\inheritance.hpp" />
+    <ClInclude Include="Libs\Sol\in_place.hpp" />
+    <ClInclude Include="Libs\Sol\load_result.hpp" />
+    <ClInclude Include="Libs\Sol\lua_table.hpp" />
+    <ClInclude Include="Libs\Sol\lua_value.hpp" />
+    <ClInclude Include="Libs\Sol\make_reference.hpp" />
+    <ClInclude Include="Libs\Sol\metatable.hpp" />
+    <ClInclude Include="Libs\Sol\object.hpp" />
+    <ClInclude Include="Libs\Sol\object_base.hpp" />
+    <ClInclude Include="Libs\Sol\optional.hpp" />
+    <ClInclude Include="Libs\Sol\optional_implementation.hpp" />
+    <ClInclude Include="Libs\Sol\overload.hpp" />
+    <ClInclude Include="Libs\Sol\packaged_coroutine.hpp" />
+    <ClInclude Include="Libs\Sol\pairs_iterator.hpp" />
+    <ClInclude Include="Libs\Sol\pointer_like.hpp" />
+    <ClInclude Include="Libs\Sol\policies.hpp" />
+    <ClInclude Include="Libs\Sol\prologue.hpp" />
+    <ClInclude Include="Libs\Sol\property.hpp" />
+    <ClInclude Include="Libs\Sol\protect.hpp" />
+    <ClInclude Include="Libs\Sol\protected_function.hpp" />
+    <ClInclude Include="Libs\Sol\protected_function_result.hpp" />
+    <ClInclude Include="Libs\Sol\protected_handler.hpp" />
+    <ClInclude Include="Libs\Sol\proxy_base.hpp" />
+    <ClInclude Include="Libs\Sol\raii.hpp" />
+    <ClInclude Include="Libs\Sol\reference.hpp" />
+    <ClInclude Include="Libs\Sol\resolve.hpp" />
+    <ClInclude Include="Libs\Sol\sol.hpp" />
+    <ClInclude Include="Libs\Sol\stack.hpp" />
+    <ClInclude Include="Libs\Sol\stack\detail\pairs.hpp" />
+    <ClInclude Include="Libs\Sol\stack_check.hpp" />
+    <ClInclude Include="Libs\Sol\stack_check_get.hpp" />
+    <ClInclude Include="Libs\Sol\stack_check_get_qualified.hpp" />
+    <ClInclude Include="Libs\Sol\stack_check_get_unqualified.hpp" />
+    <ClInclude Include="Libs\Sol\stack_check_qualified.hpp" />
+    <ClInclude Include="Libs\Sol\stack_check_unqualified.hpp" />
+    <ClInclude Include="Libs\Sol\stack_core.hpp" />
+    <ClInclude Include="Libs\Sol\stack_field.hpp" />
+    <ClInclude Include="Libs\Sol\stack_get.hpp" />
+    <ClInclude Include="Libs\Sol\stack_get_qualified.hpp" />
+    <ClInclude Include="Libs\Sol\stack_get_unqualified.hpp" />
+    <ClInclude Include="Libs\Sol\stack_guard.hpp" />
+    <ClInclude Include="Libs\Sol\stack_iterator.hpp" />
+    <ClInclude Include="Libs\Sol\stack_pop.hpp" />
+    <ClInclude Include="Libs\Sol\stack_probe.hpp" />
+    <ClInclude Include="Libs\Sol\stack_proxy.hpp" />
+    <ClInclude Include="Libs\Sol\stack_proxy_base.hpp" />
+    <ClInclude Include="Libs\Sol\stack_push.hpp" />
+    <ClInclude Include="Libs\Sol\stack_reference.hpp" />
+    <ClInclude Include="Libs\Sol\state.hpp" />
+    <ClInclude Include="Libs\Sol\state_handling.hpp" />
+    <ClInclude Include="Libs\Sol\state_view.hpp" />
+    <ClInclude Include="Libs\Sol\string_view.hpp" />
+    <ClInclude Include="Libs\Sol\table.hpp" />
+    <ClInclude Include="Libs\Sol\table_core.hpp" />
+    <ClInclude Include="Libs\Sol\table_iterator.hpp" />
+    <ClInclude Include="Libs\Sol\table_proxy.hpp" />
+    <ClInclude Include="Libs\Sol\thread.hpp" />
+    <ClInclude Include="Libs\Sol\tie.hpp" />
+    <ClInclude Include="Libs\Sol\traits.hpp" />
+    <ClInclude Include="Libs\Sol\trampoline.hpp" />
+    <ClInclude Include="Libs\Sol\tuple.hpp" />
+    <ClInclude Include="Libs\Sol\types.hpp" />
+    <ClInclude Include="Libs\Sol\unicode.hpp" />
+    <ClInclude Include="Libs\Sol\unique_usertype_traits.hpp" />
+    <ClInclude Include="Libs\Sol\unreachable.hpp" />
+    <ClInclude Include="Libs\Sol\unsafe_function.hpp" />
+    <ClInclude Include="Libs\Sol\unsafe_function_result.hpp" />
+    <ClInclude Include="Libs\Sol\userdata.hpp" />
+    <ClInclude Include="Libs\Sol\usertype.hpp" />
+    <ClInclude Include="Libs\Sol\usertype_container.hpp" />
+    <ClInclude Include="Libs\Sol\usertype_container_launch.hpp" />
+    <ClInclude Include="Libs\Sol\usertype_core.hpp" />
+    <ClInclude Include="Libs\Sol\usertype_proxy.hpp" />
+    <ClInclude Include="Libs\Sol\usertype_storage.hpp" />
+    <ClInclude Include="Libs\Sol\usertype_traits.hpp" />
+    <ClInclude Include="Libs\Sol\utility\is_integer.hpp" />
+    <ClInclude Include="Libs\Sol\utility\to_string.hpp" />
+    <ClInclude Include="Libs\Sol\variadic_args.hpp" />
+    <ClInclude Include="Libs\Sol\variadic_results.hpp" />
+    <ClInclude Include="Libs\Sol\version.hpp" />
+    <ClInclude Include="Libs\Sol\wrapper.hpp" />
     <ClInclude Include="Libs\StringToBytes\stb.h" />
+    <ClInclude Include="Localization\LocaleStructs.h" />
     <ClInclude Include="Localization\Locales\English.h" />
     <ClInclude Include="Localization\Locales\German.h" />
     <ClInclude Include="Localization\Locales\Polish.h" />
