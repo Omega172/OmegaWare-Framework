@@ -17,4 +17,4 @@ The DLL injector supports 2 injection modes
 - LoadLibrairy with optional support to bypass VAC
 - ManualMap
 
-This injector is made to be used with the OmegaWare Framework it does not support taking in a process name as an argument, it assumes you have the process name hardcoded in the FRAMEWORK_TARGET_PROCESS define in pch.h on line 19.
+This injector is made to be used with the OmegaWare Framework it does not support taking in a process name as an argument, it assumes you have the process name hardcoded in the FRAMEWORK_TARGET_PROCESS define in FrameworkConfig.h on line 12.
