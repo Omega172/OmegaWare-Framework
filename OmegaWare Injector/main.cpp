@@ -40,7 +40,7 @@ int main(int argc, char** argv, char** envp)
 	if (!std::filesystem::exists(DLLPath))
 	{
 		printf("Error: DLL not found at %ws", DLLPath.c_str());
-		return 1;
+		return DLL_NOT_FOUND;
 	}
 
 	bool bLoadLibrary = false;
@@ -48,22 +48,19 @@ int main(int argc, char** argv, char** envp)
 
 	bool bBypass = false;
 
-	Parse::ParseData LLIB = ArgParser.FindValue("llib");
-	if (LLIB.bFound)
+	if (ArgParser.FindValue("llib").bFound)
 		bLoadLibrary = true;
 
-	Parse::ParseData MM = ArgParser.FindValue("mm");
-	if (MM.bFound)
+	if (ArgParser.FindValue("mm").bFound)
 		bManualMap = true;
 
-	Parse::ParseData BYPASS = ArgParser.FindValue("bypass");
-	if (BYPASS.bFound)
+	if (ArgParser.FindValue("bypass").bFound)
 		bBypass = true;
 
 	if (!bLoadLibrary && !bManualMap)
 	{
 		printf("No injection method specified\n");
-		return 2;
+		return NO_INJECTION_METHOD_SPECIFIED;
 	}
 
 	if (bLoadLibrary && bManualMap)
@@ -99,7 +96,7 @@ int main(int argc, char** argv, char** envp)
 	if (!bReturnVal)
 	{
 		printf("Injection failed\n");
-		return 3;
+		return INJECTION_FAILED;
 	}
 
 	printf("Injection successful\n");

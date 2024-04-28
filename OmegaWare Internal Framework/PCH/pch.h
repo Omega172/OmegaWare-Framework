@@ -38,6 +38,8 @@
 #include "../Config/Config.h"
 #include "../Localization/Localization.h"
 
+#include "../Libs/Sol/sol.hpp"
+
 // Framework Globals
 namespace Framework
 {
