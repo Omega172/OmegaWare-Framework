@@ -4,7 +4,9 @@
 #pragma warning(disable : 4312)
 #include "pch.h"
 
-#define FRAMEWORK_UNITY 1
+#define MONO_DLL "mono-2.0-bdwgc.dll" // Can also be mono.dll
+
+#define DEFAULT_ASSEMBLY_NAME ".\\GAME_NAME_Data\\Managed\\Assembly-CSharp.dll"
 
 // This is where the magic happens, for unity games running mono anyway.
 #if FRAMEWORK_UNITY
@@ -59,7 +61,7 @@ private:
 
 	void Initalize()
 	{
-		hMono = GetModuleHandleA("mono.dll");
+		hMono = GetModuleHandleA(MONO_DLL);
 		if (hMono == NULL)
 			return;
 
@@ -98,11 +100,12 @@ public:
 		return _instance;
 	}
 
-	void* GetCompiledMethod(const char* className, const char* methodName, int param_count = 0, const char* assemblyName = "Assembly-CSharp")
+	void* GetCompiledMethod(const char* className, const char* methodName, int param_count = 0, const char* assemblyName = DEFAULT_ASSEMBLY_NAME)
 	{
 		MonoDomain* pDomain = mono_get_root_domain();
 		if (pDomain == nullptr)
 			return nullptr;
+		mono_thread_attach(pDomain);
 
 		MonoAssembly* pAssembly = mono_domain_assembly_open(pDomain, assemblyName);
 		if (pAssembly == nullptr)
@@ -123,11 +126,12 @@ public:
 		return mono_compile_method(pMethod);
 	}
 
-	MonoMethod* GetMethod(const char* className, const char* methodName, int param_count = 0, const char* assemblyName = "Assembly-CSharp", const char* nameSpace = "")
+	MonoMethod* GetMethod(const char* className, const char* methodName, int param_count = 0, const char* assemblyName = DEFAULT_ASSEMBLY_NAME, const char* nameSpace = "")
 	{
 		MonoDomain* pDomain = mono_get_root_domain();
 		if (pDomain == nullptr)
 			return nullptr;
+		mono_thread_attach(pDomain);
 
 		MonoAssembly* pAssembly = mono_domain_assembly_open(pDomain, assemblyName);
 		if (pAssembly == nullptr)
@@ -144,11 +148,12 @@ public:
 		return mono_class_get_method_from_name(pKlass, methodName, param_count);
 	}
 
-	MonoClass* GetClass(const char* className, const char* assemblyName = "Assembly-CSharp", const char* nameSpace = "")
+	MonoClass* GetClass(const char* className, const char* assemblyName = DEFAULT_ASSEMBLY_NAME, const char* nameSpace = "")
 	{
 		MonoDomain* pDomain = mono_get_root_domain();
 		if (pDomain == nullptr)
 			return nullptr;
+		mono_thread_attach(pDomain);
 
 		MonoAssembly* pAssembly = mono_domain_assembly_open(pDomain, assemblyName);
 		if (pAssembly == nullptr)
@@ -167,11 +172,12 @@ public:
 		return mono_method_get_class(method);
 	}
 
-	MonoClassField* GetField(const char* className, const char* fieldName, const char* assemblyName = "Assembly-CSharp", const char* nameSpace = "")
+	MonoClassField* GetField(const char* className, const char* fieldName, const char* assemblyName = DEFAULT_ASSEMBLY_NAME, const char* nameSpace = "")
 	{
 		MonoDomain* pDomain = mono_get_root_domain();
 		if (pDomain == nullptr)
 			return nullptr;
+		mono_thread_attach(pDomain);
 
 		MonoAssembly* pAssembly = mono_domain_assembly_open(pDomain, assemblyName);
 		if (pAssembly == nullptr)
@@ -231,6 +237,8 @@ public:
 
 	void* GetStaticFieldValue(const char* className, const char* fieldName)
 	{
+		mono_thread_attach(mono_get_root_domain());
+
 		MonoClass* pKlass = GetClass(className);
 		if (pKlass == nullptr)
 			return nullptr;
