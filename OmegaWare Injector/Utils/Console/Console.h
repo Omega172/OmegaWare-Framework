@@ -3,6 +3,7 @@
 #pragma once
 #include <iostream>
 #include <format>
+#include <Windows.h>
 
 class Console
 {

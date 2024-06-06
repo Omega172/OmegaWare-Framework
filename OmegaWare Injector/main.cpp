@@ -1,107 +1,53 @@
 #include <Windows.h>
 #include <filesystem>
+#include <memory>
+#include <sstream>
 
 #include "../OmegaWare Internal Framework/FrameworkConfig.h"
-#include "Parse/Parse.h"
 #include "Utils/Utils.h"
 #include "Inject/Inject.h"
+#include "GUI/GUI.h"
 
-// This injector is made to be used with the OmegaWare Framework it does not support taking in a process name as an argument,
-// it assumes you have the process name hardcoded in the FRAMEWORK_TARGET_PROCESS macro in pch.h
+namespace Globals {
+#ifdef _DEBUG
+	std::unique_ptr<Console> console = std::make_unique<Console>(true, FRAMEWORK_CODENAME);
+#endif
+}
 
-enum ERROR_CODES
+int __stdcall WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdLine, int cmdShow)
 {
-	DLL_NOT_FOUND = 1,
-	NO_INJECTION_METHOD_SPECIFIED = 2,
-	INJECTION_FAILED = 3
-};
+	LogDebugHere("Creating window...");
+	GUI::CreateWnd(L"OmegaWare.xyz DLL Injector", L"OmegaWareWndClass");
+	LogDebugHere("Window created.");
 
-int main(int argc, char** argv, char** envp)
-{
-	const std::string Framework = FRAMEWORK_CODENAME;
-	const std::string Game = FRAMEWORK_TARGET_GAME;
-	const std::string Title = Framework + " (" + Game + ")";
-
-	SetConsoleTitleA(Title.c_str());
-	Parse ArgParser(argc, argv);
-
-	if (argc < 2 || ArgParser.FindValue("--help").bFound || ArgParser.FindValue("-h").bFound)
+	LogDebugHere("Attempting to create D3D9 device...");
+	if (!GUI::CreateDevice())
 	{
-		printf("TARGET PROCESS: %s\n", FRAMEWORK_TARGET_PROCESS);
-		printf("Usage: %s DLL [options]\n", argv[0]);
-		printf("Options:\n");
-		printf("  -llib             LoadLibrary\n");
-		printf("  -mm               ManualMap\n");
-		printf("  -bypass           Bypass VAC\n");
-		return 0;
+		LogErrorHere("Failed to create D3D9 device.");
+		return EXIT_FAILURE;
+	}
+	LogDebugHere("D3D9 device created.");
+
+	LogDebugHere("Setting up ImGui...");
+	GUI::CreateImGui();
+	LogDebugHere("ImGui setup.");
+
+	while (GUI::bKeepRunning)
+	{
+		GUI::BeginRender();
+		GUI::Render();
+		GUI::EndRender();
 	}
 
-	std::filesystem::path DLLPath = ArgParser.GetArg(1);
-	if (!std::filesystem::exists(DLLPath))
-	{
-		printf("Error: DLL not found at %ws", DLLPath.c_str());
-		return 1;
-	}
+	LogDebugHere("Performing cleanup...");
+	GUI::DestroyImGui();
+	GUI::DestroyDevice();
+	GUI::DestroyWindow();
+	LogDebugHere("Cleanup finished.");
 
-	bool bLoadLibrary = false;
-	bool bManualMap = false;
+#ifdef _DEBUG
+	Globals::console.get()->Destroy();
+#endif
 
-	bool bBypass = false;
-
-	Parse::ParseData LLIB = ArgParser.FindValue("llib");
-	if (LLIB.bFound)
-		bLoadLibrary = true;
-
-	Parse::ParseData MM = ArgParser.FindValue("mm");
-	if (MM.bFound)
-		bManualMap = true;
-
-	Parse::ParseData BYPASS = ArgParser.FindValue("bypass");
-	if (BYPASS.bFound)
-		bBypass = true;
-
-	if (!bLoadLibrary && !bManualMap)
-	{
-		printf("No injection method specified\n");
-		return 2;
-	}
-
-	if (bLoadLibrary && bManualMap)
-	{
-		printf("Cannot use both -llib and -mm\n");
-		printf("Defaulting to -llib\n");
-
-		bManualMap = false;
-	}
-
-	if (bManualMap && bBypass)
-	{
-		printf("Cannot use -bypass with -mm\n");
-		printf("Defaulting to -llib\n");
-
-		bLoadLibrary = true;
-		bManualMap = false;
-	}
-
-	DWORD dwPID = Utils::GetProcId(FRAMEWORK_TARGET_PROCESS);
-	printf("PID: %d\n", dwPID);
-
-	HANDLE hProc = OpenProcess(PROCESS_ALL_ACCESS, FALSE, dwPID);
-	printf("hProc: %p\n", hProc);
-
-	bool bReturnVal = false;
-	if (bLoadLibrary)
-		bReturnVal = Inject::LoadLib(hProc, DLLPath.string(), bBypass);
-		
-	if (bManualMap)
-		bReturnVal = Inject::ManualMap(hProc, DLLPath.string());
-
-	if (!bReturnVal)
-	{
-		printf("Injection failed\n");
-		return 3;
-	}
-
-	printf("Injection successful\n");
-	return 0;
+	return EXIT_SUCCESS;
 }

@@ -327,7 +327,9 @@ namespace Inject
 		while (!hCheck)
 		{
 			MANUAL_MAPPING_DATA DataCheck{ 0 };
-			ReadProcessMemory(hProc, pTargetBase, &DataCheck, sizeof(DataCheck), nullptr);
+			if (!ReadProcessMemory(hProc, pTargetBase, &DataCheck, sizeof(DataCheck), nullptr))
+				break;
+
 			hCheck = DataCheck.hMod;
 			std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 		}

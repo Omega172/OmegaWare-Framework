@@ -4,6 +4,10 @@
 #include <string>
 #include <Windows.h>
 #include <TlHelp32.h>
+#include <ShlObj.h>
+
+#include "Console/Console.h"
+#include "Logging/Logging.h"
 
 namespace Utils
 {
@@ -38,5 +42,15 @@ namespace Utils
 		}
 		CloseHandle(hSnap);
 		return procId;
+	}
+
+	inline std::string GetDocumentsFolder()
+	{
+		char Folder[MAX_PATH];
+		HRESULT hr = SHGetFolderPathA(0, CSIDL_MYDOCUMENTS, 0, 0, Folder);
+		if (SUCCEEDED(hr))
+			return Folder;
+
+		else return "";
 	}
 }

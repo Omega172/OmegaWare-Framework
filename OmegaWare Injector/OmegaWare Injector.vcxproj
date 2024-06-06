@@ -94,12 +94,14 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;FRAMEWORK_INJECTOR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <UACExecutionLevel>RequireAdministrator</UACExecutionLevel>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -110,14 +112,16 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;FRAMEWORK_INJECTOR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <UACExecutionLevel>RequireAdministrator</UACExecutionLevel>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -126,12 +130,14 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;FRAMEWORK_INJECTOR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <UACExecutionLevel>RequireAdministrator</UACExecutionLevel>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -142,26 +148,51 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;FRAMEWORK_INJECTOR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <UACExecutionLevel>RequireAdministrator</UACExecutionLevel>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="GUI\GUI.cpp" />
+    <ClCompile Include="Libs\ImGUI\imgui.cpp" />
+    <ClCompile Include="Libs\ImGUI\imgui_demo.cpp" />
+    <ClCompile Include="Libs\ImGUI\imgui_draw.cpp" />
+    <ClCompile Include="Libs\ImGUI\imgui_impl_dx11.cpp" />
+    <ClCompile Include="Libs\ImGUI\imgui_impl_dx9.cpp" />
+    <ClCompile Include="Libs\ImGUI\imgui_impl_win32.cpp" />
+    <ClCompile Include="Libs\ImGUI\imgui_tables.cpp" />
+    <ClCompile Include="Libs\ImGUI\imgui_widgets.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Parse\Parse.cpp" />
+    <ClCompile Include="Utils\Console\Console.cpp" />
+    <ClCompile Include="Utils\Logging\Logging.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="GUI\GUI.h" />
+    <ClInclude Include="GUI\Styles.h" />
     <ClInclude Include="Inject\Inject.h" />
-    <ClInclude Include="Parse\Parse.h" />
+    <ClInclude Include="Libs\ImGUI\imconfig.h" />
+    <ClInclude Include="Libs\ImGUI\imgui.h" />
+    <ClInclude Include="Libs\ImGUI\imgui_impl_dx11.h" />
+    <ClInclude Include="Libs\ImGUI\imgui_impl_dx12.h" />
+    <ClInclude Include="Libs\ImGUI\imgui_impl_dx9.h" />
+    <ClInclude Include="Libs\ImGUI\imgui_impl_win32.h" />
+    <ClInclude Include="Libs\ImGUI\imgui_internal.h" />
+    <ClInclude Include="Libs\ImGUI\imstb_rectpack.h" />
+    <ClInclude Include="Libs\ImGUI\imstb_textedit.h" />
+    <ClInclude Include="Libs\ImGUI\imstb_truetype.h" />
+    <ClInclude Include="Utils\Console\Console.h" />
+    <ClInclude Include="Utils\Logging\Colors.hpp" />
+    <ClInclude Include="Utils\Logging\Logging.h" />
     <ClInclude Include="Utils\Utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <ImportGroup Label="ExtensionTargets">
-  </ImportGroup>
+  <ImportGroup Label="ExtensionTargets" />
 </Project>

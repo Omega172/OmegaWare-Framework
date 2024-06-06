@@ -1,6 +1,5 @@
 #pragma once
 #include "../Libs/ImGui/imgui.h"
-#include "../Localization/Localization.h"
 
 inline ImFont* CurrentFont;
 inline ImFont* CurrentFontESP;
@@ -49,6 +48,9 @@ inline void SetupStyle()
 
 	// Safe Area Padding
 	style.DisplaySafeAreaPadding = ImVec2(3, 3);
+
+	float flHighDPIScaleFactor = ImGui_ImplWin32_GetDpiScaleForHwnd(GetDesktopWindow());
+	style.ScaleAllSizes(flHighDPIScaleFactor);
 
 	// Colors
 	ImVec4* colors = ImGui::GetStyle().Colors;
@@ -107,11 +109,12 @@ inline void ImportFonts()
 	ImGuiIO& io = ImGui::GetIO();
 
 	ImFontConfig Config;
+	Config.FontDataOwnedByAtlas = false;
 	Config.GlyphExtraSpacing.x = 1.f;
+	Config.OversampleH = 2;
+	Config.OversampleV = 2;
+	Config.RasterizerMultiply = 1.5f;
 
-	TahomaFont = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\Tahoma.ttf", 14.0f, NULL, io.Fonts->GetGlyphRangesDefault());
-	TahomaFontESP = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\Tahoma.ttf", 14.0f, &Config, io.Fonts->GetGlyphRangesDefault());
-
-	TahomaFontPolish = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\Tahoma.ttf", 14.0f, NULL, PolishRanges);
-	TahomaFontPolishESP = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\Tahoma.ttf", 14.0f, &Config, PolishRanges);
+	float flHighDPIScaleFactor = ImGui_ImplWin32_GetDpiScaleForHwnd(GetDesktopWindow());
+	TahomaFont = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\Tahoma.ttf", 16.0f * flHighDPIScaleFactor, NULL, io.Fonts->GetGlyphRangesDefault());
 }
