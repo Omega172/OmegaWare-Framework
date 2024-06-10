@@ -11,6 +11,11 @@ static_assert(SDK_IMPORTED, "Did you remember to copy in the CG SDK?");
 // CoreUObject_Package.cpp
 // Engine_Package.cpp
 
+// If using Dumper 7
+// Basic.cpp
+// CoreUObject_functions.cpp
+// Engine_functions.cpp
+
 #include "FNames.h"
 #include "Unreal.h"
 
