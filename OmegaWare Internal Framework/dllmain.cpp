@@ -2,6 +2,10 @@
 
 DWORD __stdcall FrameworkInit(LPVOID lpParam)
 {
+#ifdef _DEBUG
+	Framework::console->SetVisibility(true); // Set the console to be visible by default if the framework is in debug mode
+#endif
+
 	// Initalize MinHook
 	if (MH_Initialize() != MH_STATUS::MH_OK)
 		return false;
@@ -50,10 +54,6 @@ DWORD __stdcall FrameworkInit(LPVOID lpParam)
 	Framework::config = std::make_unique<Config>(); // Initalize the config class
 
 	Framework::hModule = reinterpret_cast<HMODULE>(lpParam);
-
-	#ifdef _DEBUG
-		Framework::console->SetVisibility(true); // Set the console to be visible if the framework is in debug mode
-	#endif
 
 	Framework::bInitalized = true;
 	LogDebugHere(Framework::Title + ": Initalized");
