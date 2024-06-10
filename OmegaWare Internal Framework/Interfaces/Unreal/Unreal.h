@@ -7,7 +7,7 @@
 
 #if FRAMEWORK_UNREAL // Not sure if this is needed but it's here anyway
 
-bool FrameworkUnrealInit()
+inline bool FrameworkUnrealInit()
 {
 #ifndef DUMPER_7
 	if (!CG::InitSdk())
