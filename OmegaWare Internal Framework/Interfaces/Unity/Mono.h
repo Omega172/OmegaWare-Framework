@@ -4,10 +4,6 @@
 #pragma warning(disable : 4312)
 #include "pch.h"
 
-#define MONO_DLL "mono-2.0-bdwgc.dll" // Can also be mono.dll
-
-#define DEFAULT_ASSEMBLY_NAME ".\\GAME_NAME_Data\\Managed\\Assembly-CSharp.dll"
-
 // This is where the magic happens, for unity games running mono anyway.
 #if FRAMEWORK_UNITY
 
