@@ -29,6 +29,7 @@ bool FrameworkUnrealInit()
 		continue;
 #endif // DUMPER_7
 
+	return true;
 }
 
 #ifndef DUMPER_7
