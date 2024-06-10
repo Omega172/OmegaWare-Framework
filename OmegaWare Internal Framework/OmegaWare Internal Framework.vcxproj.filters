@@ -101,6 +101,7 @@
     <ClInclude Include="Libs\CRC64\CRC64.h" />
     <ClInclude Include="Localization\Localization.h" />
     <ClInclude Include="Localization\LocaleStructs.h" />
+    <ClInclude Include="Interfaces\Unreal\BasicTypes.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

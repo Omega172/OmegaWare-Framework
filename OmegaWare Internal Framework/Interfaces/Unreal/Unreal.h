@@ -1,9 +1,15 @@
 #pragma once
 #include "pch.h"
+
+#ifdef DUMPER_7
+#include "Unreal/BasicTypes.h"
+#endif
+
 #if FRAMEWORK_UNREAL // Not sure if this is needed but it's here anyway
 
 bool FrameworkUnrealInit()
 {
+#ifndef DUMPER_7
 	if (!CG::InitSdk())
 		return false;
 
@@ -12,8 +18,20 @@ bool FrameworkUnrealInit()
 
 	while (!(*CG::UWorld::GWorld))
 		continue;
+#endif // !DUMPER_7
+
+#ifdef DUMPER_7
+	CG::UWorld* pGWorld = CG::UWorld::GetWorld();
+	if (!pGWorld)
+		LogErrorHere("Waiting for GWorld to initalize");
+
+	while (!pGWorld)
+		continue;
+#endif // DUMPER_7
+
 }
 
+#ifndef DUMPER_7
 typedef void(__thiscall* PostRender) (CG::UObject* pViewportClient, CG::UCanvas* pCanvas);
 class BadHookPostRender
 {
@@ -29,7 +47,7 @@ public:
 		if (!IsValidObjectPtr(pFont))
 			return;
 
-		CG::UGameViewportClient* pViewportClient = GetViewportClient();
+		CG::UGameViewportClient* pViewportClient = Framework::unreal.get()->GetViewportClient();;
 		if (!IsValidObjectPtr(pViewportClient))
 			return;
 
@@ -42,7 +60,7 @@ public:
 
 	static void RestorePostRender()
 	{
-		CG::UGameViewportClient* pViewportClient = GetViewportClient();
+		CG::UGameViewportClient* pViewportClient = Framework::unreal.get()->GetViewportClient();
 		if (!IsValidObjectPtr(pViewportClient))
 			return;
 
@@ -70,10 +88,6 @@ public:
 		oPostRender(pViewportClient, pCanvas);
 	}
 };
-
-#ifndef GAME_FNAMES
-#define GAME_FNAMES(x) \
-	x(Invalid)
 #endif
 
 #define CREATE_ENUM(n) n,
@@ -111,20 +125,26 @@ namespace FNames
 
 	inline void Initialize()
 	{
-		Utils::LogDebug(Utils::GetLocation(CurrentLoc), (std::stringstream() << "GNames: 0x" << CG::FName::GNames).str());
-		Utils::LogDebug(Utils::GetLocation(CurrentLoc), (std::stringstream() << "GNames Count: " << CG::FName::GNames->Count()).str());
+#ifdef DUMPER_7
+		CG::FNamePool* GNames = reinterpret_cast<CG::FNamePool*>(CG::InSDKUtils::GetImageBase() + CG::Offsets::GNames);
+#else
+		CG::FNamePool* GNames = CG::FName::GNames;
+#endif
+
+		Utils::LogDebug(Utils::GetLocation(CurrentLoc), (std::stringstream() << "GNames: 0x" << GNames).str());
+		Utils::LogDebug(Utils::GetLocation(CurrentLoc), (std::stringstream() << "GNames Count: " << GNames->Count()).str());
 
 		size_t iGNameSize = 0;
 		int lastBlock = 0;
-		uintptr_t nextFNameAddress = reinterpret_cast<uintptr_t>(CG::FName::GNames->Allocator.Blocks[0]);
+		uintptr_t nextFNameAddress = reinterpret_cast<uintptr_t>(GNames->Allocator.Blocks[0]);
 
 		while (1) {
 
 		RePlay:
-			int32_t nextFNameComparisonId = MAKELONG((uint16_t)((nextFNameAddress - reinterpret_cast<uintptr_t>(CG::FName::GNames->Allocator.Blocks[lastBlock])) / 2), (uint16_t)lastBlock);
+			int32_t nextFNameComparisonId = MAKELONG((uint16_t)((nextFNameAddress - reinterpret_cast<uintptr_t>(GNames->Allocator.Blocks[lastBlock])) / 2), (uint16_t)lastBlock);
 			int32_t block = nextFNameComparisonId >> 16;
 			int32_t offset = (uint16_t)nextFNameComparisonId;
-			int32_t offsetFromBlock = static_cast<int32_t>(nextFNameAddress - reinterpret_cast<uintptr_t>(CG::FName::GNames->Allocator.Blocks[lastBlock]));
+			int32_t offsetFromBlock = static_cast<int32_t>(nextFNameAddress - reinterpret_cast<uintptr_t>(GNames->Allocator.Blocks[lastBlock]));
 
 			// Get entry information
 			const uintptr_t entryOffset = nextFNameAddress;
@@ -146,9 +166,9 @@ namespace FNames
 				nameLength += 1;
 
 			// Block end ?
-			if (offsetFromBlock + toAdd + (nameLength * 2) >= 0xFFFF * CG::FNameEntryAllocator::Stride || nameHeader == 0x00 || block == CG::FName::GNames->Allocator.CurrentBlock && offset >= CG::FName::GNames->Allocator.CurrentByteCursor)
+			if (offsetFromBlock + toAdd + (nameLength * 2) >= 0xFFFF * CG::FNameEntryAllocator::Stride || nameHeader == 0x00 || block == GNames->Allocator.CurrentBlock && offset >= GNames->Allocator.CurrentByteCursor)
 			{
-				nextFNameAddress = reinterpret_cast<uintptr_t>(CG::FName::GNames->Allocator.Blocks[++lastBlock]);
+				nextFNameAddress = reinterpret_cast<uintptr_t>(GNames->Allocator.Blocks[++lastBlock]);
 				goto RePlay;
 			}
 
@@ -167,7 +187,7 @@ namespace FNames
 			}
 
 			// We hit last Name in last Block
-			if (lastBlock > CG::FName::GNames->Allocator.CurrentBlock)
+			if (lastBlock > GNames->Allocator.CurrentBlock)
 				break;
 
 			// Get next name address
@@ -205,6 +225,7 @@ public:
 		std::vector<FNames::ActorInfo_t> lActorList{};
 		std::vector<float> AllDistances{};
 
+#ifndef DUMPER_7
 		if (CG::UWorld::GWorld == nullptr) {
 			ActorLock.lock();
 			Actors.clear();
@@ -212,6 +233,16 @@ public:
 			ActorLock.unlock();
 			return;
 		}
+#else
+		CG::UWorld* pGWorld = CG::UWorld::GetWorld();
+		if (pGWorld == nullptr) {
+			ActorLock.lock();
+			Actors.clear();
+			ActorList.clear();
+			ActorLock.unlock();
+			return;
+		}
+#endif
 
 		CG::AGameState* pGameState = reinterpret_cast<CG::AGameState*>(GetGameStateBase());
 		if (!IsValidObjectPtr(pGameState)) {
@@ -243,6 +274,8 @@ public:
 
 		CG::FVector vecLocation = pAcknowledgedPawn->K2_GetActorLocation();
 
+
+#ifndef DUMPER_7
 		for (int i = 0; i < (**CG::UWorld::GWorld).Levels.Count(); i++)
 		{
 			CG::ULevel* Level = (**CG::UWorld::GWorld).Levels[i];
@@ -272,6 +305,37 @@ public:
 					lActors.push_back(Actor);
 			}
 		}
+#else
+		for (int i = 0; i < pGWorld->Levels.Num(); i++)
+		{
+			CG::ULevel* Level = pGWorld->Levels[i];
+
+			if (!Level)
+				continue;
+
+			if (!Level->Actors.IsValid() || !Level->Actors.Num())
+				continue;
+
+			for (int j = 0; j < Level->Actors.Num(); j++)
+			{
+				CG::AActor* Actor = Level->Actors[j];
+				if (!Actor)
+					continue;
+
+				bool bFailed = false;
+				for (CG::AActor* pOtherActor : lActors) {
+					if (pOtherActor != Actor)
+						continue;
+
+					bFailed = true;
+					break;
+				}
+
+				if (!bFailed)
+					lActors.push_back(Actor);
+			}
+		}
+#endif
 
 		for (CG::AActor* pActor : lActors)
 		{
@@ -282,7 +346,11 @@ public:
 			FNames::ActorInfo_t stActorInfo{
 				pActor,
 				FNames::Invalid,
+#ifndef DUMPER_7
 				vecLocation.Distance(pActor->K2_GetActorLocation())
+#else
+				vecLocation.GetDistanceTo(pActor->K2_GetActorLocation())
+#endif
 			};
 
 			for (FNames::ClassLookupEntry_t stEntry : FNames::vecClassLookups) {
@@ -357,24 +425,42 @@ public:
 	// These functions are to make getting pointers to important classes and objects easier and cleaner
 	static CG::AGameStateBase* GetGameStateBase()
 	{
+#ifndef DUMPER_7
 		if (!(*CG::UWorld::GWorld))
 			return nullptr;
 
 		CG::AGameStateBase* pGameState = (*CG::UWorld::GWorld)->GameState;
 		if (!IsValidObjectPtr(pGameState))
 			return nullptr;
+#else
+		CG::UWorld* pGWorld = CG::UWorld::GetWorld();
+		if (!pGWorld)
+			return nullptr;
 
+		CG::AGameStateBase* pGameState = pGWorld->GameState;
+		if (!IsValidObjectPtr(pGameState))
+			return nullptr;
+#endif
 		return pGameState;
 	}
 	static CG::UGameInstance* GetGameInstance()
 	{
+#ifndef DUMPER_7
 		if (!(*CG::UWorld::GWorld))
 			return nullptr;
 
 		CG::UGameInstance* pGameInstance = (*CG::UWorld::GWorld)->OwningGameInstance;
 		if (!IsValidObjectPtr(pGameInstance))
 			return nullptr;
+#else
+		CG::UWorld* pGWorld = CG::UWorld::GetWorld();
+		if (!pGWorld)
+			return nullptr;
 
+		CG::UGameInstance* pGameInstance = pGWorld->OwningGameInstance;
+		if (!IsValidObjectPtr(pGameInstance))
+			return nullptr;
+#endif
 		return pGameInstance;
 	}
 

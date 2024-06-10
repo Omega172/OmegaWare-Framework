@@ -256,6 +256,7 @@
     <ClInclude Include="Interfaces\Unity\Mono\utils\mono-logger.h" />
     <ClInclude Include="Interfaces\Unity\Mono\utils\mono-publib.h" />
     <ClInclude Include="Interfaces\Unity\UnityConfig.h" />
+    <ClInclude Include="Interfaces\Unreal\BasicTypes.h" />
     <ClInclude Include="Interfaces\Unreal\UnrealConfig.h" />
     <ClInclude Include="Interfaces\Unreal\FNames.h" />
     <ClInclude Include="Interfaces\Unreal\Unreal.h" />

@@ -109,7 +109,7 @@ void GUI::Render()
 	//
 
 #if FRAMEWORK_UNREAL
-	Cheat::unreal->ActorLock.lock();
+	Framework::unreal->ActorLock.lock();
 #endif
 
 	for (size_t i = 0; i < Features.size(); i++)
@@ -118,7 +118,7 @@ void GUI::Render()
 	}
 
 #if FRAMEWORK_UNREAL
-	Cheat::unreal->ActorLock.unlock();
+	Framework::unreal->ActorLock.unlock();
 #endif
 
 	// Gui init shit 

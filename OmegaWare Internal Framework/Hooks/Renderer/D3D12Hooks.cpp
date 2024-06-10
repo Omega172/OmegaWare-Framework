@@ -239,8 +239,8 @@ static HRESULT WINAPI hkPresent(IDXGISwapChain3* pSwapChain, UINT SyncInterval, 
         DXGI_SWAP_CHAIN_DESC sdesc;
         g_pSwapChain->GetDesc(&sdesc);
         sdesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
-        sdesc.OutputWindow = Cheat::wndproc->hwndWindow;
-        sdesc.Windowed = ((GetWindowLongPtr(Cheat::wndproc->hwndWindow, GWL_STYLE) & WS_POPUP) != 0) ? false : true;
+        sdesc.OutputWindow = Framework::wndproc->hwndWindow;
+        sdesc.Windowed = ((GetWindowLongPtr(Framework::wndproc->hwndWindow, GWL_STYLE) & WS_POPUP) != 0) ? false : true;
     });
 
     RenderImGui_DX12(pSwapChain);
