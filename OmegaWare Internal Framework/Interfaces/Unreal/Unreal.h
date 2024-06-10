@@ -131,8 +131,8 @@ namespace FNames
 		CG::FNamePool* GNames = CG::FName::GNames;
 #endif
 
-		Utils::LogDebug(Utils::GetLocation(CurrentLoc), (std::stringstream() << "GNames: 0x" << GNames).str());
-		Utils::LogDebug(Utils::GetLocation(CurrentLoc), (std::stringstream() << "GNames Count: " << GNames->Count()).str());
+		LogDebugStreamHere("GNames: 0x" << GNames);
+		LogDebugStreamHere("GNames Count: " << GNames->Count());
 
 		size_t iGNameSize = 0;
 		int lastBlock = 0;

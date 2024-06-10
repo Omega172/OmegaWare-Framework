@@ -35,6 +35,7 @@ static_assert((FRAMEWORK_RENDER_DYNAMIC + FRAMEWORK_RENDER_D3D11 + FRAMEWORK_REN
 static_assert(!(FRAMEWORK_RENDER_DYNAMIC || FRAMEWORK_RENDER_D3D12), "This does NOT work right now, please dont use ;3");
 
 #ifndef FRAMEWORK_INJECTOR
+#include "Utils/Utils.h"
 
 // Unreal
 #if FRAMEWORK_UNREAL

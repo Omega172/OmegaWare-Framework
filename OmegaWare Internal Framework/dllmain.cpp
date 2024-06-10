@@ -20,7 +20,7 @@ DWORD __stdcall FrameworkInit(LPVOID lpParam)
 	LogDebugHere("Initalizing Globals, this can take a bit");
 
 	#if FRAMEWORK_UNREAL
-		LogDebugStreamHere("Unreal: 0x" << unreal.get());
+		LogDebugStreamHere("Unreal: 0x" << Framework::unreal.get());
 		FNames::Initialize();
 	#endif
 

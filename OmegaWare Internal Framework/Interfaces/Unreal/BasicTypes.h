@@ -63,10 +63,6 @@ namespace CG {
 		std::wstring GetWideName() const {
 			return std::wstring(const_cast<const wchar_t*>(WideName), GetLength());
 		};
-
-		[[force_inline]] std::string GetAnsiName() const {
-			return GetAnsiName();
-		};
 	};
 
 	class FNameEntryAllocator {
