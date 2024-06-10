@@ -2,7 +2,7 @@
 #include "pch.h"
 
 #ifdef DUMPER_7
-#include "Unreal/BasicTypes.h"
+#include "BasicTypes.h"
 #endif
 
 #if FRAMEWORK_UNREAL // Not sure if this is needed but it's here anyway
