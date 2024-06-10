@@ -9,7 +9,6 @@
 
 #define FRAMEWORK_CODENAME "OmegaWare"
 #define FRAMEWORK_TARGET_GAME ""
-#define FRAMEWORK_TARGET_PROCESS ""
 
 // Commented these out because I'm not sure they are really necessary anymore and they are pretty annoying
 //static_assert(FRAMEWORK_TARGET_GAME != "", "Target game not set.");
