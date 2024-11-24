@@ -191,7 +191,7 @@ public:
 			if (!pChild)
 				continue;
 
-			if (pChild->GetUnique() == sUnique) {
+			if (pChild->GetUnique().compare(sUnique) == 0) {
 				return pChild;
 			}
 		}
