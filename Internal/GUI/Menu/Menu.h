@@ -185,6 +185,20 @@ public:
 		return m_pParent != nullptr;
 	};
 
+	inline ElementBase* GetChild(const std::string& sUnique) const
+	{
+		for (auto& pChild : m_Children) {
+			if (!pChild)
+				continue;
+
+			if (pChild->GetUnique() == sUnique) {
+				return pChild;
+			}
+		}
+
+		return nullptr;
+	};
+
 	inline const bool HasChildren() const
 	{
 		return m_Children.size() > 0;
