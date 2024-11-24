@@ -8,8 +8,12 @@
 #define FRAMEWORK_VERSION FRAMEWORK_MAJOR_VERSION.FRAMEWORK_MINOR_VERSION.FRAMEWORK_REWORK_VERSION
 
 #define FRAMEWORK_CODENAME "OmegaWare"
-#define TARGET_GAME_NAME ""
+#define TARGET_GAME_NAME "TEST"
+
+#pragma warning( push ) // disable "operator '!=': deprecated for array types" warning
+#pragma warning( disable : 5056)
 static_assert(TARGET_GAME_NAME != "", "Target game not set, this HAS to be set or it fucks up the logging system, the console, the menu, and the config system.");
+#pragma warning( pop )
 
 #define ENGINE_UNREAL	0
 #define ENGINE_UNITY	0
@@ -18,9 +22,9 @@ static_assert(TARGET_GAME_NAME != "", "Target game not set, this HAS to be set o
 static_assert((ENGINE_UNREAL + ENGINE_UNITY + ENGINE_OTHER) == 1, "Only one target engine type can be selected at a time."); // Don't allow both frameworks to be used)
 
 // Make sure a rendering API is selected and only one rendering API is selected
-#define FRAMEWORK_RENDER_DYNAMIC 0
-#define FRAMEWORK_RENDER_D3D11 1
-#define FRAMEWORK_RENDER_D3D12 0
+#define FRAMEWORK_RENDER_DYNAMIC	0
+#define FRAMEWORK_RENDER_D3D11		0
+#define FRAMEWORK_RENDER_D3D12		1
 static_assert((FRAMEWORK_RENDER_DYNAMIC + FRAMEWORK_RENDER_D3D11 + FRAMEWORK_RENDER_D3D12) == 1, "Only one rendering API can be selected at a time,");
 
 #ifndef FRAMEWORK_INJECTOR
@@ -57,7 +61,7 @@ static_assert((FRAMEWORK_RENDER_DYNAMIC + FRAMEWORK_RENDER_D3D11 + FRAMEWORK_REN
 #include "Libs/ImGui/imgui_impl_dx12.h"
 #endif
 
-#include "GUI/Styles.h" // Custome ImGUI sytles
+#include "GUI/Styles.h" // Custom ImGUI colors and font
 #include "GUI/Custom.h" // Contains the custom ImGui widgets for the framework
 #include "GUI/GUI.h"	// Contains the GUI class that is used to create the all of the framework's menu elements
 
