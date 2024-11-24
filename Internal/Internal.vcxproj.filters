@@ -243,7 +243,25 @@
     <ClInclude Include="Hooks\WndProc\WndProcHooks.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Lua\A.h">
+    <ClInclude Include="Lua\LuaAPI.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Lua\Headers\lauxlib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Lua\Headers\lua.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Lua\Headers\lua.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Lua\Headers\luajit.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Lua\Headers\lualib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Lua\Headers\luaconf.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Libs\Nlohmann.json\json.hpp">

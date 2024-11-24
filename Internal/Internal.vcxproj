@@ -67,7 +67,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(ProjectDir)Libs\MinHook\include\minhook.x64d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(ProjectDir)Libs\MinHook\include\minhook.x64d.lib;$(ProjectDir)Lua\Libs\lua51d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -89,7 +89,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(ProjectDir)Libs\MinHook\include\minhook.x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(ProjectDir)Libs\MinHook\include\minhook.x64.lib;$(ProjectDir)Lua\Libs\lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -162,7 +162,13 @@
     <ClInclude Include="Localization\Locales\German.h" />
     <ClInclude Include="Localization\Locales\Polish.h" />
     <ClInclude Include="Localization\Localization.h" />
-    <ClInclude Include="Lua\A.h" />
+    <ClInclude Include="Lua\Headers\lauxlib.h" />
+    <ClInclude Include="Lua\Headers\lua.h" />
+    <ClInclude Include="Lua\Headers\lua.hpp" />
+    <ClInclude Include="Lua\Headers\luaconf.h" />
+    <ClInclude Include="Lua\Headers\luajit.h" />
+    <ClInclude Include="Lua\Headers\lualib.h" />
+    <ClInclude Include="Lua\LuaAPI.h" />
     <ClInclude Include="Memory\Memory.h" />
     <ClInclude Include="Memory\Windows\WindowsMemory.h" />
     <ClInclude Include="Memory\Windows\WindowsTypes.h" />

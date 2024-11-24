@@ -37,6 +37,8 @@
 #include "../Config/Config.h"
 #include "../Localization/Localization.h"
 
+#include "../Lua/LuaAPI.h"
+
 // Framework Globals
 namespace Framework
 {
