@@ -1,5 +1,5 @@
 #include "pch.h"
-#include <nlohmann/json.hpp>
+#include "../Libs/Nlohmann.json/json.hpp"
 #include <fstream>
 
 Config::Config()

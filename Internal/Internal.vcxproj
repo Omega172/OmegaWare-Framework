@@ -154,6 +154,7 @@
     <ClInclude Include="Libs\ImGUI\imstb_textedit.h" />
     <ClInclude Include="Libs\ImGUI\imstb_truetype.h" />
     <ClInclude Include="Libs\MinHook\include\MinHook.h" />
+    <ClInclude Include="Libs\Nlohmann.json\json.hpp" />
     <ClInclude Include="Libs\StringToBytes\stb.h" />
     <ClInclude Include="FrameworkConfig.h" />
     <ClInclude Include="Localization\LocaleStructs.h" />

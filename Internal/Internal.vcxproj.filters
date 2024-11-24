@@ -246,6 +246,9 @@
     <ClInclude Include="Lua\A.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Libs\Nlohmann.json\json.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Libs\ImGUI\imgui.cpp">
