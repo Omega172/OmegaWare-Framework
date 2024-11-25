@@ -98,7 +98,7 @@ void Utils::LogDebug(Location stLocation, std::string sDebugMessage)
 {
 #ifdef _DEBUG
 	// Debug: Filename | Function() -> Ln: 1 Col: 1 | Info: Message
-	std::cout << std::format("{}Debug{}: {}{}{} | {}{}{} -> Ln: {}{}{} Col: {}{}{} | {}Info{}{}",
+	std::cout << std::format("{}Debug{}: {}{}{} | {}{}{} -> Ln: {}{}{} Col: {}{}{} | {}Info{}{}\n",
 		colors::cyan, colors::white,
 		colors::green, stLocation.m_sFilename, colors::white, colors::green, stLocation.m_sFunction, colors::white,
 		colors::magenta, stLocation.m_iLine, colors::white, colors::magenta, stLocation.m_iColumn, colors::white,
