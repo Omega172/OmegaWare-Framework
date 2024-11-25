@@ -66,7 +66,7 @@ void Utils::LogError(Location stLocation, std::string sErrorMessage)
 	{
 		auto optPath = Utils::GetLogFilePath("_ERRORS.log");
 		if (!optPath) {
-			LogErrorHere("Failed to open ERROR log folder for writing");
+			//LogErrorHere("Failed to open ERROR log folder for writing");
 			return;
 		}
 
@@ -76,7 +76,7 @@ void Utils::LogError(Location stLocation, std::string sErrorMessage)
 	std::ofstream fileError(pathError, std::ios::app);
 	if (!fileError.is_open() || fileError.fail())
 	{
-		LogErrorHere("Failed to open ERROR log file for writing");
+		//LogErrorHere("Failed to open ERROR log file for writing");
 		return;
 	}
 
