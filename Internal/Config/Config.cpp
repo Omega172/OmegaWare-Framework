@@ -1,16 +1,22 @@
 #include "pch.h"
 #include "../Libs/Nlohmann.json/json.hpp"
 #include <fstream>
+#include "../Utils/Logging/Logging.h"
 
 Config::Config()
 {
-	std::stringstream SS;
-	SS << Utils::GetDocumentsFolder() << "\\" << Framework::Framework << "\\";
-	if (!std::filesystem::exists(SS.str()))
-		std::filesystem::create_directory(SS.str());
+	std::filesystem::path pathConfig{};
+	{
+		auto optPath = Utils::GetConfigFilePath(TARGET_GAME_NAME, "cfg");
+		if (!optPath) {
+			LogErrorHere("Utils::GetConfigFilePath failure! (Unable to initialize config system)");
+			return;
+		}
 
-	SS << TARGET_GAME_NAME << ".cfg";
-	ConfigPath = SS.str();
+		pathConfig = optPath.value();
+	}
+
+	ConfigPath = pathConfig;
 
 	LogDebugHere("Config Path: " + ConfigPath.string());
 

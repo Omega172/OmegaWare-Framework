@@ -21,74 +21,14 @@
 #   include <Windows.h>
 #endif
 
+// Who the fuck defines stream functions for this stuff???
 namespace colors {
-
-#if defined(COLORS_USE_WINDOWS_API)
-    inline void wset_attributes(int foreground, int background = -1) {
-        // some comments because its windows :/
-
-        // for save default attributes of output
-        static WORD defaultAttributes = 0;
-
-        // get the terminal handle
-        HANDLE handleTerminal = GetStdHandle(STD_OUTPUT_HANDLE);
-
-        // save default attributes
-        if (!defaultAttributes) {
-            CONSOLE_SCREEN_BUFFER_INFO info;
-            if (!GetConsoleScreenBufferInfo(handleTerminal, &info)) return;
-            defaultAttributes = info.wAttributes;
-        }
-
-        // restore all to the default settings
-        if (foreground == -1 && background == -1) {
-            SetConsoleTextAttribute(handleTerminal, defaultAttributes);
-            return;
-        }
-
-        // get the current settings
-        CONSOLE_SCREEN_BUFFER_INFO info;
-        if (!GetConsoleScreenBufferInfo(handleTerminal, &info)) return;
-
-        if (foreground != -1) {
-            info.wAttributes &= ~(info.wAttributes & 0x0F);
-            info.wAttributes |= static_cast<WORD>(foreground);
-        }
-
-        if (background != -1) {
-            info.wAttributes &= ~(info.wAttributes & 0xF0);
-            info.wAttributes |= static_cast<WORD>(background);
-        }
-
-        SetConsoleTextAttribute(handleTerminal, info.wAttributes);
-    }
-#endif
-
-    inline std::ostream& reset(std::ostream& stream) {
-#if defined(COLORS_USE_ANSI_ESCAPE)
-        stream << "\033[00m";
-#else
-        wset_attributes(-1, -1);
-#endif
-
-        return stream;
-    }
-
-    inline std::ostream& bold(std::ostream& stream) {
-#if defined(COLORS_USE_ANSI_ESCAPE)
-        stream << "\033[1m";
-#endif
-
-        return stream;
-    }
-
-    inline std::ostream& faint(std::ostream& stream) {
-#if defined(COLORS_USE_ANSI_ESCAPE)
-        stream << "\033[2m";
-#endif
-
-        return stream;
-    }
+    inline constexpr auto reset     = "\e[00m";
+    inline constexpr auto bold      = "\e[1m";
+    inline constexpr auto faint     = "\e[2m";
+    inline constexpr auto italic    = "\e[3m";
+    inline constexpr auto underline = "\e[4m";
+    inline constexpr auto blink     = "\e[5m";
 
     inline std::ostream& italic(std::ostream& stream) {
 #if defined(COLORS_USE_ANSI_ESCAPE)

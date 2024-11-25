@@ -1,8 +1,14 @@
 #pragma once
-#include "Logging/Logging.h" // Include the logging header file
-#include "Console/Console.h" // Include the console header file which contains the console class used to create a console window
+
+#include <filesystem>
+#include <optional>
+
+#include "Console/Console.h"
+#include "Logging/Logging.h"
 
 namespace Utils
 {
-	std::string GetDocumentsFolder();
+	std::optional<std::filesystem::path> GetLogFilePath(const std::string& sFile = "", const std::string& sExtension = "");
+
+	std::optional<std::filesystem::path> GetConfigFilePath(const std::string& sFile = "", const std::string& sExtension = "");
 }
