@@ -2,17 +2,14 @@
 
 Console::Console(bool bVisibility, std::string sConsoleTitle)
 {
-	if (this->bInitalized)
+	if (m_bInitalized)
 		return;
 
 	if (!AllocConsole())
-	{
-		std::stringstream SS("Failed to allocate console! Error: ");
-		SS << GetLastError();
-		
-		MessageBoxA(NULL, SS.str().c_str(), "Error", MB_ICONERROR);
+	{		
+		MessageBoxA(NULL, std::format("Failed to allocate console! Error: {}", GetLastError()).c_str(), "Error", MB_ICONERROR);
 		LogErrorHere(std::to_string(GetLastError())); // This code is here only to log the error, if another console is already attached
-		this->bInitalized = false;
+		m_bInitalized = false;
 		return;
 	}
 
@@ -20,7 +17,7 @@ Console::Console(bool bVisibility, std::string sConsoleTitle)
 	if (errSTDOut != NULL)
 	{
 		LogErrorHere(std::to_string(errSTDOut));
-		this->bInitalized = false;
+		m_bInitalized = false;
 		return;
 	}
 
@@ -28,7 +25,7 @@ Console::Console(bool bVisibility, std::string sConsoleTitle)
 	if (errSTDIn != NULL)
 	{
 		LogErrorHere(std::to_string(errSTDIn));
-		this->bInitalized = false;
+		m_bInitalized = false;
 		return;
 	}
 
@@ -40,13 +37,13 @@ Console::Console(bool bVisibility, std::string sConsoleTitle)
 	SetVisibility(bVisibility);
 	SetTitle(sConsoleTitle);
 
-	this->bInitalized = true;
+	m_bInitalized = true;
 	return;
 }
 
 void Console::Destroy()
 {
-	if (!this->bInitalized)
+	if (!m_bInitalized)
 		return;
 
 	if (m_pSTDOutDummy)
@@ -58,19 +55,19 @@ void Console::Destroy()
 	if (!FreeConsole())
 		LogErrorHere(std::to_string(GetLastError()));
 
-	this->bInitalized = false;
+	m_bInitalized = false;
 	return;
 }
 
 void Console::SetVisibility(bool bVisibility)
 {
-	this->bVisible = bVisibility;
+	m_bVisible = bVisibility;
 	ShowWindow(GetConsoleWindow(), (bVisibility) ? SW_SHOW : SW_HIDE);
 	return;
 }
 
 void Console::ToggleVisibility()
 {
-	SetVisibility(!this->bVisible);
+	SetVisibility(!m_bVisible);
 	return;
 }

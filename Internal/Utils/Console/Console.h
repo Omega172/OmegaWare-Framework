@@ -10,15 +10,9 @@ private:
 	FILE* m_pSTDOutDummy = nullptr;
 	FILE* m_pSTDInDummy = nullptr;
 
-	bool bAllocated = false;
-	bool bInitalized = false;
-	bool bVisible = false;
-
-#ifdef _WIN64
-	static constexpr bool bIs64Bit = true;
-#else
-	static constexpr bool bIs64Bit = true;
-#endif
+	bool m_bAllocated  : 1 = false;
+	bool m_bInitalized : 1 = false;
+	bool m_bVisible    : 1 = false;
 
 public:
 	enum Visibility
@@ -27,12 +21,12 @@ public:
 		HIDDEN = false
 	};
 
-	Console(bool bVisibility, std::string sConsoleTitle = std::format("DEBUG CONSOLE | {}", (bIs64Bit) ? "x64" : "x32"));
+	Console(bool bVisibility, std::string sConsoleTitle = std::format("DEBUG CONSOLE | x64"));
 	void Destroy();
 
 	void SetTitle(std::string sTitle) { SetConsoleTitleA(sTitle.c_str()); }
 
-	bool GetVisibility() { return this->bVisible; };
+	bool GetVisibility() { return this->m_bVisible; };
 	void SetVisibility(bool bVisibility);
 	void ToggleVisibility();
 };
