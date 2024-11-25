@@ -11,7 +11,7 @@ Console::Console(bool bVisibility, std::string sConsoleTitle)
 		SS << GetLastError();
 		
 		MessageBoxA(NULL, SS.str().c_str(), "Error", MB_ICONERROR);
-		LogErrorHere(GetLastError()); // This code is here only to log the error, if another console is already attached
+		LogErrorHere(std::to_string(GetLastError())); // This code is here only to log the error, if another console is already attached
 		this->bInitalized = false;
 		return;
 	}
@@ -19,7 +19,7 @@ Console::Console(bool bVisibility, std::string sConsoleTitle)
 	errno_t errSTDOut = freopen_s(&m_pSTDOutDummy, "CONOUT$", "w", stdout);
 	if (errSTDOut != NULL)
 	{
-		LogErrorHere(errSTDOut);
+		LogErrorHere(std::to_string(errSTDOut));
 		this->bInitalized = false;
 		return;
 	}
@@ -27,7 +27,7 @@ Console::Console(bool bVisibility, std::string sConsoleTitle)
 	errno_t errSTDIn = freopen_s(&m_pSTDInDummy, "CONIN$", "w", stdin);
 	if (errSTDIn != NULL)
 	{
-		LogErrorHere(errSTDIn);
+		LogErrorHere(std::to_string(errSTDIn));
 		this->bInitalized = false;
 		return;
 	}
@@ -35,7 +35,7 @@ Console::Console(bool bVisibility, std::string sConsoleTitle)
 	std::cout.clear();
 	std::cin.clear();
 	
-	SetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+	SetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
 	SetVisibility(bVisibility);
 	SetTitle(sConsoleTitle);
@@ -56,7 +56,7 @@ void Console::Destroy()
 		fclose(m_pSTDInDummy);
 
 	if (!FreeConsole())
-		LogErrorHere(GetLastError());
+		LogErrorHere(std::to_string(GetLastError()));
 
 	this->bInitalized = false;
 	return;
