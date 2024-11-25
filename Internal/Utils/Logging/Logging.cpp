@@ -16,7 +16,6 @@ void Utils::LogHook(Location stLocation, std::string sHookName, std::string sRea
 {
 #ifdef _DEBUG
 	// Hook[HookName]: Filename | Function() -> Ln: 1 Col: 1 | Reason: Message
-
 	std::cout << std::format("{}Hook[{}]{}: {}{}{} | {}{}{} -> Ln: {}{}{} Col: {}{}{} | {}{}{}: {}\n",
 		colors::cyan, sHookName, colors::white,
 		colors::green, stLocation.m_sFilename, colors::white, colors::green, stLocation.m_sFunction, colors::white,
@@ -39,27 +38,24 @@ void Utils::LogError(Location stLocation, int iErrorCode)
 		pathError = optPath.value();
 	}
 
-	std::ofstream ErrorFile(pathError, std::ios::app);
-	if (!ErrorFile.is_open() || ErrorFile.fail())
+	std::ofstream fileError(pathError, std::ios::app);
+	if (!fileError.is_open() || fileError.fail())
 	{
 		LogErrorHere("Failed to open ERROR log file for writing");
 		return;
 	}
 
 	// Error: Filename | Function() -> Ln: 1 Col: 1 | Info: Message
-	std::cout << colors::red << "Error" << colors::white << ": ";
-	ErrorFile << "Error" << ": ";
+	std::cout << std::format("{}Error{}: {}{}{} | {}{}{} -> Ln: {}{}{} Col: {}{}{} | {}Info{}: {}\n",
+		colors::red, colors::white,
+		colors::green, stLocation.m_sFilename, colors::white, colors::green, stLocation.m_sFunction, colors::white,
+		colors::magenta, stLocation.m_iLine, colors::white, colors::magenta, stLocation.m_iColumn, colors::white,
+		colors::yellow, colors::white, std::system_category().message(iErrorCode));
 
-	std::cout << colors::green << stLocation.m_sFilename << colors::white << " | " << colors::green << stLocation.m_sFunction << colors::white;
-	ErrorFile << stLocation.m_sFilename << " | " << stLocation.m_sFunction;
+	fileError << std::format("Error: {} | {} -> Ln: {} Col: {} | Info: {}\n",
+		stLocation.m_sFilename, stLocation.m_sFunction, stLocation.m_iLine, stLocation.m_iColumn, std::system_category().message(iErrorCode));
 
-	std::cout << " -> Ln: " << colors::magenta << stLocation.m_iLine << colors::white << " Col: " << colors::magenta << stLocation.m_iColumn << colors::white;
-	ErrorFile << " -> Ln: " << stLocation.m_iLine << " Col: " << stLocation.m_iColumn;
-
-	std::cout << " | " << colors::yellow << "Info" << colors::white << ": " << std::system_category().message(iErrorCode) << std::endl;
-	ErrorFile << " | " << "Info" << ": " << std::system_category().message(iErrorCode) << std::endl;
-
-	ErrorFile.close();
+	fileError.close();
 #endif
 }
 
@@ -85,17 +81,14 @@ void Utils::LogError(Location stLocation, std::string sErrorMessage)
 	}
 
 	// Error: Filename | Function() -> Ln: 1 Col: 1 | Info: Message
-	std::cout << colors::red << "Error" << colors::white << ": ";
-	fileError << "Error" << ": ";
+	std::cout << std::format("{}Error{}: {}{}{} | {}{}{} -> Ln: {}{}{} Col: {}{}{} | {}Info{}: {}\n",
+		colors::red, colors::white,
+		colors::green, stLocation.m_sFilename, colors::white, colors::green, stLocation.m_sFunction, colors::white,
+		colors::magenta, stLocation.m_iLine, colors::white, colors::magenta, stLocation.m_iColumn, colors::white,
+		colors::yellow, colors::white, sErrorMessage);
 
-	std::cout << colors::green << stLocation.m_sFilename << colors::white << " | " << colors::green << stLocation.m_sFunction << colors::white;
-	fileError << stLocation.m_sFilename << " | " << stLocation.m_sFunction;
-
-	std::cout << " -> Ln: " << colors::magenta << stLocation.m_iLine << colors::white << " Col: " << colors::magenta << stLocation.m_iColumn << colors::white;
-	fileError << " -> Ln: " << stLocation.m_iLine << " Col: " << stLocation.m_iColumn;
-
-	std::cout << " | " << colors::yellow << "Info" << colors::white << ": " << sErrorMessage << std::endl;
-	fileError << " | " << "Info" << ": " << sErrorMessage << std::endl;
+	fileError << std::format("Error: {} | {} -> Ln: {} Col: {} | Info: {}\n",
+		stLocation.m_sFilename, stLocation.m_sFunction, stLocation.m_iLine, stLocation.m_iColumn, sErrorMessage);
 
 	fileError.close();
 #endif
@@ -105,12 +98,10 @@ void Utils::LogDebug(Location stLocation, std::string sDebugMessage)
 {
 #ifdef _DEBUG
 	// Debug: Filename | Function() -> Ln: 1 Col: 1 | Info: Message
-	std::cout << colors::cyan << "Debug" << colors::white << ": ";
-
-	std::cout << colors::green << stLocation.m_sFilename << colors::white << " | " << colors::green << stLocation.m_sFunction << colors::white;
-
-	std::cout << " -> Ln: " << colors::magenta << stLocation.m_iLine << colors::white << " Col: " << colors::magenta << stLocation.m_iColumn << colors::white;
-
-	std::cout << " | " << colors::yellow << "Info" << colors::white << ": " << sDebugMessage << std::endl;
+	std::cout << std::format("{}Debug{}: {}{}{} | {}{}{} -> Ln: {}{}{} Col: {}{}{} | {}Info{}{}",
+		colors::cyan, colors::white,
+		colors::green, stLocation.m_sFilename, colors::white, colors::green, stLocation.m_sFunction, colors::white,
+		colors::magenta, stLocation.m_iLine, colors::white, colors::magenta, stLocation.m_iColumn, colors::white,
+		colors::yellow, colors::white, sDebugMessage);
 #endif
 }
