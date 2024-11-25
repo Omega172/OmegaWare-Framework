@@ -36,6 +36,13 @@ std::optional<std::filesystem::path> Utils::GetLogFilePath(const std::string& sF
 	pathLog /= "Logs";
 	pathLog /= "";
 
+	// Create the directory for this log if it doesn't already exist, exit upon failure.
+	if (!std::filesystem::exists(pathLog)) {
+		if (!std::filesystem::create_directory(pathLog)) {
+			return {};
+		}
+	}
+
 	// They just want the folder path.
 	if (sFile.size() == 0) {
 		return pathLog;
@@ -57,20 +64,27 @@ std::optional<std::filesystem::path> Utils::GetConfigFilePath(const std::string&
 		return {};
 	}
 
-	std::filesystem::path pathLog = optPath.value();
-	pathLog /= "Configs";
-	pathLog /= "";
+	std::filesystem::path pathConfig = optPath.value();
+	pathConfig /= "Configs";
+	pathConfig /= "";
+
+	// Create the directory for this config if it doesn't already exist, exit upon failure.
+	if (!std::filesystem::exists(pathConfig)) {
+		if (!std::filesystem::create_directory(pathConfig)) {
+			return {};
+		}
+	}
 
 	// They just want the folder path.
 	if (sFile.size() == 0) {
-		return pathLog;
+		return pathConfig;
 	}
 
-	pathLog += sFile;
+	pathConfig += sFile;
 	if (sExtension.size() == 0) {
-		return pathLog;
+		return pathConfig;
 	}
 
-	pathLog.replace_extension(sExtension);
-	return pathLog;
+	pathConfig.replace_extension(sExtension);
+	return pathConfig;
 }
