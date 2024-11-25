@@ -3,10 +3,6 @@
 #include <fstream>
 #include <format>
 
-// These functions might be ugly but they are used to make the console text look pretty and make debugging easier
-
-
-
 Utils::Location Utils::GetLocation(std::source_location stLocation)
 {
 	return { std::filesystem::path(stLocation.file_name()).filename().string(), stLocation.function_name(), stLocation.line(), stLocation.column() };

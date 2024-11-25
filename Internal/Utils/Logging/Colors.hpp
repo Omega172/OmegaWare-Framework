@@ -1,6 +1,5 @@
 #pragma once
 
-// Who the fuck defines stream functions for this stuff???
 namespace colors {
     inline constexpr auto reset         = "\033[0m";
     inline constexpr auto bold          = "\033[1m";

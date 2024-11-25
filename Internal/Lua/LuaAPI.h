@@ -10,12 +10,14 @@ private:
 public:
 	Lua()
 	{
+		LogDebugHere("Initalizing Lua");
 		luaState = luaL_newstate();
 		luaL_openlibs(luaState);
 	}
 
 	~Lua()
 	{
+		LogDebugHere("Destroying Lua");
 		lua_close(luaState);
 	}
 

@@ -55,8 +55,12 @@ DWORD __stdcall FrameworkInit(LPVOID lpParam)
 
 	Framework::hModule = reinterpret_cast<HMODULE>(lpParam);
 
+	Framework::lua = std::make_unique<Lua>();
+
 	Framework::bInitalized = true;
 	LogDebugHere(Framework::Title + ": Initalized");
+
+	Framework::lua.get()->ExecuteScript("print('Hello, from Lua!')");
 
 	while (Framework::bShouldRun)
 	{
@@ -74,6 +78,8 @@ DWORD __stdcall FrameworkInit(LPVOID lpParam)
 
 	Framework::console->SetVisibility(true); // Set the console to be visible when the cheat is unloading
 	LogDebugHere(Framework::Title + ": Unloading..."); // Log that the cheat is unloading
+
+	delete Framework::lua.release();
 
 	Framework::wndproc.get()->Destroy();
 	Framework::renderer.get()->Destroy();
