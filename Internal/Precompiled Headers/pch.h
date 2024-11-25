@@ -61,6 +61,7 @@ namespace Framework
 	inline bool bWatermarkFPS = true;
 
 	inline std::unique_ptr<Config> config;
+	inline std::unique_ptr<Lua> lua;
 
 	inline std::unique_ptr<Menu> menu = std::make_unique<Menu>(Framework::Title, Framework::Title, ElementBase::Style_t({
 	.vec2Size = ImVec2{ 800.f, 600.f },

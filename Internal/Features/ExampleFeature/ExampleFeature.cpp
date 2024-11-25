@@ -31,7 +31,11 @@ bool ExampleFeature::Setup()
 	return Initialized;
 }
 
-void ExampleFeature::Destroy() { Initialized = false; }
+void ExampleFeature::Destroy()
+{
+	LogDebugHere("Feature: ExampleFeature Destroyed");
+	Initialized = false;
+}
 
 void ExampleFeature::HandleKeys() {}
 
