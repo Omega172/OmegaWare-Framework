@@ -27,6 +27,13 @@ void Utils::LogHook(Location stLocation, std::string sHookName, std::string sRea
 void Utils::LogError(Location stLocation, int iErrorCode)
 {
 #ifdef _DEBUG
+	// Error: Filename | Function() -> Ln: 1 Col: 1 | Info: Message
+	std::cout << std::format("{}Error{}: {}{}{} | {}{}{} -> Ln: {}{}{} Col: {}{}{} | {}Info{}: {}\n",
+		colors::red, colors::white,
+		colors::green, stLocation.m_sFilename, colors::white, colors::green, stLocation.m_sFunction, colors::white,
+		colors::magenta, stLocation.m_iLine, colors::white, colors::magenta, stLocation.m_iColumn, colors::white,
+		colors::yellow, colors::white, std::system_category().message(iErrorCode));
+
 	std::filesystem::path pathError{};
 	{
 		auto optPath = Utils::GetLogFilePath("_ERRORS.log");
@@ -45,13 +52,6 @@ void Utils::LogError(Location stLocation, int iErrorCode)
 		return;
 	}
 
-	// Error: Filename | Function() -> Ln: 1 Col: 1 | Info: Message
-	std::cout << std::format("{}Error{}: {}{}{} | {}{}{} -> Ln: {}{}{} Col: {}{}{} | {}Info{}: {}\n",
-		colors::red, colors::white,
-		colors::green, stLocation.m_sFilename, colors::white, colors::green, stLocation.m_sFunction, colors::white,
-		colors::magenta, stLocation.m_iLine, colors::white, colors::magenta, stLocation.m_iColumn, colors::white,
-		colors::yellow, colors::white, std::system_category().message(iErrorCode));
-
 	fileError << std::format("Error: {} | {} -> Ln: {} Col: {} | Info: {}\n",
 		stLocation.m_sFilename, stLocation.m_sFunction, stLocation.m_iLine, stLocation.m_iColumn, std::system_category().message(iErrorCode));
 
@@ -62,6 +62,13 @@ void Utils::LogError(Location stLocation, int iErrorCode)
 void Utils::LogError(Location stLocation, std::string sErrorMessage)
 {
 #ifdef _DEBUG
+	// Error: Filename | Function() -> Ln: 1 Col: 1 | Info: Message
+	std::cout << std::format("{}Error{}: {}{}{} | {}{}{} -> Ln: {}{}{} Col: {}{}{} | {}Info{}: {}\n",
+		colors::red, colors::white,
+		colors::green, stLocation.m_sFilename, colors::white, colors::green, stLocation.m_sFunction, colors::white,
+		colors::magenta, stLocation.m_iLine, colors::white, colors::magenta, stLocation.m_iColumn, colors::white,
+		colors::yellow, colors::white, sErrorMessage);
+	
 	std::filesystem::path pathError{};
 	{
 		auto optPath = Utils::GetLogFilePath("_ERRORS.log");
@@ -79,13 +86,6 @@ void Utils::LogError(Location stLocation, std::string sErrorMessage)
 		//LogErrorHere("Failed to open ERROR log file for writing");
 		return;
 	}
-
-	// Error: Filename | Function() -> Ln: 1 Col: 1 | Info: Message
-	std::cout << std::format("{}Error{}: {}{}{} | {}{}{} -> Ln: {}{}{} Col: {}{}{} | {}Info{}: {}\n",
-		colors::red, colors::white,
-		colors::green, stLocation.m_sFilename, colors::white, colors::green, stLocation.m_sFunction, colors::white,
-		colors::magenta, stLocation.m_iLine, colors::white, colors::magenta, stLocation.m_iColumn, colors::white,
-		colors::yellow, colors::white, sErrorMessage);
 
 	fileError << std::format("Error: {} | {} -> Ln: {} Col: {} | Info: {}\n",
 		stLocation.m_sFilename, stLocation.m_sFunction, stLocation.m_iLine, stLocation.m_iColumn, sErrorMessage);
