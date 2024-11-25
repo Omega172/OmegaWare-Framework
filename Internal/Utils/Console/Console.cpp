@@ -35,6 +35,8 @@ Console::Console(bool bVisibility, std::string sConsoleTitle)
 	std::cout.clear();
 	std::cin.clear();
 	
+	SetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+
 	SetVisibility(bVisibility);
 	SetTitle(sConsoleTitle);
 
