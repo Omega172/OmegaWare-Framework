@@ -20,6 +20,15 @@ void Utils::LogHook(Location stLocation, std::string sHookName, std::string sRea
 #endif
 }
 
+static void LogError(Utils::Location stLocation, const std::string& sErrorMessage) {
+	// Error: Filename | Function() -> Ln: 1 Col: 1 | Info: Message
+	std::cout << std::format("{}Error{}: {}{}{} | {}{}{} -> Ln: {}{}{} Col: {}{}{} | {}Info{}: {}\n",
+		colors::red, colors::white,
+		colors::green, stLocation.m_sFilename, colors::white, colors::green, stLocation.m_sFunction, colors::white,
+		colors::magenta, stLocation.m_iLine, colors::white, colors::magenta, stLocation.m_iColumn, colors::white,
+		colors::yellow, colors::white, sErrorMessage);
+}
+
 void Utils::LogError(Location stLocation, int iErrorCode)
 {
 #ifdef _DEBUG
@@ -58,18 +67,13 @@ void Utils::LogError(Location stLocation, int iErrorCode)
 void Utils::LogError(Location stLocation, std::string sErrorMessage)
 {
 #ifdef _DEBUG
-	// Error: Filename | Function() -> Ln: 1 Col: 1 | Info: Message
-	std::cout << std::format("{}Error{}: {}{}{} | {}{}{} -> Ln: {}{}{} Col: {}{}{} | {}Info{}: {}\n",
-		colors::red, colors::white,
-		colors::green, stLocation.m_sFilename, colors::white, colors::green, stLocation.m_sFunction, colors::white,
-		colors::magenta, stLocation.m_iLine, colors::white, colors::magenta, stLocation.m_iColumn, colors::white,
-		colors::yellow, colors::white, sErrorMessage);
+	::LogError(stLocation, sErrorMessage);
 	
 	std::filesystem::path pathError{};
 	{
 		auto optPath = Utils::GetLogFilePath("_ERRORS.log");
 		if (!optPath) {
-			//LogErrorHere("Failed to open ERROR log folder for writing");
+			::LogError(Utils::GetLocation(CurrentLoc), "Failed to find ERROR log file path");
 			return;
 		}
 
@@ -79,7 +83,7 @@ void Utils::LogError(Location stLocation, std::string sErrorMessage)
 	std::ofstream fileError(pathError, std::ios::app);
 	if (!fileError.is_open() || fileError.fail())
 	{
-		//LogErrorHere("Failed to open ERROR log file for writing");
+		::LogError(Utils::GetLocation(CurrentLoc), "Failed to open ERROR log file for writing");
 		return;
 	}
 
