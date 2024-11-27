@@ -164,35 +164,35 @@ size_t Memory::Wcslen(const wchar_t* lpAddress, size_t dwMaxSize) {
 #endif
 }
 
-void Memory::EnumerateInterfaces(std::string_view sModuleName, EnumerateInterfacesFunc fn)
+void Memory::EnumerateInterfaces(std::string_view svModuleName, std::function<bool(InterfaceRegistry_t*)> fn)
 {
-	LPMODULEINFO pModuleInfo = GetModuleInfo(sModuleName);
+	LPMODULEINFO pModuleInfo = GetModuleInfo(svModuleName);
 	if (!pModuleInfo || !pModuleInfo->lpBaseOfDll || !pModuleInfo->SizeOfImage) {
-		LogErrorStreamHere('[' << sModuleName << "] Unable to get Module Info!");
+		Utils::LogError(std::format("[{}] Memory::GetModuleInfo failure!", svModuleName));
 		return;
 	}
 
 	const uintptr_t CreateInterfaceSymbol = reinterpret_cast<uintptr_t>(GetProcAddress(static_cast<HMODULE>(pModuleInfo->lpBaseOfDll), "CreateInterface"));
 	if (!CreateInterfaceSymbol) {
-		LogErrorStreamHere('[' << sModuleName << "] Unable to get CreateInterface address!");
+		Utils::LogError(std::format("[{}] Unable to find CreateInterface symbol!", svModuleName));
 		return;
 	}
 
 	int32_t* pStartOffset = reinterpret_cast<int32_t*>(CreateInterfaceSymbol + 3);
 	if (!IsValidObjectPtr(pStartOffset)) {
-		LogErrorStreamHere('[' << sModuleName << "] Unable to get StartOffset!");
+		Utils::LogError(std::format("[{}] pStartOffset is invalid!", svModuleName));
 		return;
 	}
 
 	InterfaceRegistry_t** pInterfaceRegistryStart = reinterpret_cast<InterfaceRegistry_t**>(CreateInterfaceSymbol + *pStartOffset + 7);
 	if (!IsValidPtr(pInterfaceRegistryStart)) {
-		LogErrorStreamHere('[' << sModuleName << "] Unable to get InterfaceRegistryStart address!");
+		Utils::LogError(std::format("[{}] pInterfaceRegistryStart is invalid!", svModuleName));
 		return;
 	}
 
 	InterfaceRegistry_t* pInterfaceRegistry = *pInterfaceRegistryStart;
-	for (; IsValidObjectPtr(pInterfaceRegistry); pInterfaceRegistry = pInterfaceRegistry->pNext) {
-		if (!Strlen(pInterfaceRegistry->szName))
+	for (; IsValidObjectPtr(pInterfaceRegistry); pInterfaceRegistry = pInterfaceRegistry->m_pNext) {
+		if (!Strlen(pInterfaceRegistry->m_szName))
 			continue;
 
 		if (fn(pInterfaceRegistry))
@@ -200,20 +200,20 @@ void Memory::EnumerateInterfaces(std::string_view sModuleName, EnumerateInterfac
 	}
 }
 
-void* Memory::CreateInterface(std::string_view sModuleName, std::string_view sInterfaceName)
+void* Memory::CreateInterface(std::string_view svModuleName, std::string_view svInterfaceName)
 {
 	void* rv = nullptr;
 
-	EnumerateInterfaces(sModuleName, [&rv, sInterfaceName](InterfaceRegistry_t* pInterfaceRegistry) -> bool {
-		if (std::string_view(pInterfaceRegistry->szName).find(sInterfaceName) == std::string_view::npos)
+	EnumerateInterfaces(svModuleName, [&rv, svInterfaceName](InterfaceRegistry_t* pInterfaceRegistry) -> bool {
+		if (std::string_view(pInterfaceRegistry->m_szName).find(svInterfaceName) == std::string_view::npos)
 			return false;
 
-		rv = pInterfaceRegistry->Create();
+		rv = pInterfaceRegistry->m_fnCreate();
 		return true;
 	});
 
 	if (!rv)
-		LogErrorStreamHere('[' << sModuleName << "] Unable to get " << sInterfaceName);
+		Utils::LogError(std::format("[{}] Unable to find interface \"{}\"", svModuleName, svInterfaceName));
 
 	return rv;
 }
@@ -229,8 +229,7 @@ size_t Memory::GetVirtualMethodTableSize(void* lpAddress)
 
 	size_t rv = 0;
 	while (IsValidPtr(pMethodTable[rv++]))
-	{
-	}
+	{}
 
 	return rv;
 }
@@ -249,21 +248,16 @@ void* Memory::GetVirtualMethod(void* lpAddress, size_t index)
 	return (IsValidPtr(pMethod)) ? pMethod : nullptr;
 }
 
-
-void* Memory::SignatureScan(LPMODULEINFO pModuleInfo, SignatureSpan_t aSignature)
+static void* ScanModuleForSignature(const LPMODULEINFO pModuleInfo, const Memory::SignatureData_t::Span_t aSignature) 
 {
-	if (!pModuleInfo || !pModuleInfo->lpBaseOfDll || !pModuleInfo->SizeOfImage)
-		return nullptr;
+	const auto pMemory = reinterpret_cast<PUCHAR>(pModuleInfo->lpBaseOfDll);
+	const auto pSignature = aSignature.data();
+	const auto dwSignatureSize = aSignature.size();
 
-	PUCHAR pMemory = reinterpret_cast<PUCHAR>(pModuleInfo->lpBaseOfDll);
-
-	const SignatureElement_t* pSignature = aSignature.data();
-	const size_t dwSignatureSize = aSignature.size();
-
-	for (size_t i = 0; i < pModuleInfo->SizeOfImage - dwSignatureSize; i++) {
+	for (size_t i = 0; i < pModuleInfo->SizeOfImage - dwSignatureSize; ++i) {
 		bool bFound = true;
-		for (size_t j = 0; j < dwSignatureSize; j++) {
-			if (pMemory[i + j] != pSignature[j] && pSignature[j] != SignatureWildcardConvertedValue) {
+		for (size_t j = 0; j < dwSignatureSize; ++j) {
+			if (pMemory[i + j] != pSignature[j] && pSignature[j] != -1) {
 				bFound = false;
 				break;
 			}
@@ -276,22 +270,31 @@ void* Memory::SignatureScan(LPMODULEINFO pModuleInfo, SignatureSpan_t aSignature
 	return nullptr;
 }
 
-void* Memory::MultiSignatureScan(std::string_view sModuleName, std::vector<SignatureData_t*> vecSignatures)
+void* Memory::SignatureScan(const std::string_view svModuleName, const SignatureData_t::Span_t aSignature) 
 {
-	LPMODULEINFO pModuleInfo = GetModuleInfo(sModuleName);
-	if (!pModuleInfo)
+	LPMODULEINFO pModuleInfo = GetModuleInfo(svModuleName);
+	if (!pModuleInfo || !pModuleInfo->lpBaseOfDll || !pModuleInfo->SizeOfImage)
+		return nullptr;
+
+	return ScanModuleForSignature(pModuleInfo, aSignature);
+}
+
+void* Memory::SignatureScan(const std::string_view svModuleName, const std::vector<SignatureData_t*> vecSignatures)
+{
+	LPMODULEINFO pModuleInfo = GetModuleInfo(svModuleName);
+	if (!pModuleInfo || !pModuleInfo->lpBaseOfDll || !pModuleInfo->SizeOfImage)
 		return nullptr;
 
 	for (SignatureData_t* stSignatureData : vecSignatures)
 	{
-		void* rv = SignatureScan(pModuleInfo, stSignatureData->aSignature);
+		void* rv = ScanModuleForSignature(pModuleInfo, stSignatureData->aSignature);
 		if (!rv)
 			continue;
 
 		if (!stSignatureData->CorrectReturnAddressFunc)
 			return rv;
 
-		return stSignatureData->CorrectReturnAddressFunc(rv);
+		return reinterpret_cast<void*>(stSignatureData->CorrectReturnAddressFunc(reinterpret_cast<uintptr_t>(rv)));
 	}
 
 	return nullptr;

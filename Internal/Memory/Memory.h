@@ -15,119 +15,219 @@
 #define PtrJmp(ptr)               (PtrOffset(ptr, sizeof(int) + *reinterpret_cast<int*>(ptr)))
 #define PtrOffsetJmp(ptr, n1, n2) (PtrOffset(PtrJmp(PtrOffset(ptr, n1)), n2))
 
-#define Signature(n) Memory::SignatureConversion_t::<stb::fixed_string{n}>::value
+#define Signature(n) (Memory::SignatureData_t::Conversion_t::<stb::fixed_string{n}>::value)
 
 namespace Memory
 {
-	// Checks to see if memory is readable to prevent access violations, can be expensive
+	/**
+	 * Determine if the memory being pointed to is readable to prevent access violations.
+	 * 
+	 * \param lpAddress The address that is being checked.
+	 * 
+	 * \param dwLength The size of the object that you want to read from.
+	 * 
+	 * \warning Can be expensive!
+	 */
 	bool IsReadable(const void* lpAddress, size_t dwLength);
 
-	// Gets the length of a string while doing readable checks, more expensive than std::strlen
+	/**
+	 * Get the length of a string whilst using Memory::IsReadable to prevent access violations.
+	 * 
+	 * \returns The size of the string.
+	 * 
+	 * \param lpAddress The address of the start of the string to be checked.
+	 * 
+	 * \param dwMaxSize The maximum size of the string to be read from.
+	 * 
+	 * \warning Is more expensive than std::strlen!
+	 */
 	size_t Strlen(const char* lpAddress, size_t dwMaxSize = 1024);
-	// Gets the length of a wstring while doing readable checks, more expensive than std::wcslen
+
+	/**
+	 * Get the length of a wstring whilst using Memory::IsReadable to prevent access violations.
+	 *
+	 * \returns The size of the wstring.
+	 *
+	 * \param lpAddress The address of the start of the wstring to be checked.
+	 *
+	 * \param dwMaxSize The maximum size of the wstring to be read from.
+	 *
+	 * \warning Is more expensive than std::wcslen!
+	 */
 	size_t Wcslen(const wchar_t* lpAddress, size_t dwMaxSize = 1024);
 
-	typedef struct InterfaceRegistry_t {
-		using CreateFunc = void* (*)();
-		CreateFunc Create;
-		const char* szName;
-		InterfaceRegistry_t* pNext;
-	} InterfaceRegistry_t;
+	struct InterfaceRegistry_t {
+		void* (cdecl* m_fnCreate)();
+		const char* m_szName;
+		InterfaceRegistry_t* m_pNext;
+	};
+	
+	/**
+	 * Enumerate interfaces in module; calling the function and passing a pointer to the interface registry.
+	 * 
+	 * \param svModuleName The name of the module to look for interfaces in.
+	 * 
+	 * \param fn A function that accepts an InterfaceRegistry pointer and returns a boolean indicating if it wants to stop the enumeration.
+	 */
+	void EnumerateInterfaces(std::string_view svModuleName, std::function<bool(InterfaceRegistry_t*)> fn);
 
-	using EnumerateInterfacesFunc = std::function<bool(InterfaceRegistry_t*)>;
+	/**
+	 * Find calls the Create function for the given interface found in the given module.
+	 *
+	 * \returns A pointer to the interface.
+	 * 
+	 * \param svModuleName The name of the module to look for the interface in.
+	 * 
+	 * \param svInterfaceName The full name of the interface to find in the module.
+	 */
+	void* CreateInterface(std::string_view svModuleName, std::string_view svInterfaceName);
 
-	void EnumerateInterfaces(std::string_view sModuleName, EnumerateInterfacesFunc fn);
-
-	void* CreateInterface(std::string_view sModuleName, std::string_view sInterfaceName);
-
-
-	// Get the size of the virtual method table
+	/**
+	 * \returns The number of methods in the virtual method table.
+	 * 
+	 * \param lpAddress The address to the virtual method table.
+	 */
 	size_t GetVirtualMethodTableSize(void* lpAddress);
 
-	// Gets method from virtual method table
+	/**
+	 * \returns A pointer to the method at the given index in the virtual method table.
+	 * 
+	 * \param lpAddress The address to the virtual method table.
+	 * 
+	 * \param index The index of the method to get the offset of in the virtual method table.
+	 */
 	void* GetVirtualMethod(void* lpAddress, size_t index);
 
-	// Types used for Signature conversion and arrays, use STB (string to bytes) to convert strings to spans that contain SignatureElement_t
-	using SignatureElement_t = short;
-	constexpr SignatureElement_t SignatureWildcardConvertedValue = -1;
-	using SignatureConversion_t = stb::basic_hex_string_array_conversion<' ', '?', SignatureElement_t, SignatureWildcardConvertedValue>;
-	using SignatureSpan_t = std::span<const SignatureElement_t>;
+	struct SignatureData_t {
+		using Span_t = std::span<const int16_t>;
+		using Conversion_t = stb::basic_hex_string_array_conversion<' ', '?', Span_t::element_type, -1>;
 
-	// Scans module for memory signature, returning the found address
-	void* SignatureScan(LPMODULEINFO pModuleInfo, SignatureSpan_t aSignature);
+		Span_t aSignature;
+		std::function<uintptr_t (uintptr_t)> CorrectReturnAddressFunc;
+	};
+ 
+	/**
+	 * Scan a module for the given signature.
+	 *
+	 * \returns A pointer to the memory address of the start of the signature.
+	 *
+	 * \param svModuleName The name of the module to look for the signature in.
+	 *
+	 * \param aSignatures The signature to scan the module with.
+	 */
+	void* SignatureScan(const std::string_view svModuleName, const SignatureData_t::Span_t aSignature);
 
-	// Type used for MultiSignatureScan function, contains signature and function to correct the return address
-	typedef struct SignatureData_t {
-		SignatureSpan_t aSignature;
-		// Used for multiscan so different signatures that would need to be corrected differently can be scanned, can be a nullptr
-		std::function<void* (void*)> CorrectReturnAddressFunc;
-	} SignatureData_t;
+	/**
+	 * Scan a module for one of the given signatures.
+	 * 
+	 * \returns A pointer to the first memory address of the start of the first successful signature.
+	 * 
+	 * \param svModuleName The name of the module to look for the signatures in.
+	 * 
+	 * \param vecSignatures A vector of signatures to scan the module with.
+	 */
+	void* SignatureScan(const std::string_view svModuleName, const std::vector<SignatureData_t*> vecSignatures);
 
-	// Scans module for signatures and will call the sig's CorrectReturnAddressFunc before returning the found address
-	void* MultiSignatureScan(std::string_view sModuleName, std::vector<SignatureData_t*> vecSignatures);
-
-	template<typename TFunction>
+	/**
+	 * Wrapper for MinHook.
+	 */
+	template<typename Fn_t>
 	class Hook
 	{
 	private:
+		// The target address being hooked.
 		void* m_pTarget = nullptr;
-		TFunction m_fnOriginal = nullptr;
 
+		// Storage for the original function pointer.
+		Fn_t m_fnOriginal = nullptr;
 	public:
 		Hook() {};
 
-		// Call the original function that we hooked
+		/**
+		 * Call the original function.
+		 */
 		template <typename... TArgs>
 		auto operator()(TArgs... args)
 		{
-			static_assert(std::is_invocable_v<TFunction, TArgs...>, "Args dont match function type!");
+			static_assert(std::is_invocable_v<Fn_t, TArgs...>, "Args dont match function type!");
 			if (!m_fnOriginal)
-				throw std::runtime_error("Attempted to call a nullptr!");
+				throw std::runtime_error("Attempted to call the original function of an uninitialized hook.");
 
 			return m_fnOriginal(std::forward<TArgs>(args)...);
 		};
 
-		// Disable the already installed hook (wont remove it)
-		MH_STATUS Disable()
+		/**
+		 * Disable an already started hook; will not fully remove the hook.
+		 * 
+		 * \see MH_DisableHook
+		 */
+		inline MH_STATUS Disable() const
 		{
 			return MH_DisableHook(m_pTarget);
 		};
 
-		// Enable the already installed hook
-		MH_STATUS Enable()
+		/**
+		 * Re-enable an already started hook.
+		 * 
+		 * \see MH_EnableHook
+		 */
+		inline MH_STATUS Enable() const
 		{
 			return MH_EnableHook(m_pTarget);
 		};
 
-		// Remove the installed hook
-		MH_STATUS RemoveHook()
+		/**
+		 * Disable and remove an installed hook.
+		 * 
+		 * \see Hook::Disable
+		 * \see MH_RemoveHook
+		 */
+		inline MH_STATUS Remove()
 		{
-			MH_STATUS status = Disable();
+			MH_STATUS eStatus = Disable();
 
-			if (status != MH_OK && status != MH_ERROR_DISABLED)
-				return status;
+			if (eStatus != MH_OK && eStatus != MH_ERROR_DISABLED)
+				return eStatus;
 
-			status = MH_RemoveHook(m_pTarget);
-			if (status == MH_OK)
+			eStatus = MH_RemoveHook(m_pTarget);
+			if (eStatus == MH_OK)
 				m_pTarget = nullptr;
 
-			return status;
+			return eStatus;
 		};
 
-		// Hook function via a function pointer
-		MH_STATUS HookAddress(TFunction fnHook, void* pTarget)
+		/**
+		 * Hook an address.
+		 * 
+		 * \param fnDetour The function that will be called instead of the original function.
+		 * 
+		 * \param lpAddressThe address of the function to be hooked.
+		 * 
+		 * \see MH_CreateHook
+		 */
+		inline MH_STATUS Start(Fn_t fnDetour, void* lpAddress)
 		{
-			if (MH_STATUS status = MH_CreateHook(pTarget, fnHook, reinterpret_cast<void**>(&m_fnOriginal)); status != MH_OK)
-				return status;
+			if (MH_STATUS eStatus = MH_CreateHook(lpAddress, fnDetour, reinterpret_cast<void**>(&m_fnOriginal)); eStatus != MH_OK)
+				return eStatus;
 
-			m_pTarget = pTarget;
+			m_pTarget = lpAddress;
 			return Enable();
 		};
 
-		// Hook the function via a virtual method table index
-		MH_STATUS HookVirtualMethod(TFunction fnHook, void* lpAddress, size_t index)
+		/**
+		 * Hook a virtual method table.
+		 * 
+		 * \param fnDetour The function that will be called instead of the original function.
+		 * 
+		 * \param lpAddress The virtual method table to hook.
+		 * 
+		 * \param iIndex The index of the method in the virtual method table to hook.
+		 * 
+		 * \see MH_CreateHook
+		 */
+		inline MH_STATUS Start(Fn_t fnDetour, void* lpAddress, size_t iIndex)
 		{
-			return HookAddress(fnHook, GetVirtualMethod(lpAddress, index));
-		}
+			return Start(fnDetour, GetVirtualMethod(lpAddress, iIndex));
+		};
 	};
 }

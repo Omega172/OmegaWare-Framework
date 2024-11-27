@@ -16,23 +16,21 @@ DWORD __stdcall FrameworkInit(LPVOID lpParam)
 	if (!Framework::renderer.get()->Setup())
 		return false;
 
-	#if FRAMEWORK_UNREAL
-		if (!FrameworkUnrealInit())
-			return false;
-	#endif
+#if FRAMEWORK_UNREAL
+	if (!FrameworkUnrealInit())
+		return false;
+#endif
 
-	LogDebugHere("Initalizing Globals, this can take a bit");
-
-	#if FRAMEWORK_UNREAL
-		LogDebugStreamHere("Unreal: 0x" << Framework::unreal.get());
-		FNames::Initialize();
-	#endif
-
-	LogDebugHere("Globals Initalized"); // Log that the globals have been initalized
+#if FRAMEWORK_UNREAL
+	Utils::LogDebug("Initializing FNames, this can take a bit.");
+	Utils::LogDebug(std::format("Unreal: 0x{:x}", Framework::unreal.get()));
+	FNames::Initialize();
+	Utils::LogDebug("FNames initialized!");
+#endif
 
 	HANDLE pPrivilagedHandle = Memory::GetPrivilegedHandleToProcess();
 	if (pPrivilagedHandle)
-		LogDebugStreamHere("PrivilagedHandle: 0x" << std::hex << pPrivilagedHandle);
+		Utils::LogDebug(std::format("PriviladgedHandle: 0x{:#010x}", reinterpret_cast<uintptr_t>(pPrivilagedHandle)));
 
 	AddFeatures();
 
@@ -42,13 +40,13 @@ DWORD __stdcall FrameworkInit(LPVOID lpParam)
 			bool bResult = Features[i]->Setup();
 			if (!bResult)
 			{
-				LogErrorHere("Failed to setup feature: " + std::to_string(i));
+				Utils::LogError(std::format("Failed to setup feature: {}", i));
 				return false;
 			}
 		}
 	}
-	catch (char* e) {
-		LogDebugHere(std::string(e));
+	catch (const std::exception& e) {
+		Utils::LogError(e.what());
 	}
 
 	Framework::config = std::make_unique<Config>(); // Initalize the config class
@@ -58,7 +56,7 @@ DWORD __stdcall FrameworkInit(LPVOID lpParam)
 	Framework::lua = std::make_unique<Lua>();
 
 	Framework::bInitalized = true;
-	LogDebugHere(Framework::Title + ": Initalized");
+	Utils::LogDebug(std::format("{}: Initialized", Framework::Title));
 
 	Framework::lua.get()->ExecuteScript("print('Hello, from Lua!')");
 
@@ -77,7 +75,7 @@ DWORD __stdcall FrameworkInit(LPVOID lpParam)
 	}
 
 	Framework::console->SetVisibility(true); // Set the console to be visible when the cheat is unloading
-	LogDebugHere(Framework::Title + ": Unloading..."); // Log that the cheat is unloading
+	Utils::LogDebug(std::format("{}: Unloading...", Framework::Title)); // Log that the cheat is unloading
 
 	delete Framework::lua.release();
 

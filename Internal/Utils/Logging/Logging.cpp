@@ -2,106 +2,188 @@
 #include <sstream>
 #include <fstream>
 #include <format>
+#include "Colors.hpp" // Include the colors header file which contains the color class used to set the color of the console text to make it look pretty
+#include <filesystem>
 
-Utils::Location Utils::GetLocation(std::source_location stLocation)
+// I hate this.
+static std::string ConvertFunctionName(const char* szFunctionName)
 {
-	return { std::filesystem::path(stLocation.file_name()).filename().string(), stLocation.function_name(), stLocation.line(), stLocation.column() };
+	std::string sFnName{ szFunctionName };
+
+	size_t iEnd = sFnName.find_last_of('(');
+	if (iEnd == std::string::npos) {
+		iEnd = sFnName.size();
+	}
+
+	int iTemplates = 0;
+
+	bool bDone = false;
+
+	if (iEnd != sFnName.size()) {
+		for (size_t i = iEnd - 1; i > 0 && !bDone; --i) {
+			const char c = sFnName[i];
+
+			switch (c) {
+			case('<'):
+				iTemplates--;
+				break;
+			case('>'):
+				iTemplates++;
+				break;
+
+			default:
+				if (iTemplates == 0) {
+					bDone = true;
+					iEnd = i;
+				}
+				break;
+			}
+		}
+	}
+
+	iTemplates = 0;
+	bool bHasValidChar = false;
+	size_t iStart = 0;
+
+	for (size_t i = iEnd; i > 0 && iStart == 0; --i) {
+		const char c = sFnName[i];
+		switch (c) {
+		case('<'):
+			bHasValidChar = false;
+			iTemplates--;
+			break;
+		case('>'):
+			bHasValidChar = false;
+			iTemplates++;
+			break;
+		case(' '):
+			if (bHasValidChar) {
+				iStart = i + 1;
+			}
+			break;
+
+		case(';'):
+		case(':'):
+		case('('):
+		case(')'):
+		case('{'):
+		case('}'):
+			bHasValidChar = false;
+			break;
+
+		default:
+			if (iTemplates == 0) {
+				bHasValidChar = true;
+			}
+			break;
+		}
+	}
+
+	return std::string(sFnName, iStart, iEnd - iStart + 1);
 }
 
-void Utils::LogHook(Location stLocation, std::string sHookName, std::string sReason, std::string sMessage)
+static std::string GetLocationString(std::source_location location) 
 {
-#ifdef _DEBUG
-	// Hook[HookName]: Filename | Function() -> Ln: 1 Col: 1 | Reason: Message
-	std::cout << std::format("{}Hook[{}]{}: {}{}{} | {}{}{} -> Ln: {}{}{} Col: {}{}{} | {}{}{}: {}\n",
-		colors::cyan, sHookName, colors::white,
-		colors::green, stLocation.m_sFilename, colors::white, colors::green, stLocation.m_sFunction, colors::white,
-		colors::magenta, stLocation.m_iLine, colors::white, colors::magenta, stLocation.m_iColumn, colors::white,
-		colors::yellow, sReason, colors::white, sMessage);
-#endif
+	return std::format("[{}{}{} ({}{}{},{}{}{})] {}{}{} |",
+		colors::green, std::filesystem::path(location.file_name()).filename().string(), colors::white,
+		colors::magenta, location.line(), colors::white, 
+		colors::magenta, location.column(), colors::white,
+		colors::green, ConvertFunctionName(location.function_name()), colors::white);
 }
 
-static void LogError(Utils::Location stLocation, const std::string& sErrorMessage) {
-	// Error: Filename | Function() -> Ln: 1 Col: 1 | Info: Message
-	std::cout << std::format("{}Error{}: {}{}{} | {}{}{} -> Ln: {}{}{} Col: {}{}{} | {}Info{}: {}\n",
-		colors::red, colors::white,
-		colors::green, stLocation.m_sFilename, colors::white, colors::green, stLocation.m_sFunction, colors::white,
-		colors::magenta, stLocation.m_iLine, colors::white, colors::magenta, stLocation.m_iColumn, colors::white,
-		colors::yellow, colors::white, sErrorMessage);
+static std::string GetColorlessLocationString(std::source_location location) 
+{
+	return std::format("{} | {} -> Ln: {} Col: {} |", location.file_name(), ConvertFunctionName(location.function_name()), location.line(), location.column());
 }
 
-void Utils::LogError(Location stLocation, int iErrorCode)
-{
-#ifdef _DEBUG
-	// Error: Filename | Function() -> Ln: 1 Col: 1 | Info: Message
-	std::cout << std::format("{}Error{}: {}{}{} | {}{}{} -> Ln: {}{}{} Col: {}{}{} | {}Info{}: {}\n",
-		colors::red, colors::white,
-		colors::green, stLocation.m_sFilename, colors::white, colors::green, stLocation.m_sFunction, colors::white,
-		colors::magenta, stLocation.m_iLine, colors::white, colors::magenta, stLocation.m_iColumn, colors::white,
-		colors::yellow, colors::white, std::system_category().message(iErrorCode));
+static void LogError(const std::string& sErrorMessage, std::source_location location) {
+	// Error: [$Filename ($Ln,$Col)] $Function | Info: $Message
+	std::cout << std::format("{}Error{}: {} {}Info{}: {}\n", colors::red, colors::white, GetLocationString(location), colors::yellow, colors::white, sErrorMessage);
+}
 
-	std::filesystem::path pathError{};
+namespace Utils {
+	void LogHook(const std::string& sHookName, const MH_STATUS eStatus, std::source_location location)
 	{
-		auto optPath = Utils::GetLogFilePath("_ERRORS.log");
-		if (!optPath) {
-			LogErrorHere("Failed to open ERROR log folder for writing");
+	#ifdef _DEBUG
+		if (eStatus == MH_OK) {
+			// Hook[$HookName]: [$Filename ($Ln,$Col)] $Function | Success!
+			std::cout << std::format("{}Hook[{}]{}: {} {}Success{}!\n", colors::cyan, sHookName, colors::white, GetLocationString(location), colors::green, colors::white);
 			return;
 		}
 
-		pathError = optPath.value();
+		// Hook[$HookName]: [$Filename ($Ln,$Col)] $Function | Failure: $Status
+		std::cout << std::format("{}Hook[{}]{}: {} {}Failure{}: {}\n", colors::cyan, sHookName, colors::white, GetLocationString(location), colors::yellow, colors::white, MH_StatusToString(eStatus));
+	#endif
+	}
+	void LogHook(const std::string& sHookName, const std::string& sReason, const std::string& sMessage, std::source_location location)
+	{
+	#ifdef _DEBUG
+		// Hook[$HookName]: [$Filename ($Ln,$Col)] $Function | $Reason: $Message
+		std::cout << std::format("{}Hook[{}]{}: {} {}{}{}: {}\n", colors::cyan, sHookName, colors::white, GetLocationString(location), colors::yellow, sReason, colors::white, sMessage);
+	#endif
 	}
 
-	std::ofstream fileError(pathError, std::ios::app);
-	if (!fileError.is_open() || fileError.fail())
+	void LogError(const int iErrorCode, std::source_location location) 
 	{
-		LogErrorHere("Failed to open ERROR log file for writing");
-		return;
-	}
+	#ifdef _DEBUG
+		::LogError(std::system_category().message(iErrorCode), location);
 
-	fileError << std::format("Error: {} | {} -> Ln: {} Col: {} | Info: {}\n",
-		stLocation.m_sFilename, stLocation.m_sFunction, stLocation.m_iLine, stLocation.m_iColumn, std::system_category().message(iErrorCode));
+		std::filesystem::path pathError{};
+		{
+			auto optPath = Utils::GetLogFilePath("_ERRORS.log");
+			if (!optPath) {
+				::LogError("Failed to find ERROR log file path", std::source_location::current());
+				return;
+			}
 
-	fileError.close();
-#endif
-}
+			pathError = optPath.value();
+		}
 
-void Utils::LogError(Location stLocation, std::string sErrorMessage)
-{
-#ifdef _DEBUG
-	::LogError(stLocation, sErrorMessage);
-	
-	std::filesystem::path pathError{};
-	{
-		auto optPath = Utils::GetLogFilePath("_ERRORS.log");
-		if (!optPath) {
-			::LogError(Utils::GetLocation(CurrentLoc), "Failed to find ERROR log file path");
+		std::ofstream fileError(pathError, std::ios::app);
+		if (!fileError.is_open() || fileError.fail())
+		{
+			::LogError("Failed to open ERROR log file for writing", std::source_location::current());
 			return;
 		}
 
-		pathError = optPath.value();
+		fileError << std::format("Error: {} Info: {}\n", GetColorlessLocationString(location), std::system_category().message(iErrorCode));
+		fileError.close();
+	#endif
 	}
 
-	std::ofstream fileError(pathError, std::ios::app);
-	if (!fileError.is_open() || fileError.fail())
+	void LogError(const std::string& sErrorMessage, std::source_location location)
 	{
-		::LogError(Utils::GetLocation(CurrentLoc), "Failed to open ERROR log file for writing");
-		return;
+	#ifdef _DEBUG
+		::LogError(sErrorMessage, location);
+
+		std::filesystem::path pathError{};
+		{
+			auto optPath = Utils::GetLogFilePath("_ERRORS.log");
+			if (!optPath) {
+				::LogError("Failed to find ERROR log file path", std::source_location::current());
+				return;
+			}
+
+			pathError = optPath.value();
+		}
+
+		std::ofstream fileError(pathError, std::ios::app);
+		if (!fileError.is_open() || fileError.fail())
+		{
+			::LogError("Failed to open ERROR log file for writing", std::source_location::current());
+			return;
+		}
+
+		fileError << std::format("Error: {} Info: {}\n", GetColorlessLocationString(location), sErrorMessage);
+		fileError.close();
+	#endif
 	}
 
-	fileError << std::format("Error: {} | {} -> Ln: {} Col: {} | Info: {}\n",
-		stLocation.m_sFilename, stLocation.m_sFunction, stLocation.m_iLine, stLocation.m_iColumn, sErrorMessage);
-
-	fileError.close();
-#endif
-}
-
-void Utils::LogDebug(Location stLocation, std::string sDebugMessage)
-{
-#ifdef _DEBUG
-	// Debug: Filename | Function() -> Ln: 1 Col: 1 | Info: Message
-	std::cout << std::format("{}Debug{}: {}{}{} | {}{}{} -> Ln: {}{}{} Col: {}{}{} | {}Info{}: {}\n",
-		colors::cyan, colors::white,
-		colors::green, stLocation.m_sFilename, colors::white, colors::green, stLocation.m_sFunction, colors::white,
-		colors::magenta, stLocation.m_iLine, colors::white, colors::magenta, stLocation.m_iColumn, colors::white,
-		colors::yellow, colors::white, sDebugMessage);
-#endif
-}
+	void LogDebug(const std::string& sDebugMessage, std::source_location location)
+	{
+	#ifdef _DEBUG
+		// Debug: [$Filename ($Ln,$Col)] $Function | Info: $Message
+		std::cout << std::format("{}Debug{}: {} {}Info{}: {}\n", colors::cyan, colors::white, GetLocationString(location), colors::yellow, colors::white, sDebugMessage);
+	#endif
+	}
+};

@@ -60,19 +60,19 @@ static bool CreateDeviceD3D12(HWND hWnd) {
         return false;
 
     if (CreateDXGIFactory2(DXGI_CREATE_FACTORY_DEBUG, IID_PPV_ARGS(&g_pDXGIFactory)) != S_OK) {
-        Utils::LogError(Utils::GetLocation(CurrentLoc), "Unable to create DXGIFactory!");
+        Utils::LogError("Create CreateDXGIFactory2 failure!");
         return false;
     }
 
     // FAILURE HERE
     IDXGISwapChain1* swapChain1 = NULL;
     if (g_pDXGIFactory->CreateSwapChainForHwnd(g_pD3DCommandQueue, hWnd, &sd, NULL, NULL, &swapChain1) != S_OK) {
-        Utils::LogError(Utils::GetLocation(CurrentLoc), "Unable to create SwapChainForHwnd!");
+        Utils::LogError("DXGIFactory2::CreateSwapChainForHwnd failure!");
         return false;
     }
 
     if (swapChain1->QueryInterface(IID_PPV_ARGS(&g_pSwapChain)) != S_OK) {
-        Utils::LogError(Utils::GetLocation(CurrentLoc), "Unable to create SwapChain!");
+        Utils::LogError("IUnknown::QueryInterface failure!");
         return false;
     }
     swapChain1->Release();
@@ -326,7 +326,7 @@ bool RendererHooks::D3D12Setup()
     HWND hWindow = CreateWindowA(WndClass.lpszClassName, "OmegaWare DirectX Window", WS_OVERLAPPEDWINDOW, 0, 0, 100, 100, NULL, NULL, WndClass.hInstance, NULL);
 
     if (!CreateDeviceD3D12(hWindow)) {
-        Utils::LogError(Utils::GetLocation(CurrentLoc), "Unable to create dx12 device!");
+        Utils::LogError("CreateDeviceD3D12 failure!");
       
         DestroyWindow(hWindow);
         UnregisterClassA(WndClass.lpszClassName, WndClass.hInstance);
@@ -336,52 +336,53 @@ bool RendererHooks::D3D12Setup()
     DestroyWindow(hWindow);
 
     // IDXGIFactory
-    if (oCreateSwapChain.HookVirtualMethod(hkCreateSwapChain, g_pDXGIFactory, 10) != MH_OK) {
-        Utils::LogError(Utils::GetLocation(CurrentLoc), "CreateSwapChain hook couldnt be created!");
+    MH_STATUS eStatus{};
+    if (eStatus = oCreateSwapChain.Start(hkCreateSwapChain, g_pDXGIFactory, 10); eStatus != MH_OK) {
+        Utils::LogHook("CreateSwapChain", eStatus);
         return false;
     }
 
-    if (oCreateSwapChainForHwnd.HookVirtualMethod(hkCreateSwapChainForHwnd, g_pDXGIFactory, 15) != MH_OK) {
-        Utils::LogError(Utils::GetLocation(CurrentLoc), "CreateSwapChainForHwnd hook couldnt be created!");
+    if (eStatus = oCreateSwapChainForHwnd.Start(hkCreateSwapChainForHwnd, g_pDXGIFactory, 15); eStatus != MH_OK) {
+        Utils::LogHook("CreateSwapChainForHwnd", eStatus);
         return false;
     }
 
-    if (oCreateSwapChainForCoreWindow.HookVirtualMethod(hkCreateSwapChainForCoreWindow, g_pDXGIFactory, 16) != MH_OK) {
-        Utils::LogError(Utils::GetLocation(CurrentLoc), "CreateSwapChainForCoreWindow hook couldnt be created!");
+    if (eStatus = oCreateSwapChainForCoreWindow.Start(hkCreateSwapChainForCoreWindow, g_pDXGIFactory, 16); eStatus != MH_OK) {
+        Utils::LogHook("CreateSwapChainForCoreWindow", eStatus);
         return false;
     }
 
-    if (oCreateSwapChainForComposition.HookVirtualMethod(hkCreateSwapChainForComposition, g_pDXGIFactory, 24) != MH_OK) {
-        Utils::LogError(Utils::GetLocation(CurrentLoc), "CreateSwapChainForComposition hook couldnt be created!");
+    if (eStatus = oCreateSwapChainForComposition.Start(hkCreateSwapChainForComposition, g_pDXGIFactory, 24); eStatus != MH_OK) {
+        Utils::LogHook("CreateSwapChainForComposition", eStatus);
         return false;
     }
     // IDXGIFactory
 
     // SwapChain
-    if (oPresent.HookVirtualMethod(hkPresent, g_pSwapChain, 8) != MH_OK) {
-        Utils::LogError(Utils::GetLocation(CurrentLoc), "Present hook couldnt be created!");
+    if (eStatus = oPresent.Start(hkPresent, g_pSwapChain, 8); eStatus != MH_OK) {
+        Utils::LogHook("Present", eStatus);
         return false;
     }
 
-    if (oResizeBuffers.HookVirtualMethod(hkResizeBuffers, g_pSwapChain, 13) != MH_OK) {
-        Utils::LogError(Utils::GetLocation(CurrentLoc), "ResizeBuffers hook couldnt be created!");
+    if (eStatus = oResizeBuffers.Start(hkResizeBuffers, g_pSwapChain, 13); eStatus != MH_OK) {
+        Utils::LogHook("ResizeBuffers", eStatus);
         return false;
     }
 
-    if (oPresent1.HookVirtualMethod(hkPresent1, g_pSwapChain, 22) != MH_OK) {
-        Utils::LogError(Utils::GetLocation(CurrentLoc), "Present1 hook couldnt be created!");
+    if (eStatus = oPresent1.Start(hkPresent1, g_pSwapChain, 22); eStatus != MH_OK) {
+        Utils::LogHook("Present1", eStatus);
         return false;
     }
 
-    if (oResizeBuffers1.HookVirtualMethod(hkResizeBuffers1, g_pSwapChain, 39) != MH_OK) {
-        Utils::LogError(Utils::GetLocation(CurrentLoc), "ResizeBuffers1 hook couldnt be created!");
+    if (eStatus = oResizeBuffers1.Start(hkResizeBuffers1, g_pSwapChain, 39); eStatus != MH_OK) {
+        Utils::LogHook("ResizeBuffers1", eStatus);
         return false;
     }
     // SwapChain
 
     // D3DCommandQueue
-    if (oExecuteCommandLists.HookVirtualMethod(hkExecuteCommandLists, g_pD3DCommandQueue, 10) != MH_OK) {
-        Utils::LogError(Utils::GetLocation(CurrentLoc), "ResizeBuffers1 hook couldnt be created!");
+    if (eStatus = oExecuteCommandLists.Start(hkExecuteCommandLists, g_pD3DCommandQueue, 10); eStatus != MH_OK) {
+        Utils::LogHook("ExecuteCommandLists", eStatus);
         return false;
     }
     // D3DCommandQueue
@@ -398,14 +399,14 @@ bool RendererHooks::D3D12Setup()
 
 void RendererHooks::D3D12Destroy()
 {
-    oPresent.RemoveHook();
-    oPresent1.RemoveHook();
-    oResizeBuffers1.RemoveHook();
-    oCreateSwapChain.RemoveHook();
-    oCreateSwapChainForHwnd.RemoveHook();
-    oCreateSwapChainForCoreWindow.RemoveHook();
-    oCreateSwapChainForComposition.RemoveHook();
-    oExecuteCommandLists.RemoveHook();
+    oPresent.Remove();
+    oPresent1.Remove();
+    oResizeBuffers1.Remove();
+    oCreateSwapChain.Remove();
+    oCreateSwapChainForHwnd.Remove();
+    oCreateSwapChainForCoreWindow.Remove();
+    oCreateSwapChainForComposition.Remove();
+    oExecuteCommandLists.Remove();
 
     if (ImGui::GetCurrentContext()) {
         if (ImGui::GetIO().BackendRendererUserData)

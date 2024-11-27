@@ -79,11 +79,11 @@ bool WndProcHooks::Setup()
     dwProcessId = GetCurrentProcessId();
     EnumWindows(EnumWindowsCallback, reinterpret_cast<LPARAM>(&hwndWindow));
     if (!hwndWindow) {
-        LogErrorHere("Couldn't get procedure window!");
+        Utils::LogError("EnumWindows failure!");
         return false;
     }
 
-    LogDebugStreamHere("Window: 0x" << reinterpret_cast<void*>(hwndWindow));
+    Utils::LogDebug(std::format("Window: {:#010x}", reinterpret_cast<uintptr_t>(hwndWindow)));
     oWndProc = reinterpret_cast<WNDPROC>(SetWindowLongPtr(hwndWindow, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(hkWndProc)));
 
     return true;

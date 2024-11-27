@@ -25,16 +25,15 @@ bool ExampleFeature::Setup()
 		{ "EXAMPLE_COLORPICKER"Hashed, "Przykładowy próbnik kolorów" }
 	});
 
-	LogDebugHere("Feature: ExampleFeature Initialized");
-
 	Initialized = true;
-	return Initialized;
+	Utils::LogDebug("Feature: ExampleFeature initialized.");
+	return true;
 }
 
 void ExampleFeature::Destroy()
 {
-	LogDebugHere("Feature: ExampleFeature Destroyed");
 	Initialized = false;
+	Utils::LogDebug("Feature: ExampleFeature destroyed.");
 }
 
 void ExampleFeature::HandleKeys() {}

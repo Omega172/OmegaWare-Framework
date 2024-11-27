@@ -13,7 +13,7 @@ Localization::Localization()
 	_LoadLocale(localePolish);
 
 	if (!_SetLocale("ENG"Hashed))
-		LogErrorHere("Failed to set default locale!");
+		Utils::LogError("Localization::_SetLocale failure!");
 };
 
 std::string Localization::_Get(const size_t ullKeyHash) const

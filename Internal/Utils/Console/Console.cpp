@@ -8,7 +8,7 @@ Console::Console(bool bVisibility, std::string sConsoleTitle)
 	if (!AllocConsole())
 	{		
 		MessageBoxA(NULL, std::format("Failed to allocate console! Error: {}", GetLastError()).c_str(), "Error", MB_ICONERROR);
-		LogErrorHere(std::to_string(GetLastError())); // This code is here only to log the error, if another console is already attached
+		Utils::LogError(std::to_string(GetLastError())); // This code is here only to log the error, if another console is already attached
 		m_bInitalized = false;
 		return;
 	}
@@ -16,7 +16,7 @@ Console::Console(bool bVisibility, std::string sConsoleTitle)
 	errno_t errSTDOut = freopen_s(&m_pSTDOutDummy, "CONOUT$", "w", stdout);
 	if (errSTDOut != NULL)
 	{
-		LogErrorHere(std::to_string(errSTDOut));
+		Utils::LogError(std::to_string(errSTDOut));
 		m_bInitalized = false;
 		return;
 	}
@@ -24,7 +24,7 @@ Console::Console(bool bVisibility, std::string sConsoleTitle)
 	errno_t errSTDIn = freopen_s(&m_pSTDInDummy, "CONIN$", "w", stdin);
 	if (errSTDIn != NULL)
 	{
-		LogErrorHere(std::to_string(errSTDIn));
+		Utils::LogError(std::to_string(errSTDIn));
 		m_bInitalized = false;
 		return;
 	}
@@ -53,7 +53,7 @@ void Console::Destroy()
 		fclose(m_pSTDInDummy);
 
 	if (!FreeConsole())
-		LogErrorHere(std::to_string(GetLastError()));
+		Utils::LogError(std::to_string(GetLastError()));
 
 	m_bInitalized = false;
 	return;

@@ -1,37 +1,18 @@
 #pragma once
-#include "Colors.hpp" // Include the colors header file which contains the color class used to set the color of the console text to make it look pretty
 
 #include <source_location>
-#include <filesystem>
 
-#define CurrentLoc (std::source_location::current())
-
-#define LogHookHere(hook, reason, message) (Utils::LogHook(Utils::GetLocation(CurrentLoc), hook, reason, message))
-#define LogErrorHere(message) (Utils::LogError(Utils::GetLocation(CurrentLoc), message))
-#define LogErrorStreamHere(message) (Utils::LogError(Utils::GetLocation(CurrentLoc), (std::stringstream() << message).str()))
-#define LogDebugHere(message) (Utils::LogDebug(Utils::GetLocation(CurrentLoc), message))
-#define LogDebugStreamHere(message) (Utils::LogDebug(Utils::GetLocation(CurrentLoc), (std::stringstream() << message).str()))
-
+#include "..\..\Libs\MinHook\include\MinHook.h"
 
 namespace Utils
 {
-	struct Location // A struct to hold the location of the error used in the logging function for pretty printing
-	{
-		std::string m_sFilename;
-		std::string m_sFunction;
-		unsigned int m_iLine;
-		unsigned int m_iColumn;
-	};
+	void LogHook(const std::string& sHookName, const MH_STATUS eStatus, std::source_location location = std::source_location::current());
+	void LogHook(const std::string& sHookName, const std::string& sReason, const std::string& sMessage, std::source_location location = std::source_location::current());
 
-	Location GetLocation(std::source_location stLocation); // Convert the source location to a location struct
+	void LogError(const int iErrorCode, std::source_location location = std::source_location::current());
+	void LogError(const std::string& sErrorMessage, std::source_location location = std::source_location::current());
 
-	// Various logging functions for different types of messages
-	void LogHook(Location stLocation, std::string sHookName, std::string sReason, std::string sMessage);
-
-	void LogError(Location stLocation, int iErrorCode);
-	void LogError(Location stLocation, std::string sErrorMessage);
-
-	void LogDebug(Location stLocation, std::string sDebugMessage);
+	void LogDebug(const std::string& sDebugMessage, std::source_location location = std::source_location::current());
 
 	// Because std::format verifies values at compile time sometimes we need to use its runtime version std::vforamt this is my wrapper for it
 	template<typename... Args>

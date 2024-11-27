@@ -9,7 +9,7 @@ Config::Config()
 	{
 		auto optPath = Utils::GetConfigFilePath(TARGET_GAME_NAME, "cfg");
 		if (!optPath) {
-			LogErrorHere("Utils::GetConfigFilePath failure! (Unable to initialize config system)");
+			Utils::LogError("Utils::GetConfigFilePath failure! (Unable to initialize config system)");
 			return;
 		}
 
@@ -18,7 +18,7 @@ Config::Config()
 
 	ConfigPath = pathConfig;
 
-	LogDebugHere("Config Path: " + ConfigPath.string());
+	Utils::LogDebug(std::format("Config Path: {}", ConfigPath.string()));
 
 	if (!std::filesystem::exists(ConfigPath))
 	{
@@ -35,7 +35,7 @@ bool Config::SaveConfig()
 	std::ofstream fileConfig(ConfigPath);
 	if (fileConfig.fail())
 	{
-		LogErrorHere("Failed to open config file for writing");
+		Utils::LogError("Failed to open config file for writing!");
 		return false;
 	}
 
@@ -52,7 +52,7 @@ bool Config::LoadConfig()
 	std::ifstream fileConfig(ConfigPath);
 	if (fileConfig.fail())
 	{
-		LogErrorHere("Failed to open config file for reading");
+		Utils::LogError("Failed to open config filed for reading!");
 		return false;
 	}
 

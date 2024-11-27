@@ -10,14 +10,14 @@ private:
 public:
 	Lua()
 	{
-		LogDebugHere("Initalizing Lua");
+		Utils::LogDebug("Initializing Lua");
 		luaState = luaL_newstate();
 		luaL_openlibs(luaState);
 	}
 
 	~Lua()
 	{
-		LogDebugHere("Destroying Lua");
+		Utils::LogDebug("Destroying Lua");
 		lua_close(luaState);
 	}
 
@@ -25,6 +25,6 @@ public:
 	{
 		int iResult = luaL_dostring(luaState, sScript.c_str());
 		if (iResult != LUA_OK)
-			LogErrorHere(lua_tostring(luaState, -1));
+			Utils::LogError(lua_tostring(luaState, -1));
 	}
 };

@@ -81,7 +81,7 @@ namespace CRC64
         return crc ^ 0xffffffffffffffff;
     };
 
-    constexpr size_t hash(std::string s)
+    constexpr size_t hash(const std::string& s)
     {
         size_t crc = 0xffffffffffffffff;
         for (char c : s)

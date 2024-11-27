@@ -47,7 +47,7 @@ static void CreateRenderTarget(IDXGISwapChain* pSwapChain)
 		desc.Format = GetCorrectDXGIFormat(sd.BufferDesc.Format);
 
 		if (!IsValidObjectPtr(g_pDevice)) {
-			LogErrorHere("This is not funny!");
+			Utils::LogError("ID3D11Device is invalid!");
 			return;
 		}
 
@@ -58,7 +58,7 @@ static void CreateRenderTarget(IDXGISwapChain* pSwapChain)
 			if (FAILED(g_pDevice->CreateRenderTargetView(pBackBuffer, &desc, &g_pRenderTargetView))) {
 
 				if (FAILED(g_pDevice->CreateRenderTargetView(pBackBuffer, NULL, &g_pRenderTargetView))) {
-					LogErrorHere("CreateRenderTargetView failure!");
+					Utils::LogError("ID3D11Device::CreateRenderTargetView failure!");
 				}
 			}
 		}
@@ -68,7 +68,7 @@ static void CreateRenderTarget(IDXGISwapChain* pSwapChain)
 }
 
 static void CleanupRenderTarget() {
-	LogDebugHere("DX11 CleanupRenderTarget()");
+	Utils::LogDebug("Called.");
 
 	if (g_pRenderTargetView) {
 		g_pRenderTargetView->Release();
@@ -77,7 +77,7 @@ static void CleanupRenderTarget() {
 }
 
 static void CleanupDevice() {
-	LogDebugHere("DX11 CleanupDevice()");
+	Utils::LogDebug("Called.");
 
 	CleanupRenderTarget();
 
@@ -102,7 +102,7 @@ static void RenderImGui(IDXGISwapChain* pSwapChain) {
 	if (!ImGui::GetIO().BackendRendererUserData) {
 
 		if (!SUCCEEDED(pSwapChain->GetDevice(IID_PPV_ARGS(&g_pDevice)))) {
-			LogErrorHere("Couldnt get device ?!???");
+			Utils::LogDebug("IDXGIDeviceSubObject::GetDevice failure!");
 			return;
 		}
 
@@ -188,7 +188,7 @@ static HRESULT WINAPI hkCreateSwapChainForComposition(IDXGIFactory* pFactory, IU
 bool RendererHooks::D3D11Setup()
 {
 	if (!CreateDevice(Framework::wndproc.get()->hwndWindow)) {
-		LogErrorHere("Unable to create dx11 device!");
+		Utils::LogError("CreateDevice failure!");
 		return false;
 	}
 
@@ -202,45 +202,46 @@ bool RendererHooks::D3D11Setup()
 	pDXGIAdapter->GetParent(IID_PPV_ARGS(&pIDXGIFactory));
 
 	// IDXGIFactory
-	if (oCreateSwapChain.HookVirtualMethod(hkCreateSwapChain, pIDXGIFactory, 10) != MH_OK) {
-		LogErrorHere("CreateSwapCain hook couldnt be created!");
+	MH_STATUS eStatus{};
+	if (eStatus = oCreateSwapChain.Start(hkCreateSwapChain, pIDXGIFactory, 10); eStatus != MH_OK) {
+		Utils::LogHook("CreateSwapChain", eStatus);
 		return false;
 	}
 
-	if (oCreateSwapChainForHwnd.HookVirtualMethod(hkCreateSwapChainForHwnd, pIDXGIFactory, 15) != MH_OK) {
-		LogErrorHere("CreateSwapChainForHwnd hook couldnt be created!");
+	if (eStatus = oCreateSwapChainForHwnd.Start(hkCreateSwapChainForHwnd, pIDXGIFactory, 15); eStatus != MH_OK) {
+		Utils::LogHook("CreateSwapChainForHwnd", eStatus);
 		return false;
 	}
 
-	if (oCreateSwapChainForCoreWindow.HookVirtualMethod(hkCreateSwapChainForCoreWindow, pIDXGIFactory, 16) != MH_OK) {
-		LogErrorHere("CreateSwapChainForCoreWindow hook couldnt be created!");
+	if (eStatus = oCreateSwapChainForCoreWindow.Start(hkCreateSwapChainForCoreWindow, pIDXGIFactory, 16); eStatus != MH_OK) {
+		Utils::LogHook("CreateSwapChainForCoreWindow", eStatus);
 		return false;
 	}
 
-	if (oCreateSwapChainForComposition.HookVirtualMethod(hkCreateSwapChainForComposition, pIDXGIFactory, 24) != MH_OK) {
-		LogErrorHere("CreateSwapChainForComposition hook couldnt be created!");
+	if (eStatus = oCreateSwapChainForComposition.Start(hkCreateSwapChainForComposition, pIDXGIFactory, 24); eStatus != MH_OK) {
+		Utils::LogHook("CreateSwapChainForComposition", eStatus);
 		return false;
 	}
 	// IDXGIFactory
 
 	// SwapChain
-	if (oPresent.HookVirtualMethod(hkPresent, g_pSwapChain, 8) != MH_OK) {
-		LogErrorHere("Present hook couldnt be created!");
+	if (eStatus = oPresent.Start(hkPresent, g_pSwapChain, 8); eStatus != MH_OK) {
+		Utils::LogHook("Present", eStatus);
 		return false;
 	}
 
-	if (oResizeBuffers.HookVirtualMethod(hkResizeBuffers, g_pSwapChain, 13) != MH_OK) {
-		LogErrorHere("ResizeBuffers hook couldnt be created!");
+	if (eStatus = oResizeBuffers.Start(hkResizeBuffers, g_pSwapChain, 13); eStatus != MH_OK) {
+		Utils::LogHook("ResizeBuffers", eStatus);
 		return false;
 	}
 
-	if (oPresent1.HookVirtualMethod(hkPresent1, g_pSwapChain, 22) != MH_OK) {
-		LogErrorHere("Present1 hook couldnt be created!");
+	if (eStatus = oPresent1.Start(hkPresent1, g_pSwapChain, 22); eStatus != MH_OK) {
+		Utils::LogHook("Present1", eStatus);
 		return false;
 	}
 
-	if (oResizeBuffers1.HookVirtualMethod(hkResizeBuffers1, g_pSwapChain, 39) != MH_OK) {
-		LogErrorHere("ResizeBuffers1 hook couldnt be created!");
+	if (eStatus = oResizeBuffers1.Start(hkResizeBuffers1, g_pSwapChain, 39); eStatus != MH_OK) {
+		Utils::LogHook("ResizeBuffers1", eStatus);
 		return false;
 	}
 	// SwapChain
@@ -256,13 +257,13 @@ bool RendererHooks::D3D11Setup()
 
 void RendererHooks::D3D11Destroy()
 {
-	oPresent.RemoveHook();
-	oPresent1.RemoveHook();
-	oResizeBuffers1.RemoveHook();
-	oCreateSwapChain.RemoveHook();
-	oCreateSwapChainForHwnd.RemoveHook();
-	oCreateSwapChainForCoreWindow.RemoveHook();
-	oCreateSwapChainForComposition.RemoveHook();
+	oPresent.Remove();
+	oPresent1.Remove();
+	oResizeBuffers1.Remove();
+	oCreateSwapChain.Remove();
+	oCreateSwapChainForHwnd.Remove();
+	oCreateSwapChainForCoreWindow.Remove();
+	oCreateSwapChainForComposition.Remove();
 
 	if (ImGui::GetCurrentContext()) {
 		ImGuiIO& io = ImGui::GetIO();
