@@ -58,7 +58,7 @@ DWORD __stdcall FrameworkInit(LPVOID lpParam)
 	Framework::bInitalized = true;
 	Utils::LogDebug(std::format("{}: Initialized", Framework::Title));
 
-	Framework::lua.get()->ExecuteScript("print('Hello, from Lua!')");
+	Framework::lua.get()->AutoRun();
 
 	while (Framework::bShouldRun)
 	{

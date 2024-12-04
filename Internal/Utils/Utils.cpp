@@ -88,3 +88,35 @@ std::optional<std::filesystem::path> Utils::GetConfigFilePath(const std::string&
 	pathConfig.replace_extension(sExtension);
 	return pathConfig;
 }
+
+std::optional<std::filesystem::path> Utils::GetLuaFilePath(const std::string& sFile, const std::string& sExtension)
+{
+	auto optPath = GetFrameworkFolder();
+	if (!optPath) {
+		return {};
+	}
+
+	std::filesystem::path pathLua = optPath.value();
+	pathLua /= "Lua";
+	pathLua /= "";
+
+	// Create the directory for this config if it doesn't already exist, exit upon failure.
+	if (!std::filesystem::exists(pathLua)) {
+		if (!std::filesystem::create_directory(pathLua)) {
+			return {};
+		}
+	}
+
+	// They just want the folder path.
+	if (sFile.size() == 0) {
+		return pathLua;
+	}
+
+	pathLua += sFile;
+	if (sExtension.size() == 0) {
+		return pathLua;
+	}
+
+	pathLua.replace_extension(sExtension);
+	return pathLua;
+}

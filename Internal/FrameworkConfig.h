@@ -23,8 +23,8 @@ static_assert((ENGINE_UNREAL + ENGINE_UNITY + ENGINE_OTHER) == 1, "Only one targ
 
 // Make sure a rendering API is selected and only one rendering API is selected
 #define FRAMEWORK_RENDER_DYNAMIC	0
-#define FRAMEWORK_RENDER_D3D11		0
-#define FRAMEWORK_RENDER_D3D12		1
+#define FRAMEWORK_RENDER_D3D11		1
+#define FRAMEWORK_RENDER_D3D12		0
 static_assert((FRAMEWORK_RENDER_DYNAMIC + FRAMEWORK_RENDER_D3D11 + FRAMEWORK_RENDER_D3D12) == 1, "Only one rendering API can be selected at a time,");
 
 #ifndef FRAMEWORK_INJECTOR

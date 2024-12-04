@@ -16,5 +16,8 @@ Locale_t localeEnglish{
 		{ "SAVE_CONFIG"Hashed, "Save Config" },
 		{ "LOAD_CONFIG"Hashed, "Load Config" },
 		{ "LANGUAGE"Hashed, "Language" },
+
+		{ "LUA"Hashed, "Lua" },
+		{ "LUA_FILES"Hashed, "Files" }
 	}),
 };
