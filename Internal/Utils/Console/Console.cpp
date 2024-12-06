@@ -9,7 +9,6 @@ Console::Console(bool bVisibility, std::string sConsoleTitle)
 	{		
 		MessageBoxA(NULL, std::format("Failed to allocate console! Error: {}", GetLastError()).c_str(), "Error", MB_ICONERROR);
 		Utils::LogError(std::to_string(GetLastError())); // This code is here only to log the error, if another console is already attached
-		m_bInitalized = false;
 		return;
 	}
 
@@ -17,7 +16,6 @@ Console::Console(bool bVisibility, std::string sConsoleTitle)
 	if (errSTDOut != NULL)
 	{
 		Utils::LogError(std::to_string(errSTDOut));
-		m_bInitalized = false;
 		return;
 	}
 
@@ -25,7 +23,6 @@ Console::Console(bool bVisibility, std::string sConsoleTitle)
 	if (errSTDIn != NULL)
 	{
 		Utils::LogError(std::to_string(errSTDIn));
-		m_bInitalized = false;
 		return;
 	}
 
