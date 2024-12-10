@@ -15,7 +15,7 @@
 #define PtrJmp(ptr)               (PtrOffset(ptr, sizeof(int) + *reinterpret_cast<int*>(ptr)))
 #define PtrOffsetJmp(ptr, n1, n2) (PtrOffset(PtrJmp(PtrOffset(ptr, n1)), n2))
 
-#define Signature(n) (Memory::SignatureData_t::Conversion_t::<stb::fixed_string{n}>::value)
+#define Signature(n) (ConvertSignatureArrayToVector(Memory::SignatureData_t::Conversion_t::build<stb::fixed_string{n}>::value))
 
 namespace Memory
 {
@@ -99,8 +99,8 @@ namespace Memory
 	void* GetVirtualMethod(void* lpAddress, size_t index);
 
 	struct SignatureData_t {
-		using Span_t = std::span<const int16_t>;
-		using Conversion_t = stb::basic_hex_string_array_conversion<' ', '?', Span_t::element_type, -1>;
+		using Span_t = std::vector<int16_t>;
+		using Conversion_t = stb::basic_hex_string_array_conversion<' ', '?', Span_t::value_type, -1>;
 
 		Span_t aSignature;
 		std::function<uintptr_t (uintptr_t)> CorrectReturnAddressFunc;
@@ -230,4 +230,10 @@ namespace Memory
 			return Start(fnDetour, GetVirtualMethod(lpAddress, iIndex));
 		};
 	};
+}
+
+template<size_t sizeArray>
+inline Memory::SignatureData_t::Span_t ConvertSignatureArrayToVector(std::array<Memory::SignatureData_t::Span_t::value_type, sizeArray> aSignature)
+{
+	return { aSignature.begin(), aSignature.end() };
 }
