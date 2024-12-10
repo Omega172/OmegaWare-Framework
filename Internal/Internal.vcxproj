@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -170,6 +170,7 @@
     <ClInclude Include="Lua\Headers\lualib.h" />
     <ClInclude Include="Lua\LuaAPI.h" />
     <ClInclude Include="Memory\Memory.h" />
+    <ClInclude Include="Memory\Return Address Spoofer.h" />
     <ClInclude Include="Memory\Windows\WindowsMemory.h" />
     <ClInclude Include="Memory\Windows\WindowsTypes.h" />
     <ClInclude Include="Precompiled Headers\pch.h" />
@@ -229,6 +230,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Interfaces\Unity\Mono\cil\opcode.def" />
+    <None Include="Memory\SpooferStub.asm" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />

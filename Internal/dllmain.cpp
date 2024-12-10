@@ -107,8 +107,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ulReasonForCall, LPVOID lpReserved)
 	if (ulReasonForCall != DLL_PROCESS_ATTACH)
 		return TRUE;
 
-	HANDLE hThread = CreateThread(nullptr, NULL, FrameworkInit, hModule, NULL, nullptr);
-	if (hThread) CloseHandle(hThread);
+	Memory::SpoofThreadAddress(FrameworkInit, hModule);
 
 	return TRUE;
 }

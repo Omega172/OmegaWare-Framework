@@ -24,6 +24,8 @@
 #include <span>
 #include <vector>
 
+#include <random>
+
 #define _USE_MATH_DEFINES // Define math constants for things like M_PI and M_SQRT2
 #include <math.h>
 #include <cmath>

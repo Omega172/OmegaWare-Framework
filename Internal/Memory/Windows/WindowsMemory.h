@@ -28,4 +28,22 @@ namespace Memory
 
 	// Enumerates process moduleswith fn that returns true if it wants to stop the enumeration
 	void EnumerateModules(EnumerateModulesFunc fn, DWORD dwProcessId = 0, DWORD flags = 0);
+
+	/**
+	 * Generates a random writable address in a discrete fashion.
+	 * 
+	 * \returns A pointer to the allocated memory.
+	 * 
+	 * \param size The size of memory needed to be allocated.
+	 */
+	void* GenerateRandomWritableAddress(size_t size);
+
+	/**
+	 * Creates a hidden dummy thread that will call our target function.
+	 * 
+	 * \param pTargetAddress The target function to call in a separate thread.
+	 * 
+	 * \param hModule The module that this function belongs to.
+	 */
+	void SpoofThreadAddress(void* pTargetAddress, HMODULE& hModule);
 }

@@ -254,6 +254,7 @@ namespace Memory
 	};
 }
 
+// This is a dirty hack btw.
 template<size_t sizeArray>
 inline Memory::SignatureData_t::Span_t ConvertSignatureArrayToVector(std::array<Memory::SignatureData_t::Span_t::value_type, sizeArray> aSignature)
 {
