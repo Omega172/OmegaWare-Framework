@@ -51,8 +51,6 @@ DWORD __stdcall FrameworkInit(LPVOID lpParam)
 
 	Framework::config = std::make_unique<Config>(); // Initalize the config class
 
-	Framework::hModule = reinterpret_cast<HMODULE>(lpParam);
-
 	Framework::lua = std::make_unique<Lua>();
 
 	Framework::bInitalized = true;
@@ -99,6 +97,7 @@ DWORD __stdcall FrameworkInit(LPVOID lpParam)
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ulReasonForCall, LPVOID lpReserved)
 {
 	DisableThreadLibraryCalls(hModule);
+	Framework::hModule = hModule;
 
 	if (ulReasonForCall != DLL_PROCESS_ATTACH)
 		return TRUE;
