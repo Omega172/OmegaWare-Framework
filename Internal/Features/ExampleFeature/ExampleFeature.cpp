@@ -1,8 +1,6 @@
 #include "pch.h"
 
-ExampleFeature::ExampleFeature() {};
-
-bool ExampleFeature::Setup()
+bool ExampleFeature::SetupMenu()
 {
 	Localization::AddToLocale("ENG", std::initializer_list<std::pair<size_t, std::string>>{
 		{ "EXAMPLE_FEATURE"Hashed, "Example Feature" },
@@ -25,51 +23,32 @@ bool ExampleFeature::Setup()
 		{ "EXAMPLE_COLORPICKER"Hashed, "Przykładowy próbnik kolorów" }
 	});
 
-	Initialized = true;
-	Utils::LogDebug("Feature: ExampleFeature initialized.");
+	GuiSection->SetCallback([]() {
+		ImGuiContext* pContext = ImGui::GetCurrentContext();
+
+		ImVec2 vec2Size = (Framework::menu->m_stStyle.vec2Size / ImVec2{ 3.f, 2.f }) - pContext->Style.ItemSpacing;
+		ImVec2 vec2MaxSize = ImGui::GetContentRegionAvail();
+
+		if (vec2Size.x > vec2MaxSize.x)
+			vec2Size.x = vec2MaxSize.x;
+
+		if (vec2Size.y > vec2MaxSize.y)
+			vec2Size.y = vec2MaxSize.y;
+
+		return vec2Size;
+	});
+
+	GuiSection->AddElement(GuiCheckbox.get());
+	GuiCheckbox->AddElement(GuiEnabledText.get());
+	GuiCheckbox->AddElement(GuiEnabledSlider.get());
+	GuiSection->AddElement(GuiColorPickerLabel.get());
+	GuiSection->AddElement(GuiColorPicker.get());
+
 	return true;
 }
 
-void ExampleFeature::Destroy()
-{
-	Initialized = false;
-	Utils::LogDebug("Feature: ExampleFeature destroyed.");
-}
-
-void ExampleFeature::HandleKeys() {}
-
-void ExampleFeature::Render() {}
-
-void ExampleFeature::Run() {}
-
 void ExampleFeature::HandleMenu()
 {
-	static std::once_flag onceflag;
-	std::call_once(onceflag, [this]() {
-		GuiSection->SetCallback([]() {
-			ImGuiContext* pContext = ImGui::GetCurrentContext();
-
-			ImVec2 vec2Size = (Framework::menu->m_stStyle.vec2Size / ImVec2{ 3.f, 2.f }) - pContext->Style.ItemSpacing;
-			ImVec2 vec2MaxSize = ImGui::GetContentRegionAvail();
-
-			if (vec2Size.x > vec2MaxSize.x)
-				vec2Size.x = vec2MaxSize.x;
-
-			if (vec2Size.y > vec2MaxSize.y)
-				vec2Size.y = vec2MaxSize.y;
-
-			return vec2Size;
-		});
-
-		GuiSection->AddElement(GuiCheckbox.get());
-
-		GuiCheckbox->AddElement(GuiEnabledText.get());
-		GuiCheckbox->AddElement(GuiEnabledSlider.get());
-
-		GuiSection->AddElement(GuiColorPickerLabel.get());
-		GuiSection->AddElement(GuiColorPicker.get());
-	});
-
 	if (!GuiSection->HasParent())
 		Framework::menu->AddElement(GuiSection.get());
 

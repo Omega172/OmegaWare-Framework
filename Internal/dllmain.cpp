@@ -2,6 +2,9 @@
 
 DWORD __stdcall FrameworkInit(LPVOID lpParam)
 {
+	// Why must we resort to hacks when we have simple issues.
+	AppendFeatures();
+
 #ifdef _DEBUG
 	Framework::console->SetVisibility(true); // Set the console to be visible by default if the framework is in debug mode
 #endif
@@ -32,21 +35,18 @@ DWORD __stdcall FrameworkInit(LPVOID lpParam)
 	if (pPrivilagedHandle)
 		Utils::LogDebug(std::format("PriviladgedHandle: 0x{:#010x}", reinterpret_cast<uintptr_t>(pPrivilagedHandle)));
 
-	AddFeatures();
-
 	try {
-		for (size_t i = 0; i < Features.size(); i++) // A loop to grap the feature pointers and call their respective setup functions
-		{
-			bool bResult = Features[i]->Setup();
-			if (!bResult)
-			{
-				Utils::LogError(std::format("Failed to setup feature: {}", i));
-				return false;
-			}
+		for (auto& pFeature : g_vecFeatures) {
+			if (pFeature->SetupMenu() && pFeature->Setup())
+				continue;
+			
+			Utils::LogError(std::format("Feature \"{}\" failed SetupMenu or Setup", pFeature->GetName()));
+			return false;
 		}
 	}
 	catch (const std::exception& e) {
 		Utils::LogError(e.what());
+		return false;
 	}
 
 	Framework::config = std::make_unique<Config>(); // Initalize the config class
@@ -66,10 +66,8 @@ DWORD __stdcall FrameworkInit(LPVOID lpParam)
 			Framework::unreal.get()->RefreshActorList();
 		#endif
 
-		for (size_t i = 0; i < Features.size(); i++)
-		{
-			Features[i]->Run();
-		}
+		for (auto& pFeature : g_vecFeatures)
+			pFeature->Run();
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	}
@@ -83,10 +81,8 @@ DWORD __stdcall FrameworkInit(LPVOID lpParam)
 	Framework::renderer.get()->Destroy();
 
 	// Destroy features
-	for (size_t i = 0; i < Features.size(); i++)
-	{
-		Features[i]->Destroy();
-	}
+	for (auto& pFeature : g_vecFeatures)
+		pFeature->Destroy();
 
 	std::this_thread::sleep_for(std::chrono::seconds(3));
 

@@ -1,12 +1,9 @@
 #pragma once
 #include "pch.h"
 
-class ExampleFeature : public Feature
+class ExampleFeature : public BaseFeature
 {
 private:
-	bool Initialized = false;
-	std::mutex Mutex;
-
 	std::unique_ptr<Child> GuiSection = std::make_unique<Child>("EXAMPLE_FEATURE", "EXAMPLE_FEATURE"Hashed, ElementBase::Style_t{
 		.iFlags = ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeX | ImGuiChildFlags_AutoResizeY }, ImGuiWindowFlags_HorizontalScrollbar);
 	std::unique_ptr<Checkbox> GuiCheckbox = std::make_unique<Checkbox>("CHECKBOX", "EXAMPLE_FEATURE"Hashed);
@@ -17,17 +14,9 @@ private:
 		.iFlags = ImGuiColorEditFlags_NoInputs});
 
 public:
-	ExampleFeature();
-
-	bool Setup();
-
-	void Destroy();
-
-	void HandleKeys();
-
-	void Render();
-
-	void Run();
+	bool SetupMenu();
 
 	void HandleMenu();
+
+	std::string GetName() { return "ExampleFeature"; };
 };

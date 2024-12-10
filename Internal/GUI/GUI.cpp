@@ -21,10 +21,8 @@ void GUI::Render()
 	if (ImGui::IsKeyPressed(Framework::keyUnloadKey1) || ImGui::IsKeyPressed(Framework::keyUnloadKey2))
 		Framework::bShouldRun = false;
 
-	for (size_t i = 0; i < Features.size(); i++)
-	{
-		Features[i]->HandleKeys();
-	}
+	for (auto& pFeature : g_vecFeatures)
+		pFeature->HandleInput();
 
 	if (GuiWatermark->GetValue())
 		ShowWatermark(GuiWatermarkFPS->GetValue(), Framework::Title.c_str(), ImVec4(255, 255, 255, 255), ImVec4(255, 255, 255, 0));
@@ -32,7 +30,6 @@ void GUI::Render()
 	if (bMenuOpen)
 	{
 		static std::once_flag onceflag;
-
 		std::call_once(onceflag, []() {
 			GuiCheat->SetCallback([]() {
 				ImGuiContext* pContext = ImGui::GetCurrentContext();
@@ -88,8 +85,6 @@ void GUI::Render()
 				Framework::config->LoadConfig();
 			});
 
-			
-
 			GuiLua->SetCallback([]() {
 				ImGuiContext* pContext = ImGui::GetCurrentContext();
 
@@ -138,10 +133,8 @@ void GUI::Render()
 			Framework::menu->AddElement(GuiLua.get());
 		}
 
-		for (size_t i = 0; i < Features.size(); i++)
-		{
-			Features[i]->HandleMenu();
-		}
+		for (auto& pFeature : g_vecFeatures)
+			pFeature->HandleMenu();
 
 		Framework::menu->Render();
 	}
@@ -154,10 +147,8 @@ void GUI::Render()
 	Framework::unreal->ActorLock.lock();
 #endif
 
-	for (size_t i = 0; i < Features.size(); i++)
-	{
-		Features[i]->Render();
-	}
+	for (auto& pFeature : g_vecFeatures)
+		pFeature->Render();
 
 #if FRAMEWORK_UNREAL
 	Framework::unreal->ActorLock.unlock();

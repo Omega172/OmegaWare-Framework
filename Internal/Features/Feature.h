@@ -1,29 +1,48 @@
 #pragma once
 #include "pch.h"
 
-class Feature
+class BaseFeature
 {
-private:
-	bool Initialized = false;
-	std::mutex Mutex; // Prevent problems with multithreading by using locks!
-
 public:
-	Feature() {};
+	BaseFeature(){};
 
-	// Handle setup, like hook creation and variable initalization
-	virtual bool Setup() = 0;
+	/**
+	 * Called upon menu creation. Create any and all menu elements for this feature here.
+	 */
+	virtual bool SetupMenu() { return true; };
 
-	// Handle clean up, like restoring hooked functions 
-	virtual void Destroy() = 0;
+	/**
+	 * Called once upon startup for hooking or variable initialization.
+	 */
+	virtual bool Setup() { return true; };
 
-	// Handle checking for any key/hotkey presses or holds needed for features
-	virtual void HandleKeys() = 0;
+	/**
+	 * Called once upon shutdown to handle cleanup such as restoring hooks.
+	 */
+	virtual void Destroy() {};
 
-	virtual void Render() = 0;
+	/**
+	 * Called at the start of every frame for input handling.
+	 */
+	virtual void HandleInput() {};
 
-	// This should be run in the feature loop, used to run any acutal feature code like setting a value for godmode
-	virtual void Run() = 0;
+	/**
+	 * Called once every frame.
+	 */
+	virtual void Render() {};
 
-	// Called every frame before any ImGui elements
-	virtual void HandleMenu() = 0;
+	/**
+	 * Called 10 times per second in the main thread.
+	 */
+	virtual void Run() {};
+
+	/**
+	 * Called every frame while the menu is open to update any menu elements.
+	 */
+	virtual void HandleMenu() {};
+
+	/**
+	 * Returns the name of this feature for logging purposes.
+	 */
+	virtual std::string GetName() = 0;
 };

@@ -85,11 +85,9 @@ namespace Framework
 #include "../Features/Feature.h"
 #include "../Features/ExampleFeature/ExampleFeature.h"
 
-// https://stackoverflow.com/questions/13048301/pointer-to-array-of-base-class-populate-with-derived-class
-// https://stackoverflow.com/questions/16711697/is-there-any-use-for-unique-ptr-with-array
-inline std::vector<std::unique_ptr<Feature>> Features;
+inline std::vector<std::unique_ptr<BaseFeature>> g_vecFeatures{};
 
-static auto AddFeatures = [](void)
+__forceinline void AppendFeatures()
 {
-	Features.push_back(std::make_unique<ExampleFeature>());
-};
+	g_vecFeatures.push_back(std::make_unique<ExampleFeature>());
+}
