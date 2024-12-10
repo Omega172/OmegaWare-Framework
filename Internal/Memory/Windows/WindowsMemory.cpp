@@ -25,6 +25,17 @@ LPMODULEINFO Memory::GetModuleInfo(std::string_view sModuleName)
 	return GetModuleInfo(sModuleName);
 }
 
+LPMODULEINFO Memory::GetModuleInfo(HMODULE hModule)
+{
+	
+	char szFilePath[1024]{};
+	if (GetModuleFileNameA(hModule, szFilePath, sizeof(szFilePath)) == 0)
+		return nullptr;
+
+	std::filesystem::path pathModule{ szFilePath };
+	return GetModuleInfo(pathModule.filename().string());
+}
+
 void Memory::EnumerateHandles(EnumerateHandlesFunc fn)
 {
 	_NtQuerySystemInformation NtQuerySystemInformation = reinterpret_cast<_NtQuerySystemInformation>(GetProcAddress(GetModuleHandle("ntdll.dll"), "NtQuerySystemInformation"));

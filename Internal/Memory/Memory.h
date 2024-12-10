@@ -116,6 +116,17 @@ namespace Memory
 	 * \param aSignatures The signature to scan the module with.
 	 */
 	void* SignatureScan(const std::string_view svModuleName, const SignatureData_t::Span_t aSignature);
+	
+	/**
+	 * Scan a module for the given signature.
+	 *
+	 * \returns A pointer to the memory address of the start of the signature.
+	 *
+	 * \param hModule The module to look for the signature in.
+	 *
+	 * \param aSignatures The signature to scan the module with.
+	 */
+	void* SignatureScan(const HMODULE hModule, const SignatureData_t::Span_t aSignature);
 
 	/**
 	 * Scan a module for one of the given signatures.
@@ -127,6 +138,17 @@ namespace Memory
 	 * \param vecSignatures A vector of signatures to scan the module with.
 	 */
 	void* SignatureScan(const std::string_view svModuleName, const std::vector<SignatureData_t*> vecSignatures);
+
+	/**
+	 * Scan a module for one of the given signatures.
+	 *
+	 * \returns A pointer to the first memory address of the start of the first successful signature.
+	 *
+	 * \param hModule The module to look for the signatures in.
+	 *
+	 * \param vecSignatures A vector of signatures to scan the module with.
+	 */
+	void* SignatureScan(const HMODULE hModule, const std::vector<SignatureData_t*> vecSignatures);
 
 	/**
 	 * Wrapper for MinHook.

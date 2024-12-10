@@ -279,9 +279,39 @@ void* Memory::SignatureScan(const std::string_view svModuleName, const Signature
 	return ScanModuleForSignature(pModuleInfo, aSignature);
 }
 
+void* Memory::SignatureScan(const HMODULE hModule, const SignatureData_t::Span_t aSignature)
+{
+	LPMODULEINFO pModuleInfo = GetModuleInfo(hModule);
+	if (!pModuleInfo || !pModuleInfo->lpBaseOfDll || !pModuleInfo->SizeOfImage)
+		return nullptr;
+
+	return ScanModuleForSignature(pModuleInfo, aSignature);
+}
+
 void* Memory::SignatureScan(const std::string_view svModuleName, const std::vector<SignatureData_t*> vecSignatures)
 {
 	LPMODULEINFO pModuleInfo = GetModuleInfo(svModuleName);
+	if (!pModuleInfo || !pModuleInfo->lpBaseOfDll || !pModuleInfo->SizeOfImage)
+		return nullptr;
+
+	for (SignatureData_t* stSignatureData : vecSignatures)
+	{
+		void* rv = ScanModuleForSignature(pModuleInfo, stSignatureData->aSignature);
+		if (!rv)
+			continue;
+
+		if (!stSignatureData->CorrectReturnAddressFunc)
+			return rv;
+
+		return reinterpret_cast<void*>(stSignatureData->CorrectReturnAddressFunc(reinterpret_cast<uintptr_t>(rv)));
+	}
+
+	return nullptr;
+}
+
+void* Memory::SignatureScan(const HMODULE hModule, const std::vector<SignatureData_t*> vecSignatures)
+{
+	LPMODULEINFO pModuleInfo = GetModuleInfo(hModule);
 	if (!pModuleInfo || !pModuleInfo->lpBaseOfDll || !pModuleInfo->SizeOfImage)
 		return nullptr;
 

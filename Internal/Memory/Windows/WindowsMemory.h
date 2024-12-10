@@ -7,6 +7,7 @@ namespace Memory
 {
 	// Gets loaded module info
 	LPMODULEINFO GetModuleInfo(std::string_view sModuleName);
+	LPMODULEINFO GetModuleInfo(HMODULE hModule);
 
 	// Type used for EnumerateHandles function
 	using EnumerateHandlesFunc = std::function<bool(PSYSTEM_HANDLE_TABLE_ENTRY_INFO)>;
