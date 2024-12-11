@@ -1,6 +1,6 @@
 .code
          
-_spoofer_stub PROC
+SpooferStub PROC
     pop r11
     add rsp, 8
     mov rax, [rsp + 24]
@@ -23,6 +23,6 @@ fixup:
     mov rcx, rbx
     mov rbx, [rcx + 16]
     jmp QWORD PTR [rcx + 8]
-_spoofer_stub ENDP
+SpooferStub ENDP
          
 END

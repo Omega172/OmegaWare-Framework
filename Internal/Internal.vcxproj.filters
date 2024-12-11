@@ -267,9 +267,6 @@
     <ClInclude Include="Libs\Nlohmann.json\json.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Memory\Return Address Spoofer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Libs\ImGUI\imgui.cpp">
@@ -343,8 +340,10 @@
     <None Include="Interfaces\Unity\Mono\cil\opcode.def">
       <Filter>Source Files</Filter>
     </None>
-    <None Include="Memory\SpooferStub.asm">
+  </ItemGroup>
+  <ItemGroup>
+    <MASM Include="Memory\SpooferStub.asm">
       <Filter>Source Files</Filter>
-    </None>
+    </MASM>
   </ItemGroup>
 </Project>

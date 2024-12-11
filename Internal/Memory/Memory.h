@@ -19,6 +19,41 @@
 
 #define Signature(n) (ConvertSignatureArrayToVector(Memory::SignatureData_t::Conversion_t::build<stb::fixed_string{n}>::value))
 
+
+
+// https://www.unknowncheats.me/forum/anti-cheat-bypass/268039-x64-return-address-spoofing-source-explanation.html
+// https://www.youtube.com/watch?v=bSQau-PaCTE
+
+extern "C" void* SpooferStub();
+
+namespace CallSpoofer
+{
+	template <typename Returned_t, typename... Args_t>
+	Returned_t SpooferStubHelper(Args_t... aArgs) {
+		return reinterpret_cast<Returned_t(*)(Args_t...)>(&SpooferStub)(aArgs...);
+	}
+
+	// At least 5 params
+	template <size_t sizeArgs, typename>
+	struct ArgumentRemapper
+	{
+		template<typename Returned_t, typename a1_t, typename a2_t, typename a3_t, typename a4_t, typename... Pack_t>
+		static Returned_t Call(void* pShellParam, a1_t t1, a2_t t2, a3_t t3, a4_t t4, Pack_t... aPack) {
+			return SpooferStubHelper<Returned_t, a1_t, a2_t, a3_t, a4_t, void*, void*, Pack_t...>(t1, t2, t3, t4, pShellParam, {}, aPack...);
+		}
+	};
+
+	// 4 or less params
+	template <size_t sizeArgs>
+	struct ArgumentRemapper<sizeArgs, std::enable_if_t<sizeArgs <= 4>>
+	{
+		template<typename Returned_t, typename a1_t = void*, typename a2_t = void*, typename a3_t = void*, typename a4_t = void*>
+		static Returned_t Call(void* pShellParam, a1_t t1 = {}, a2_t t2 = {}, a3_t t3 = {}, a4_t t4 = {}) {
+			return SpooferStubHelper<Returned_t, a1_t, a2_t, a3_t, a4_t, void*, void*>(t1, t2, t3, t4, pShellParam, {});
+		}
+	};
+}
+
 namespace Memory
 {
 	/**
@@ -195,6 +230,18 @@ namespace Memory
 	 * Returns a pointer to a random trampoline instruction.
 	 */
 	void* GetRandomTrampoline();
+
+	template <typename Returned_t, typename... Args_t>
+	inline Returned_t CallSpoofed(Returned_t(*fn)(Args_t...), Args_t... aArgs)
+	{
+		struct {
+			const void* m_pTrampoline;
+			void* m_fn;
+			void* m_pRBX;
+		} stShellParams{ GetRandomTrampoline(), fn };
+
+		return CallSpoofer::ArgumentRemapper<sizeof...(Args_t), void>::template Call<Returned_t, Args_t...>(&stShellParams, aArgs...);
+	}
 
 	/**
 	 * Wrapper for MinHook.

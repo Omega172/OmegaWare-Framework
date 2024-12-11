@@ -33,6 +33,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.props" />
   </ImportGroup>
   <ImportGroup Label="Shared">
   </ImportGroup>
@@ -68,6 +69,8 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>$(ProjectDir)Libs\MinHook\include\minhook.x64d.lib;$(ProjectDir)Lua\Libs\lua51d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AddModuleNamesToAssembly>
+      </AddModuleNamesToAssembly>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -170,7 +173,6 @@
     <ClInclude Include="Lua\Headers\lualib.h" />
     <ClInclude Include="Lua\LuaAPI.h" />
     <ClInclude Include="Memory\Memory.h" />
-    <ClInclude Include="Memory\Return Address Spoofer.h" />
     <ClInclude Include="Memory\Windows\WindowsMemory.h" />
     <ClInclude Include="Memory\Windows\WindowsTypes.h" />
     <ClInclude Include="Precompiled Headers\pch.h" />
@@ -230,8 +232,12 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Interfaces\Unity\Mono\cil\opcode.def" />
-    <None Include="Memory\SpooferStub.asm" />
+    <MASM Include="Memory\SpooferStub.asm">
+      <FileType>Document</FileType>
+    </MASM>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <ImportGroup Label="ExtensionTargets" />
+  <ImportGroup Label="ExtensionTargets">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.targets" />
+  </ImportGroup>
 </Project>
