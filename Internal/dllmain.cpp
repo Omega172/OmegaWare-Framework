@@ -5,10 +5,17 @@ DWORD __stdcall FrameworkInit(LPVOID lpParam)
 	// Why must we resort to hacks when we have simple issues.
 	AppendFeatures();
 
+	{
+		char szModuleName[1024]{};
+		if (!GetModuleFileNameA(Framework::hModule, szModuleName, sizeof(szModuleName)))
+			return false;
+
+		Framework::iModuleNameHash = CRC64::hash(szModuleName);
+	}
+	
 #ifdef _DEBUG
 	Framework::console->SetVisibility(true); // Set the console to be visible by default if the framework is in debug mode
 #endif
-
 	// Initalize MinHook
 	if (MH_Initialize() != MH_STATUS::MH_OK)
 		return false;
@@ -17,6 +24,10 @@ DWORD __stdcall FrameworkInit(LPVOID lpParam)
 		return false;
 
 	if (!Framework::renderer.get()->Setup())
+		return false;
+
+	Utils::LogDebug(std::format("PrivilegedHandle: {:#010x}", reinterpret_cast<uintptr_t>(Memory::GetPrivilegedHandleToProcess())));
+	if (!Memory::ResetTrampolineCollection())
 		return false;
 
 #if FRAMEWORK_UNREAL
@@ -30,10 +41,6 @@ DWORD __stdcall FrameworkInit(LPVOID lpParam)
 	FNames::Initialize();
 	Utils::LogDebug("FNames initialized!");
 #endif
-
-	HANDLE pPrivilagedHandle = Memory::GetPrivilegedHandleToProcess();
-	if (pPrivilagedHandle)
-		Utils::LogDebug(std::format("PriviladgedHandle: 0x{:#010x}", reinterpret_cast<uintptr_t>(pPrivilagedHandle)));
 
 	try {
 		for (auto& pFeature : g_vecFeatures) {

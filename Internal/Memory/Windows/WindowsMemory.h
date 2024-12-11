@@ -27,7 +27,7 @@ namespace Memory
 	}
 
 	// Enumerates process moduleswith fn that returns true if it wants to stop the enumeration
-	void EnumerateModules(EnumerateModulesFunc fn, DWORD dwProcessId = 0, DWORD flags = 0);
+	void EnumerateModules(EnumerateModulesFunc fn, DWORD dwProcessId = 0, DWORD flags = EnumerateModulesFlags::DiscardSystemModules | EnumerateModulesFlags::ModuleNameOnly);
 
 	/**
 	 * Generates a random writable address in a discrete fashion.

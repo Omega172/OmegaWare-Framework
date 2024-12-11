@@ -29,7 +29,6 @@ LPMODULEINFO Memory::GetModuleInfo(std::string_view sModuleName)
 
 LPMODULEINFO Memory::GetModuleInfo(HMODULE hModule)
 {
-	
 	char szFilePath[1024]{};
 	if (GetModuleFileNameA(hModule, szFilePath, sizeof(szFilePath)) == 0)
 		return nullptr;
@@ -40,7 +39,14 @@ LPMODULEINFO Memory::GetModuleInfo(HMODULE hModule)
 
 void Memory::EnumerateHandles(EnumerateHandlesFunc fn)
 {
-	_NtQuerySystemInformation NtQuerySystemInformation = reinterpret_cast<_NtQuerySystemInformation>(GetProcAddress(GetModuleHandle("ntdll.dll"), "NtQuerySystemInformation"));
+	using NtQuerySystemInformation_t = NTSTATUS(NTAPI*)(
+		_In_ SYSTEM_INFORMATION_CLASS SystemInformationClass,
+		_Out_writes_bytes_opt_(SystemInformationLength) PVOID SystemInformation,
+		_In_ ULONG SystemInformationLength,
+		_Out_opt_ PULONG ReturnLength
+	);
+	
+	auto NtQuerySystemInformation = reinterpret_cast<NtQuerySystemInformation_t>(GetProcAddress(GetModuleHandle("ntdll.dll"), "NtQuerySystemInformation"));
 	if (!NtQuerySystemInformation)
 		return;
 
@@ -125,7 +131,7 @@ HANDLE Memory::GetPrivilegedHandleToProcess(DWORD dwProcessId)
 
 		rv = reinterpret_cast<HANDLE>(pHandleEntryInfo->Handle);
 		return true;
-		});
+	});
 
 	return rv;
 }
@@ -137,17 +143,21 @@ void Memory::EnumerateModules(EnumerateModulesFunc fn, DWORD dwProcessId, DWORD 
 		return;
 
 	HMODULE hModules[1024];
-	DWORD dwNeeded;
+	DWORD dwNeeded{};
 	if (!EnumProcessModules(hProcess, hModules, sizeof(hModules), &dwNeeded))
 		return;
 
-	TCHAR szModuleName[MAX_PATH];
+	TCHAR szModuleName[1024];
 	for (UINT i = 0; i < (dwNeeded / sizeof(HMODULE)); i++)
 	{
 		if (!GetModuleFileNameEx(hProcess, hModules[i], szModuleName, sizeof(szModuleName)))
 			continue;
 
 		std::string sModuleName(szModuleName);
+
+		// We dont want to enumerate our own cheat dummy!
+		if (CRC64::hash(sModuleName) == Framework::iModuleNameHash)
+			continue;
 
 		if (flags & EnumerateModulesFlags::DiscardSystemModules) {
 			if (sModuleName.find(":\\WINDOWS\\") != std::string::npos || sModuleName.find(":\\Windows\\") != std::string::npos)
@@ -163,7 +173,7 @@ void Memory::EnumerateModules(EnumerateModulesFunc fn, DWORD dwProcessId, DWORD 
 		if (flags & EnumerateModulesFlags::LowercaseName) {
 			std::transform(sModuleName.begin(), sModuleName.end(), sModuleName.begin(), [](unsigned char c) -> unsigned char {
 				return std::tolower(c);
-				});
+			});
 		}
 
 		if (fn(sModuleName))

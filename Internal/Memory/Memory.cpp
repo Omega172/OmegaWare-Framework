@@ -288,44 +288,205 @@ void* Memory::SignatureScan(const HMODULE hModule, const SignatureData_t::Span_t
 	return ScanModuleForSignature(pModuleInfo, aSignature);
 }
 
-void* Memory::SignatureScan(const std::string_view svModuleName, const std::vector<SignatureData_t*> vecSignatures)
+void* Memory::SignatureScan(const std::string_view svModuleName, const std::vector<SignatureData_t> vecSignatures)
 {
 	LPMODULEINFO pModuleInfo = GetModuleInfo(svModuleName);
 	if (!pModuleInfo || !pModuleInfo->lpBaseOfDll || !pModuleInfo->SizeOfImage)
 		return nullptr;
 
-	for (SignatureData_t* stSignatureData : vecSignatures)
+	for (auto& stSignatureData : vecSignatures)
 	{
-		void* rv = ScanModuleForSignature(pModuleInfo, stSignatureData->aSignature);
+		void* rv = ScanModuleForSignature(pModuleInfo, stSignatureData.aSignature);
 		if (!rv)
 			continue;
 
-		if (!stSignatureData->CorrectReturnAddressFunc)
+		if (!stSignatureData.CorrectReturnAddressFunc)
 			return rv;
 
-		return reinterpret_cast<void*>(stSignatureData->CorrectReturnAddressFunc(reinterpret_cast<uintptr_t>(rv)));
+		return reinterpret_cast<void*>(stSignatureData.CorrectReturnAddressFunc(reinterpret_cast<uintptr_t>(rv)));
 	}
 
 	return nullptr;
 }
 
-void* Memory::SignatureScan(const HMODULE hModule, const std::vector<SignatureData_t*> vecSignatures)
+void* Memory::SignatureScan(const HMODULE hModule, const std::vector<SignatureData_t> vecSignatures)
 {
 	LPMODULEINFO pModuleInfo = GetModuleInfo(hModule);
 	if (!pModuleInfo || !pModuleInfo->lpBaseOfDll || !pModuleInfo->SizeOfImage)
 		return nullptr;
 
-	for (SignatureData_t* stSignatureData : vecSignatures)
+	for (auto& stSignatureData : vecSignatures)
 	{
-		void* rv = ScanModuleForSignature(pModuleInfo, stSignatureData->aSignature);
+		void* rv = ScanModuleForSignature(pModuleInfo, stSignatureData.aSignature);
 		if (!rv)
 			continue;
 
-		if (!stSignatureData->CorrectReturnAddressFunc)
+		if (!stSignatureData.CorrectReturnAddressFunc)
 			return rv;
 
-		return reinterpret_cast<void*>(stSignatureData->CorrectReturnAddressFunc(reinterpret_cast<uintptr_t>(rv)));
+		return reinterpret_cast<void*>(stSignatureData.CorrectReturnAddressFunc(reinterpret_cast<uintptr_t>(rv)));
 	}
 
 	return nullptr;
+}
+
+static std::vector<void*> GetAllInstancesOfSignature(PUCHAR pMemory, size_t size, Memory::SignatureData_t::Span_t aSignature, size_t sizeLimit)
+{
+	std::vector<void*> vecReturned{};
+
+	const auto pSignature = aSignature.data();
+	const auto dwSignatureSize = aSignature.size();
+
+	for (size_t i = 0; i < size - dwSignatureSize; ++i) {
+		bool bFound = true;
+		for (size_t j = 0; j < dwSignatureSize; ++j) {
+			if (pMemory[i + j] != pSignature[j] && pSignature[j] != -1) {
+				bFound = false;
+				break;
+			}
+		}
+
+		if (bFound) {
+			vecReturned.emplace_back(reinterpret_cast<void*>(&pMemory[i]));
+			if (vecReturned.size() >= sizeLimit)
+				break;
+		}
+	}
+
+	return vecReturned;
+}
+
+std::vector<Memory::ModuleScanResult_t> Memory::SignatureScan(std::vector<std::string_view> vecModules, bool bIncludeProcess,
+	const std::vector<SignatureData_t> vecSignatures, size_t sizePerModuleLimit)
+{
+	std::vector<Memory::ModuleScanResult_t> vecReturned{};
+
+	// Start by going through each module first.
+	for (auto& svModuleName : vecModules) {
+		LPMODULEINFO pModuleInfo = GetModuleInfo(svModuleName);
+		if (!pModuleInfo || !pModuleInfo->lpBaseOfDll || !pModuleInfo->SizeOfImage)
+			continue;
+
+		auto& stScanResult = vecReturned.emplace_back();
+		stScanResult.m_sModuleName = svModuleName;
+
+		// Look for the patterns!
+		for (auto& stSignatureData : vecSignatures) {
+			auto vecPointers = GetAllInstancesOfSignature(reinterpret_cast<PUCHAR>(pModuleInfo->lpBaseOfDll), pModuleInfo->SizeOfImage,
+				stSignatureData.aSignature, sizePerModuleLimit - stScanResult.m_vecPointers.size());
+
+			// Apply the correction function where applicable
+			if (stSignatureData.CorrectReturnAddressFunc)
+				for (auto& ptr : vecPointers)
+					ptr = reinterpret_cast<void*>(stSignatureData.CorrectReturnAddressFunc(reinterpret_cast<uintptr_t>(ptr)));
+
+			// Add our new collection of pointers and stop scanning this module if we have enough.
+			stScanResult.m_vecPointers.insert(stScanResult.m_vecPointers.end(), vecPointers.begin(), vecPointers.end());
+			if (stScanResult.m_vecPointers.size() >= sizePerModuleLimit)
+				break;
+		}
+
+		// This entry is empty, remove it.
+		if (stScanResult.m_vecPointers.size() == 0)
+			vecReturned.erase(--vecReturned.end());
+	}
+
+	// Now scan the process
+	if (!bIncludeProcess)
+		return vecReturned;
+
+	HANDLE hProcess = GetPrivilegedHandleToProcess();
+	
+	// Get the process name.
+	char szProcessName[1024]{};
+	if (FAILED(GetProcessImageFileName(hProcess, szProcessName, sizeof(szProcessName))))
+		return vecReturned;
+
+	// Get the main module of the process.
+	LPMODULEINFO pModuleInfo = GetModuleInfo(std::filesystem::path(szProcessName).filename().string());
+	if (!pModuleInfo || !pModuleInfo->lpBaseOfDll || !pModuleInfo->SizeOfImage)
+		return vecReturned;
+
+	auto& stScanResult = vecReturned.emplace_back();
+	stScanResult.m_sModuleName = std::filesystem::path(szProcessName).filename().string();
+
+	// Look for the patterns!
+	for (auto& stSignatureData : vecSignatures) {
+		auto vecPointers = GetAllInstancesOfSignature(reinterpret_cast<PUCHAR>(pModuleInfo->lpBaseOfDll), pModuleInfo->SizeOfImage,
+			stSignatureData.aSignature, sizePerModuleLimit - stScanResult.m_vecPointers.size());
+
+		// Apply the correction function where applicable
+		if (stSignatureData.CorrectReturnAddressFunc)
+			for (auto& ptr : vecPointers)
+				ptr = reinterpret_cast<void*>(stSignatureData.CorrectReturnAddressFunc(reinterpret_cast<uintptr_t>(ptr)));
+
+		// Add our new collection of pointers and stop scanning this module if we have enough.
+		stScanResult.m_vecPointers.insert(stScanResult.m_vecPointers.end(), vecPointers.begin(), vecPointers.end());
+		if (stScanResult.m_vecPointers.size() >= sizePerModuleLimit)
+			break;
+	}
+
+	// This entry is empty, remove it.
+	if (stScanResult.m_vecPointers.size() == 0)
+		vecReturned.erase(--vecReturned.end());
+
+	return vecReturned;
+}
+
+std::vector<Memory::ModuleScanResult_t> Memory::SignatureScan(const std::vector<SignatureData_t> vecSignatures, size_t sizePerModuleLimit)
+{
+	std::vector<Memory::ModuleScanResult_t> vecReturned{};
+
+	// Start by going through each module first.
+	EnumerateModules([&vecReturned, vecSignatures, sizePerModuleLimit](auto svModuleName) -> bool {
+		LPMODULEINFO pModuleInfo = GetModuleInfo(svModuleName);
+		if (!pModuleInfo || !pModuleInfo->lpBaseOfDll || !pModuleInfo->SizeOfImage)
+			return false;
+
+		auto& stScanResult = vecReturned.emplace_back();
+		stScanResult.m_sModuleName = svModuleName;
+
+		// Look for the patterns!
+		for (auto& stSignatureData : vecSignatures) {
+			auto vecPointers = GetAllInstancesOfSignature(reinterpret_cast<PUCHAR>(pModuleInfo->lpBaseOfDll), pModuleInfo->SizeOfImage,
+				stSignatureData.aSignature, sizePerModuleLimit - stScanResult.m_vecPointers.size());
+
+			// Apply the correction function where applicable
+			if (stSignatureData.CorrectReturnAddressFunc)
+				for (auto& ptr : vecPointers)
+					ptr = reinterpret_cast<void*>(stSignatureData.CorrectReturnAddressFunc(reinterpret_cast<uintptr_t>(ptr)));
+
+			// Add our new collection of pointers and stop scanning this module if we have enough.
+			stScanResult.m_vecPointers.insert(stScanResult.m_vecPointers.end(), vecPointers.begin(), vecPointers.end());
+			if (stScanResult.m_vecPointers.size() >= sizePerModuleLimit)
+				break;
+		}
+
+		// This entry is empty, remove it.
+		if (stScanResult.m_vecPointers.size() == 0)
+			vecReturned.erase(--vecReturned.end());
+
+		return false;
+	});
+
+	return vecReturned;
+}
+
+static std::vector<void*> g_vecTrampolineCollection{};
+bool Memory::ResetTrampolineCollection()
+{
+	g_vecTrampolineCollection.clear();
+	for (auto& stScanResult : SignatureScan({ { Signature("FF 23"), {} } }))
+	{
+		g_vecTrampolineCollection.insert(g_vecTrampolineCollection.end(), stScanResult.m_vecPointers.begin(), stScanResult.m_vecPointers.end());
+	}
+
+	Utils::LogDebug(std::format("Trampolines collected: {}", g_vecTrampolineCollection.size()));
+	return g_vecTrampolineCollection.size() > 0;
+}
+
+void* Memory::GetRandomTrampoline()
+{
+	assert(g_vecTrampolineCollection.size() != 0);
+	return g_vecTrampolineCollection.at(Utils::Random<size_t>(0, g_vecTrampolineCollection.size() - 1));
 }

@@ -53,6 +53,7 @@ namespace Framework
 	inline bool bInitalized = false;
 	inline bool bShouldRun = true;
 	inline HMODULE hModule = NULL;
+	inline size_t iModuleNameHash = {};
 
 	constexpr ImGuiKey keyMenuKey = ImGuiKey_Insert;
 	constexpr ImGuiKey keyUnloadKey1 = ImGuiKey_End; // A DWORD to store the key that unloads the cheat (Cool one)

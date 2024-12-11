@@ -2,6 +2,8 @@
 
 #include "pch.h"
 
+#include <cassert>
+
 #define STB_OMIT_TESTS
 #include "../Libs/StringToBytes/stb.h"
 
@@ -137,7 +139,7 @@ namespace Memory
 	 * 
 	 * \param vecSignatures A vector of signatures to scan the module with.
 	 */
-	void* SignatureScan(const std::string_view svModuleName, const std::vector<SignatureData_t*> vecSignatures);
+	void* SignatureScan(const std::string_view svModuleName, const std::vector<SignatureData_t> vecSignatures);
 
 	/**
 	 * Scan a module for one of the given signatures.
@@ -148,7 +150,51 @@ namespace Memory
 	 *
 	 * \param vecSignatures A vector of signatures to scan the module with.
 	 */
-	void* SignatureScan(const HMODULE hModule, const std::vector<SignatureData_t*> vecSignatures);
+	void* SignatureScan(const HMODULE hModule, const std::vector<SignatureData_t> vecSignatures);
+
+	struct ModuleScanResult_t {
+		std::string m_sModuleName;
+		std::vector<void*> m_vecPointers;
+	};
+
+	/**
+	 * Scan the current process and its modules for all instances of the given signatures.
+	 *
+	 * \returns A vector of ModuleScanResult_t that give vectors of pointers to instructions and the module it belongs to.
+	 * 
+	 * \vecModules The modules to scan.
+	 * 
+	 * \bIncludeProcess Wether or not to scan the target process.
+	 * 
+	 * \param vecSignatures A vector of SignatureData_t to scan all modules with.
+	 *
+	 * \param sizePerModuleLimit The limit of instructions to collect per module.
+	 */
+	std::vector<ModuleScanResult_t> SignatureScan(std::vector<std::string_view> vecModules, bool bIncludeProcess,
+		const std::vector<SignatureData_t> vecSignatures, size_t sizePerModuleLimit = SIZE_MAX);
+
+	/**
+	 * Scan the current process and its modules for all instances of the given signatures.
+	 * 
+	 * \returns A vector of ModuleScanResult_t that give vectors of pointers to instructions and the module it belongs to.
+	 * 
+	 * \param vecSignatures A vector of SignatureData_t to scan all modules with.
+	 * 
+	 * \param sizePerModuleLimit The limit of instructions to collect per module.
+	 */
+	std::vector<ModuleScanResult_t> SignatureScan(const std::vector<SignatureData_t> vecSignatures, size_t sizePerModuleLimit = SIZE_MAX);
+
+	/**
+	 * Collects and stores trampolines in the target process and its modules.
+	 * 
+	 * \returns A boolean indicating that it has collected atleast one trampoline.
+	 */
+	bool ResetTrampolineCollection();
+
+	/**
+	 * Returns a pointer to a random trampoline instruction.
+	 */
+	void* GetRandomTrampoline();
 
 	/**
 	 * Wrapper for MinHook.

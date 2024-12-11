@@ -77,13 +77,6 @@ typedef struct _OBJECT_TYPE_INFORMATION
 } OBJECT_TYPE_INFORMATION, * POBJECT_TYPE_INFORMATION;
 
 
-typedef NTSTATUS(NTAPI* _NtQuerySystemInformation)(
-	_In_ SYSTEM_INFORMATION_CLASS SystemInformationClass,
-	_Out_writes_bytes_opt_(SystemInformationLength) PVOID SystemInformation,
-	_In_ ULONG SystemInformationLength,
-	_Out_opt_ PULONG ReturnLength
-);
-
 typedef NTSTATUS(NTAPI* _NtQueryObject)(
 	_In_opt_ HANDLE Handle,
 	_In_ OBJECT_INFORMATION_CLASS ObjectInformationClass,
