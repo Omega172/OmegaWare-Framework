@@ -478,7 +478,15 @@ bool Memory::ResetTrampolineCollection()
 	g_vecTrampolineCollection.clear();
 	for (auto& stScanResult : SignatureScan({ { Signature("FF 23"), {} } }))
 	{
-		g_vecTrampolineCollection.insert(g_vecTrampolineCollection.end(), stScanResult.m_vecPointers.begin(), stScanResult.m_vecPointers.end());
+		MEMORY_BASIC_INFORMATION mbi{};
+		for (auto& ptr : stScanResult.m_vecPointers)
+		{
+			if (VirtualQuery(ptr, &mbi, sizeof(mbi)) == 0)
+				continue;
+
+			if(mbi.Protect == PAGE_EXECUTE_READ)
+				g_vecTrampolineCollection.emplace_back(ptr);
+		}
 	}
 
 	Utils::LogDebug(std::format("Trampolines collected: {}", g_vecTrampolineCollection.size()));

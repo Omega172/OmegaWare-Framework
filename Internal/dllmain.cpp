@@ -1,11 +1,4 @@
 #include "pch.h"
-#include <intrin.h>
-
-void DummyFn()
-{
-	Utils::LogDebug(std::format("ReturnAddress: {:#010x}", reinterpret_cast<uintptr_t>(_ReturnAddress())));
-}
-
 
 DWORD __stdcall FrameworkInit(LPVOID lpParam)
 {
@@ -36,10 +29,6 @@ DWORD __stdcall FrameworkInit(LPVOID lpParam)
 	Utils::LogDebug(std::format("PrivilegedHandle: {:#010x}", reinterpret_cast<uintptr_t>(Memory::GetPrivilegedHandleToProcess())));
 	if (!Memory::ResetTrampolineCollection())
 		return false;
-
-	DummyFn();
-	for (size_t i = 0; i < 5; ++i)
-		Memory::CallSpoofed(DummyFn);
 
 #if FRAMEWORK_UNREAL
 	if (!FrameworkUnrealInit())
