@@ -232,15 +232,21 @@ namespace Memory
 	void* GetRandomTrampoline();
 
 	template <typename Returned_t, typename... Args_t>
-	inline Returned_t CallSpoofed(Returned_t(*fn)(Args_t...), Args_t... aArgs)
+	inline Returned_t CallSpoofedFrom(const void* pTrampoline, Returned_t(*fn)(Args_t...), Args_t... aArgs)
 	{
 		struct {
 			const void* m_pTrampoline;
 			void* m_fn;
 			void* m_pRBX;
-		} stShellParams{ GetRandomTrampoline(), fn };
+		} stShellParams{ pTrampoline, fn };
 
 		return CallSpoofer::ArgumentRemapper<sizeof...(Args_t), void>::template Call<Returned_t, Args_t...>(&stShellParams, aArgs...);
+	}
+
+	template <typename Returned_t, typename... Args_t>
+	__forceinline Returned_t CallSpoofed(Returned_t(*fn)(Args_t...), Args_t... aArgs)
+	{
+		return CallSpoofedFrom(GetRandomTrampoline(), fn, aArgs...);
 	}
 
 	/**
