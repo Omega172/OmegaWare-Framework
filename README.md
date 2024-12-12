@@ -23,11 +23,3 @@ You can see this framework being used in these places:
 ## UnityConfig.h
 `MONO_DLL`: The name of the mono DLL the target application uses by default it is `mono-2.0-bdwgc.dll`
 `DEFAULT_ASSEMBLY_NAME`: The path to the default Assemply-CSharp.dll, this should be changed and by default is `".\\GAME_NAME_Data\\Managed\\Assembly-CSharp.dll"`
-
-#  The Injector
-The injector has no configuration.
-
-It is a simple program that lets you select a DLL with a file dialog and then select a running process to inject the DLL into.
-The only injection method it supports at the moment is `ManualMap` injection but there is a function for `LoadLibrairy` injection in the code.
-
-It does not support cross architecture injection, it will let you know if you attempt to inject a DLL that is not compatible with the injectors current architecture or the target processes architecture
