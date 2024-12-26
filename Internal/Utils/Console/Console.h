@@ -14,12 +14,6 @@ private:
 	bool m_bVisible    : 1 = false;
 
 public:
-	enum Visibility
-	{
-		SHOWN = true,
-		HIDDEN = false
-	};
-
 	Console(bool bVisibility, std::string sConsoleTitle = "DEBUG CONSOLE | x64", DWORD dwMode = ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING) noexcept;
 	~Console() noexcept { Destroy(); }
 
