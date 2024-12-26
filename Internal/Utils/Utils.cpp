@@ -48,6 +48,8 @@ std::optional<std::filesystem::path> Utils::GetLogFilePath(const std::string& sF
 		return pathLog;
 	}
 
+	pathLog += TARGET_GAME_NAME; // Prepend the framework target game name so it titles the log files correctly
+
 	pathLog += sFile;
 	if (sExtension.size() == 0) {
 		return pathLog;
