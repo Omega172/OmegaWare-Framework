@@ -30,16 +30,15 @@ static_assert((FRAMEWORK_RENDER_DYNAMIC + FRAMEWORK_RENDER_D3D11 + FRAMEWORK_REN
 #define SPOOF_THREAD_ADDRESS 0
 #define SPOOF_RETURN_ADDRESSES 0
 
-#ifndef FRAMEWORK_INJECTOR
 #include "Utils/Utils.h"
 
 // Unreal
-#if FRAMEWORK_UNREAL
+#if ENGINE_UNREAL
 #include "Interfaces/Unreal/UnrealConfig.h"
 #endif
 
 // Unity
-#if FRAMEWORK_UNITY
+#if ENGINE_UNITY
 #include "Interfaces/Unity/UnityConfig.h"
 #endif
 
@@ -70,5 +69,3 @@ static_assert((FRAMEWORK_RENDER_DYNAMIC + FRAMEWORK_RENDER_D3D11 + FRAMEWORK_REN
 
 #include "Hooks/WndProc/WndProcHooks.h"
 #include "Hooks/Renderer/RendererHooks.h"
-
-#endif

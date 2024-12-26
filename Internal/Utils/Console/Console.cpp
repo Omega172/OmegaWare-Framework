@@ -1,6 +1,6 @@
 #include "pch.h"
 
-Console::Console(bool bVisibility, std::string sConsoleTitle, DWORD dwMode)
+Console::Console(bool bVisibility, std::string sConsoleTitle, DWORD dwMode) noexcept
 {
 	if (m_bInitalized)
 		return;

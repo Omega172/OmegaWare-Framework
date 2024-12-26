@@ -24,12 +24,12 @@ static bool FrameworkInit()
 		return false;
 #endif
 
-#if FRAMEWORK_UNREAL
+#if ENGINE_UNREAL
 	if (!FrameworkUnrealInit())
 		return false;
 #endif
 
-#if FRAMEWORK_UNREAL
+#if ENGINE_UNREAL
 	Utils::LogDebug("Initializing FNames, this can take a bit.");
 	Utils::LogDebug(std::format("Unreal: 0x{:x}", Framework::unreal.get()));
 	FNames::Initialize();
@@ -71,7 +71,7 @@ DWORD __stdcall FrameworkMainThread(LPVOID lpParam)
 
 	while (Framework::bShouldRun)
 	{
-		#if FRAMEWORK_UNREAL
+		#if ENGINE_UNREAL
 			Framework::unreal.get()->RefreshActorList();
 		#endif
 

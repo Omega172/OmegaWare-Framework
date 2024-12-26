@@ -143,14 +143,14 @@ void GUI::Render()
 	//	Other Render Stuff
 	//
 
-#if FRAMEWORK_UNREAL
+#if ENGINE_UNREAL
 	Framework::unreal->ActorLock.lock();
 #endif
 
 	for (auto& pFeature : g_vecFeatures)
 		pFeature->Render();
 
-#if FRAMEWORK_UNREAL
+#if ENGINE_UNREAL
 	Framework::unreal->ActorLock.unlock();
 #endif
 

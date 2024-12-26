@@ -72,11 +72,11 @@ namespace Framework
 	inline std::unique_ptr<WndProcHooks> wndproc = std::make_unique<WndProcHooks>();
 	inline std::unique_ptr<RendererHooks> renderer = std::make_unique<RendererHooks>();
 
-#if FRAMEWORK_UNREAL
+#if ENGINE_UNREAL
 	inline std::unique_ptr<Unreal> unreal = std::make_unique<Unreal>();
 #endif
 
-#if FRAMEWORK_UNITY
+#if ENGINE_UNITY
 	inline Mono mono = Mono::Instance();
 #endif
 

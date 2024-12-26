@@ -1,5 +1,5 @@
 #pragma once
-#if FRAMEWORK_UNREAL
+#if ENGINE_UNREAL
 
 #include "SDK.h"
 
