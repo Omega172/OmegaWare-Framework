@@ -14,7 +14,7 @@ inline bool FrameworkUnrealInit()
 		return false;
 
 	if (!(*CG::UWorld::GWorld))
-		LogErrorHere("Waiting for GWorld to initalize");
+		Utils::LogError("Waiting for GWorld to initalize");
 
 	while (!(*CG::UWorld::GWorld))
 		continue;
@@ -23,7 +23,7 @@ inline bool FrameworkUnrealInit()
 #ifdef DUMPER_7
 	CG::UWorld* pGWorld = CG::UWorld::GetWorld();
 	if (!pGWorld)
-		LogErrorHere("Waiting for GWorld to initalize");
+		Utils::LogError("Waiting for GWorld to initalize");
 
 	while (!pGWorld)
 		continue;
@@ -132,8 +132,8 @@ namespace FNames
 		CG::FNamePool* GNames = CG::FName::GNames;
 #endif
 
-		LogDebugStreamHere("GNames: 0x" << GNames);
-		LogDebugStreamHere("GNames Count: " << GNames->Count());
+		Utils::LogDebug(std::format("GNames: 0x{:x}", GNames));
+		Utils::LogDebug(std::format("GNames Count: {}", GNames->Count()));
 
 		size_t iGNameSize = 0;
 		int lastBlock = 0;
@@ -173,7 +173,7 @@ namespace FNames
 				goto RePlay;
 			}
 
-			std::string sName = std::string(reinterpret_cast<CG::FNameEntry*>(entryOffset)->AnsiName, nameHeader >> 6);
+			std::string sName = std::string(reinterpret_cast<CG::FNameEntry*>(entryOffset)->Name.AnsiName, nameHeader >> 6);
 
 			for (int i = 0; i < vecClassLookups.size(); i++) {
 				if (vecClassLookups[i].ComparisonIndex)
@@ -183,7 +183,7 @@ namespace FNames
 					continue;
 
 				vecClassLookups[i].ComparisonIndex = nextFNameComparisonId;
-				Utils::LogDebug(Utils::GetLocation(CurrentLoc), "Initalized " + sName);
+				Utils::LogDebug(std::format("Initalized {}", sName));
 				break;
 			}
 
@@ -198,10 +198,10 @@ namespace FNames
 
 		for (ClassLookupEntry_t stLookupEntry : vecClassLookups) {
 			if (!stLookupEntry.ComparisonIndex)
-				Utils::LogError(Utils::GetLocation(CurrentLoc), "Didnt Find " + std::string(stLookupEntry.sName));
+				Utils::LogError(std::format("Didnt Find {}", std::string(stLookupEntry.sName)));
 		}
 
-		LogDebugStreamHere("Resolved GNames Count: " << iGNameSize);
+		Utils::LogDebug(std::format("Resolved GNames Count: {}", iGNameSize));
 	};
 }
 #undef CREATE_ENUM
