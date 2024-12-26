@@ -77,10 +77,14 @@ void Memory::EnumerateHandles(EnumerateHandlesFunc fn)
 	VirtualFree(pSystemHandleInformation, 0, MEM_RELEASE);
 }
 
+static std::map<DWORD, HANDLE> mapHandles{};
 HANDLE Memory::GetPrivilegedHandleToProcess(DWORD dwProcessId)
 {
 	if (!dwProcessId)
 		dwProcessId = Framework::wndproc->dwProcessId;
+
+	if (mapHandles.contains(dwProcessId))
+		return mapHandles.find(dwProcessId)->second;
 
 	HANDLE rv = nullptr;
 
@@ -133,7 +137,20 @@ HANDLE Memory::GetPrivilegedHandleToProcess(DWORD dwProcessId)
 		return true;
 	});
 
+	if (rv)
+		return rv;
+	
+	rv = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, false, dwProcessId);
+	if (rv)
+		mapHandles.emplace(dwProcessId, rv);
+
 	return rv;
+}
+
+void Memory::ReleaseHandles() {
+	for (auto& pairEntry : mapHandles) {
+		CloseHandle(pairEntry.second);
+	}
 }
 
 void Memory::EnumerateModules(EnumerateModulesFunc fn, DWORD dwProcessId, DWORD flags)

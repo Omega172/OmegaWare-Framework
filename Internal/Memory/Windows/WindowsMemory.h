@@ -17,6 +17,8 @@ namespace Memory
 	// Get a handle to current process with PROCESS_QUERY_INFORMATION and PROCESS_VM_READ
 	HANDLE GetPrivilegedHandleToProcess(DWORD dwProcessId = 0);
 
+	void ReleaseHandles();
+
 	// Type used for EnumerateModules function
 	using EnumerateModulesFunc = std::function<bool(std::string_view)>;
 	// Enum used for EnumerateModules function, filters the strings provided to the callback fn

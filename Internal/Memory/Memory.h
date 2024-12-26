@@ -231,6 +231,17 @@ namespace Memory
 	 */
 	void* GetRandomTrampoline();
 
+	/**
+	 * Calls function fn from a provided trampoline.
+	 *
+	 * \returns The same return value as the original function.
+	 *
+	 * \param pTrampoline The location of the instruction that will jump to our function.
+	 * 
+	 * \param fn The function to be called.
+	 *
+	 * \aArgs The same args you would otherwise have passed to the original function.
+	 */
 	template <typename Returned_t, typename... Args_t>
 	inline Returned_t CallSpoofedFrom(const void* pTrampoline, Returned_t(*fn)(Args_t...), Args_t... aArgs)
 	{
@@ -243,6 +254,15 @@ namespace Memory
 		return CallSpoofer::ArgumentRemapper<sizeof...(Args_t), void>::template Call<Returned_t, Args_t...>(&stShellParams, aArgs...);
 	}
 
+	/**
+	 * Calls function fn from a random trampoline within the target process and its modules.
+	 * 
+	 * \returns The same return value as the original function.
+	 * 
+	 * \param fn The function to be called.
+	 * 
+	 * \aArgs The same args you would otherwise have passed to the original function.
+	 */
 	template <typename Returned_t, typename... Args_t>
 	__forceinline Returned_t CallSpoofed(Returned_t(*fn)(Args_t...), Args_t... aArgs)
 	{
