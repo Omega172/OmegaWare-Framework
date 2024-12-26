@@ -1,6 +1,6 @@
 #include "pch.h"
 
-Console::Console(bool bVisibility, std::string sConsoleTitle)
+Console::Console(bool bVisibility, std::string sConsoleTitle, DWORD dwMode)
 {
 	if (m_bInitalized)
 		return;
@@ -19,6 +19,13 @@ Console::Console(bool bVisibility, std::string sConsoleTitle)
 		return;
 	}
 
+	errno_t errSTDErr = freopen_s(&m_pSTDErrDummy, "CONOUT$", "w", stderr);
+	if (errSTDErr != NULL)
+	{
+		Utils::LogError(std::to_string(errSTDErr));
+		return;
+	}
+
 	errno_t errSTDIn = freopen_s(&m_pSTDInDummy, "CONIN$", "w", stdin);
 	if (errSTDIn != NULL)
 	{
@@ -27,12 +34,13 @@ Console::Console(bool bVisibility, std::string sConsoleTitle)
 	}
 
 	std::cout.clear();
+	std::cerr.clear();
 	std::cin.clear();
 	
-	SetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+	SetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), dwMode);
 
-	SetVisibility(bVisibility);
 	SetTitle(sConsoleTitle);
+	SetVisibility(bVisibility);
 
 	m_bInitalized = true;
 	return;
@@ -66,5 +74,11 @@ void Console::SetVisibility(bool bVisibility)
 void Console::ToggleVisibility()
 {
 	SetVisibility(!m_bVisible);
+	return;
+}
+
+void Console::SetMode(DWORD dwMode)
+{
+	SetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), dwMode);
 	return;
 }
