@@ -1,4 +1,5 @@
 #include "pch.h"
+#include "ExampleFeature.h"
 
 bool ExampleFeature::SetupMenu()
 {

@@ -82,13 +82,8 @@ namespace Framework
 
 }
 
-// Framework Features
-#include "../Features/Feature.h"
-#include "../Features/ExampleFeature/ExampleFeature.h"
-
+class BaseFeature;
 inline std::vector<std::unique_ptr<BaseFeature>> g_vecFeatures{};
 
-__forceinline void AppendFeatures()
-{
-	g_vecFeatures.push_back(std::make_unique<ExampleFeature>());
-}
+// Framework Features
+#include "../Features/Feature.h"

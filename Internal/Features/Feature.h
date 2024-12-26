@@ -4,7 +4,9 @@
 class BaseFeature
 {
 public:
-	BaseFeature(){};
+	BaseFeature() {
+		RegisterFeature(this);
+	};
 
 	/**
 	 * Called upon menu creation. Create any and all menu elements for this feature here.
@@ -45,4 +47,10 @@ public:
 	 * Returns the name of this feature for logging purposes.
 	 */
 	virtual std::string GetName() = 0;
+
+private:
+	static void RegisterFeature(BaseFeature* pFeature)
+	{
+		g_vecFeatures.emplace_back(pFeature);
+	}
 };

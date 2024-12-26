@@ -101,6 +101,11 @@ static void LogError(const std::string& sErrorMessage, std::source_location loca
 	std::cout << std::format("{}Error{}: {} {}Info{}: {}\n", colors::red, colors::white, GetLocationString(location), colors::yellow, colors::white, sErrorMessage);
 }
 
+static void LogDebug(const std::string& sDebugMessage, std::source_location location) {
+	// Debug: [$Filename ($Ln,$Col)] $Function | Info: $Message
+	std::cout << std::format("{}Debug{}: {} {}Info{}: {}\n", colors::cyan, colors::white, GetLocationString(location), colors::yellow, colors::white, sDebugMessage);
+}
+
 namespace Utils {
 	void LogHook(const std::string& sHookName, const MH_STATUS eStatus, std::source_location location)
 	{
@@ -182,8 +187,28 @@ namespace Utils {
 	void LogDebug(const std::string& sDebugMessage, std::source_location location)
 	{
 	#ifdef _DEBUG
-		// Debug: [$Filename ($Ln,$Col)] $Function | Info: $Message
-		std::cout << std::format("{}Debug{}: {} {}Info{}: {}\n", colors::cyan, colors::white, GetLocationString(location), colors::yellow, colors::white, sDebugMessage);
+		::LogDebug(sDebugMessage, location);
+
+		std::filesystem::path pathDebug{};
+		{
+			auto optPath = Utils::GetLogFilePath(".log");
+			if (!optPath) {
+				::LogError("Failed to find DEBUG log file path", std::source_location::current());
+				return;
+			}
+
+			pathDebug = optPath.value();
+		}
+
+		std::ofstream fileDebug(pathDebug, std::ios::app);
+		if (!fileDebug.is_open() || fileDebug.fail())
+		{
+			::LogError("Failed to open DEBUG log file for writing", std::source_location::current());
+			return;
+		}
+
+		fileDebug << std::format("Debug: {} Info: {}\n", GetColorlessLocationString(location), sDebugMessage);
+		fileDebug.close();
 	#endif
 	}
 };

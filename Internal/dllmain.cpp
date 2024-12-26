@@ -1,21 +1,13 @@
 #include "pch.h"
 
-DWORD __stdcall FrameworkInit(LPVOID lpParam)
+static bool FrameworkInit()
 {
-	// Why must we resort to hacks when we have simple issues.
-	AppendFeatures();
+	char szModuleName[1024]{};
+	if (!GetModuleFileNameA(Framework::hModule, szModuleName, sizeof(szModuleName)))
+		return false;
 
-	{
-		char szModuleName[1024]{};
-		if (!GetModuleFileNameA(Framework::hModule, szModuleName, sizeof(szModuleName)))
-			return false;
+	Framework::iModuleNameHash = CRC64::hash(szModuleName);
 
-		Framework::iModuleNameHash = CRC64::hash(szModuleName);
-	}
-	
-#ifdef _DEBUG
-	Framework::console->SetVisibility(true); // Set the console to be visible by default if the framework is in debug mode
-#endif
 	// Initalize MinHook
 	if (MH_Initialize() != MH_STATUS::MH_OK)
 		return false;
@@ -46,7 +38,7 @@ DWORD __stdcall FrameworkInit(LPVOID lpParam)
 		for (auto& pFeature : g_vecFeatures) {
 			if (pFeature->SetupMenu() && pFeature->Setup())
 				continue;
-			
+
 			Utils::LogError(std::format("Feature \"{}\" failed SetupMenu or Setup", pFeature->GetName()));
 			return false;
 		}
@@ -54,6 +46,16 @@ DWORD __stdcall FrameworkInit(LPVOID lpParam)
 	catch (const std::exception& e) {
 		Utils::LogError(e.what());
 		return false;
+	}
+
+	return true;
+}
+
+DWORD __stdcall FrameworkMainThread(LPVOID lpParam)
+{
+	if (!FrameworkInit()) {
+		Framework::bShouldRun = false;
+		Utils::LogDebug("FrameworkInit() returned false, unloading...");
 	}
 
 	Framework::config = std::make_unique<Config>(); // Initalize the config class
@@ -109,7 +111,17 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ulReasonForCall, LPVOID lpReserved)
 	if (ulReasonForCall != DLL_PROCESS_ATTACH)
 		return TRUE;
 
+#ifdef _DEBUG
+	Framework::console->SetVisibility(true); // Set the console to be visible by default if the framework is in debug mode
+#endif
+
+#if SPOOF_THREAD_ADDRESS
 	Memory::SpoofThreadAddress(FrameworkInit, hModule);
+#else
+	HANDLE hThread = CreateThread(nullptr, NULL, FrameworkMainThread, hModule, NULL, nullptr);
+	if (hThread)
+		CloseHandle(hThread);
+#endif
 
 	return TRUE;
 }
