@@ -9,7 +9,6 @@ private:
 	FILE* m_pSTDErrDummy = nullptr;
 	FILE* m_pSTDInDummy = nullptr;
 
-	bool m_bAllocated  : 1 = false;
 	bool m_bInitalized : 1 = false;
 	bool m_bVisible    : 1 = false;
 
