@@ -28,6 +28,7 @@ static_assert((ENGINE_UNREAL + ENGINE_UNITY + ENGINE_OTHER) == 1, "Only one targ
 static_assert((FRAMEWORK_RENDER_DYNAMIC + FRAMEWORK_RENDER_D3D11 + FRAMEWORK_RENDER_D3D12) == 1, "Only one rendering API can be selected at a time,");
 
 #define SPOOF_THREAD_ADDRESS 0
+#define SPOOF_RETURN_ADDRESSES 0
 
 #ifndef FRAMEWORK_INJECTOR
 #include "Utils/Utils.h"

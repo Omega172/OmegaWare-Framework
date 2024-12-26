@@ -18,9 +18,11 @@ static bool FrameworkInit()
 	if (!Framework::renderer.get()->Setup())
 		return false;
 
+#if (SPOOF_THREAD_ADDRESS || SPOOF_RETURN_ADDRESSES)
 	Utils::LogDebug(std::format("PrivilegedHandle: {:#010x}", reinterpret_cast<uintptr_t>(Memory::GetPrivilegedHandleToProcess())));
 	if (!Memory::ResetTrampolineCollection())
 		return false;
+#endif
 
 #if FRAMEWORK_UNREAL
 	if (!FrameworkUnrealInit())

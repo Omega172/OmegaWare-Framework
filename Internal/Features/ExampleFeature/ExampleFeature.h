@@ -20,3 +20,5 @@ public:
 
 	std::string GetName() { return "ExampleFeature"; };
 };
+
+std::unique_ptr<ExampleFeature> pExampleFeature = std::make_unique<ExampleFeature>();
