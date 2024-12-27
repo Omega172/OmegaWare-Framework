@@ -83,7 +83,7 @@ namespace Framework
 }
 
 class BaseFeature;
-inline std::vector<std::unique_ptr<BaseFeature>> g_vecFeatures{};
+inline std::vector<BaseFeature*> g_vecFeatures{};
 
 // Framework Features
 #include "../Features/Feature.h"
