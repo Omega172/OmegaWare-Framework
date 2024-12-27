@@ -31,7 +31,7 @@ static bool FrameworkInit()
 
 #if ENGINE_UNREAL
 	Utils::LogDebug("Initializing FNames, this can take a bit.");
-	Utils::LogDebug(std::format("Unreal: 0x{:x}", Framework::unreal.get()));
+	Utils::LogDebug(std::format("Unreal: {:#010x}", reinterpret_cast<uintptr_t>(Framework::unreal.get())));
 	FNames::Initialize();
 	Utils::LogDebug("FNames initialized!");
 #endif

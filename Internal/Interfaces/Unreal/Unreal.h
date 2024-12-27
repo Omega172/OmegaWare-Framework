@@ -132,7 +132,7 @@ namespace FNames
 		CG::FNamePool* GNames = CG::FName::GNames;
 #endif
 
-		Utils::LogDebug(std::format("GNames: 0x{:x}", GNames));
+		Utils::LogDebug(std::format("GNames: {:#010x}", reinterpret_cast<uintptr_t>(GNames)));
 		Utils::LogDebug(std::format("GNames Count: {}", GNames->Count()));
 
 		size_t iGNameSize = 0;
