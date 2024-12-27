@@ -82,7 +82,7 @@ namespace Framework
 
 }
 
-class BaseFeature;
+class BaseFeature; //Forward declaration
 inline std::vector<BaseFeature*> g_vecFeatures{};
 
 // Framework Features
