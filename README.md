@@ -1,3 +1,5 @@
+# Important Info
+After the refactor, I am still finding some instances where things were not renamed or fixed, if you notice any of these issues let me know or make a PR.
 
 #  The Internal Framework
 The framework itself can be configured inside of `FrameworkConfig.h`
