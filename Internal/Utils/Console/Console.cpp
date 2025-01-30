@@ -1,4 +1,5 @@
 #include "pch.h"
+#include "Includes.h"
 
 Console::Console(bool bVisibility, std::string sConsoleTitle, DWORD dwMode) noexcept
 {

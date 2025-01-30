@@ -1,6 +1,6 @@
 #pragma once
-#include "../Libs/ImGui/imgui.h"
-#include "../Localization/Localization.h"
+#include "pch.h"
+#include "Includes.h"
 
 inline ImFont* CurrentFont;
 inline ImFont* CurrentFontESP;

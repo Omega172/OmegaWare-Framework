@@ -1,4 +1,6 @@
 #include "pch.h"
+#include "Includes.h"
+
 #if FRAMEWORK_RENDER_D3D11 || FRAMEWORK_RENDER_DYNAMIC
 
 static ID3D11Device* g_pDevice = NULL;

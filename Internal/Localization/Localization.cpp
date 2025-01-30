@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "Localization.h"
+#include "Includes.h"
 #include "Locales/English.h"
 #include "Locales/German.h"
 #include "Locales/Polish.h"

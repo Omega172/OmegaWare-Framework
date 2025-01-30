@@ -1,58 +1,12 @@
 #pragma once
-
 #include "pch.h"
-
-#include <cassert>
-
-#define STB_OMIT_TESTS
-#include "../Libs/StringToBytes/stb.h"
 
 #include "Windows/WindowsMemory.h"
 
 #define IsValidObjectPtr(lpAddress) (Memory::IsReadable(lpAddress, sizeof(*lpAddress)))
 #define IsValidPtr(lpAddress) (Memory::IsReadable(lpAddress, sizeof(void*)))
 
-#define PtrOffset(ptr, n)         (ptr + n)
-#define PtrDereference(ptr)       (*reinterpret_cast<void**>(ptr))
-#define PtrJmp(ptr)               (PtrOffset(ptr, sizeof(int) + *reinterpret_cast<int*>(ptr)))
-#define PtrOffsetJmp(ptr, n1, n2) (PtrOffset(PtrJmp(PtrOffset(ptr, n1)), n2))
-
 #define Signature(n) (ConvertSignatureArrayToVector(Memory::SignatureData_t::Conversion_t::build<stb::fixed_string{n}>::value))
-
-
-
-// https://www.unknowncheats.me/forum/anti-cheat-bypass/268039-x64-return-address-spoofing-source-explanation.html
-// https://www.youtube.com/watch?v=bSQau-PaCTE
-
-extern "C" void* SpooferStub();
-
-namespace CallSpoofer
-{
-	template <typename Returned_t, typename... Args_t>
-	Returned_t SpooferStubHelper(Args_t... aArgs) {
-		return reinterpret_cast<Returned_t(*)(Args_t...)>(&SpooferStub)(aArgs...);
-	}
-
-	// At least 5 params
-	template <size_t sizeArgs, typename>
-	struct ArgumentRemapper
-	{
-		template<typename Returned_t, typename a1_t, typename a2_t, typename a3_t, typename a4_t, typename... Pack_t>
-		static Returned_t Call(void* pShellParam, a1_t t1, a2_t t2, a3_t t3, a4_t t4, Pack_t... aPack) {
-			return SpooferStubHelper<Returned_t, a1_t, a2_t, a3_t, a4_t, void*, void*, Pack_t...>(t1, t2, t3, t4, pShellParam, {}, aPack...);
-		}
-	};
-
-	// 4 or less params
-	template <size_t sizeArgs>
-	struct ArgumentRemapper<sizeArgs, std::enable_if_t<sizeArgs <= 4>>
-	{
-		template<typename Returned_t, typename a1_t = void*, typename a2_t = void*, typename a3_t = void*, typename a4_t = void*>
-		static Returned_t Call(void* pShellParam, a1_t t1 = {}, a2_t t2 = {}, a3_t t3 = {}, a4_t t4 = {}) {
-			return SpooferStubHelper<Returned_t, a1_t, a2_t, a3_t, a4_t, void*, void*>(t1, t2, t3, t4, pShellParam, {});
-		}
-	};
-}
 
 namespace Memory
 {
@@ -218,56 +172,6 @@ namespace Memory
 	 * \param sizePerModuleLimit The limit of instructions to collect per module.
 	 */
 	std::vector<ModuleScanResult_t> SignatureScan(const std::vector<SignatureData_t> vecSignatures, size_t sizePerModuleLimit = SIZE_MAX);
-
-	/**
-	 * Collects and stores trampolines in the target process and its modules.
-	 * 
-	 * \returns A boolean indicating that it has collected atleast one trampoline.
-	 */
-	bool ResetTrampolineCollection();
-
-	/**
-	 * Returns a pointer to a random trampoline instruction.
-	 */
-	void* GetRandomTrampoline();
-
-	/**
-	 * Calls function fn from a provided trampoline.
-	 *
-	 * \returns The same return value as the original function.
-	 *
-	 * \param pTrampoline The location of the instruction that will jump to our function.
-	 * 
-	 * \param fn The function to be called.
-	 *
-	 * \aArgs The same args you would otherwise have passed to the original function.
-	 */
-	template <typename Returned_t, typename... Args_t>
-	inline Returned_t CallSpoofedFrom(const void* pTrampoline, Returned_t(*fn)(Args_t...), Args_t... aArgs)
-	{
-		struct {
-			const void* m_pTrampoline;
-			void* m_fn;
-			void* m_pRBX;
-		} stShellParams{ pTrampoline, fn };
-
-		return CallSpoofer::ArgumentRemapper<sizeof...(Args_t), void>::template Call<Returned_t, Args_t...>(&stShellParams, aArgs...);
-	}
-
-	/**
-	 * Calls function fn from a random trampoline within the target process and its modules.
-	 * 
-	 * \returns The same return value as the original function.
-	 * 
-	 * \param fn The function to be called.
-	 * 
-	 * \aArgs The same args you would otherwise have passed to the original function.
-	 */
-	template <typename Returned_t, typename... Args_t>
-	__forceinline Returned_t CallSpoofed(Returned_t(*fn)(Args_t...), Args_t... aArgs)
-	{
-		return CallSpoofedFrom(GetRandomTrampoline(), fn, aArgs...);
-	}
 
 	/**
 	 * Wrapper for MinHook.

@@ -1,8 +1,5 @@
 #pragma once
-
-#include <source_location>
-
-#include "..\..\Libs\MinHook\include\MinHook.h"
+#include "Includes.h"
 
 namespace Utils
 {

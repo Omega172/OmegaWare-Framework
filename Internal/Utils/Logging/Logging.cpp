@@ -1,9 +1,6 @@
 #include "pch.h"
-#include <sstream>
-#include <fstream>
-#include <format>
+#include "Includes.h"
 #include "Colors.hpp" // Include the colors header file which contains the color class used to set the color of the console text to make it look pretty
-#include <filesystem>
 
 // I hate this.
 static std::string ConvertFunctionName(const char* szFunctionName)
