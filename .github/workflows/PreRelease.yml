@@ -25,7 +25,7 @@ jobs:
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
       with:
-        tag_name: PreRelease ${{ github.run_number }}  # Auto-incrementing version number
+        tag_name: PreRelease.${{ github.run_number }}  # Auto-incrementing version number
         name: OmegaWare Framework PreRelease ${{ github.run_number }}
         body: |
           **Changes in this release:**
