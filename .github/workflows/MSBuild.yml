@@ -47,5 +47,6 @@ jobs:
     - name: Upload Build Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: Internal_${{ matrix.build_configuration }}.dll
-        path: D:/a/OmegaWare-Framework/Build/${{ matrix.build_configuration }}/Internal_${{ matrix.build_configuration }}.dll
+        name: Internal${{ matrix.build_configuration == 'Debug' && '_DEBUG' || '' }}.dll
+        path: D:/a/OmegaWare-Framework/Build/${{ matrix.build_configuration }}/Internal/Internal${{ matrix.build_configuration == 'Debug' && '_DEBUG' || '' }}.dll
+    
