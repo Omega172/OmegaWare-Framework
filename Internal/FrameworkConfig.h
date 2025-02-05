@@ -97,7 +97,7 @@ static_assert((FRAMEWORK_RENDER_DYNAMIC + FRAMEWORK_RENDER_D3D11 + FRAMEWORK_REN
 #pragma comment(lib, "dxgi.lib")
 #include <d3d11.h>
 #include <dxgi1_2.h>
-#include "Libs/ImGui/imgui_impl_dx11.h"
+#include "Libs/ImGui/backends/imgui_impl_dx11.h"
 #endif
 
 #if FRAMEWORK_RENDER_D3D12 || FRAMEWORK_RENDER_DYNAMIC
@@ -105,7 +105,7 @@ static_assert((FRAMEWORK_RENDER_DYNAMIC + FRAMEWORK_RENDER_D3D11 + FRAMEWORK_REN
 #pragma comment(lib, "dxgi.lib")
 #include <D3D12.h>
 #include <dxgi1_4.h>
-#include "Libs/ImGui/imgui_impl_dx12.h"
+#include "Libs/ImGui/backends/imgui_impl_dx12.h"
 #endif
 
 #include "GUI/Styles.h" // Custom ImGUI colors and font

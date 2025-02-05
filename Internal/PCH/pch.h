@@ -62,13 +62,13 @@
 
 #include <cassert>
 
-#include "../Libs/MinHook/MinHook.h"
+#include "../Libs/MinHook/include/MinHook.h"
 
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "../Libs/ImGUI/imgui.h"
-#include "../Libs/ImGui/imgui_impl_win32.h"
+#include "../Libs/ImGui/backends/imgui_impl_win32.h"
 
-#include "../Libs/Nlohmann.json/json.hpp"
+#include "../Libs/Nlohmann.json/single_include/nlohmann/json.hpp"
 
 #include "../Libs/CRC64/CRC64.h"
 
