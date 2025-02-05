@@ -30,6 +30,6 @@ jobs:
         body: |
           ## What's Changed
           ${{ github.event.head_commit.message }}  # Automatically grabs the latest commit message as release notes
-        draft: false  # Set to true if you want to review before publishing
+        draft: true  # Set to true if you want to review before publishing
         prerelease: true
         files: artifacts/Internal_*.zip  # Upload all build ZIPs
