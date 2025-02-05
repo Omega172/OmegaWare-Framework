@@ -1,8 +1,5 @@
-// SHGetFolderPathA
-#include <shlobj_core.h>
-
-#include "Utils.h"
 #include "pch.h"
+#include "Includes.h"
 
 static std::optional<std::filesystem::path> GetFrameworkFolder()
 {

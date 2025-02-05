@@ -51,6 +51,6 @@ public:
 private:
 	static void RegisterFeature(BaseFeature* pFeature)
 	{
-		g_vecFeatures.emplace_back(pFeature);
+		Framework::g_vecFeatures.emplace_back(pFeature);
 	}
 };

@@ -1,4 +1,5 @@
 #include "pch.h"
+#include "Includes.h"
 
 static bool FrameworkInit()
 {
@@ -18,12 +19,6 @@ static bool FrameworkInit()
 	if (!Framework::renderer.get()->Setup())
 		return false;
 
-#if (SPOOF_THREAD_ADDRESS || SPOOF_RETURN_ADDRESSES)
-	Utils::LogDebug(std::format("PrivilegedHandle: {:#010x}", reinterpret_cast<uintptr_t>(Memory::GetPrivilegedHandleToProcess())));
-	if (!Memory::ResetTrampolineCollection())
-		return false;
-#endif
-
 #if ENGINE_UNREAL
 	if (!FrameworkUnrealInit())
 		return false;
@@ -37,7 +32,7 @@ static bool FrameworkInit()
 #endif
 
 	try {
-		for (auto& pFeature : g_vecFeatures) {
+		for (auto& pFeature : Framework::g_vecFeatures) {
 			if (pFeature->SetupMenu() && pFeature->Setup())
 				continue;
 
@@ -53,7 +48,7 @@ static bool FrameworkInit()
 	return true;
 }
 
-DWORD __stdcall FrameworkMainThread(LPVOID lpParam)
+void FrameworkMainThread(HMODULE hModule)
 {
 	if (!FrameworkInit()) {
 		Framework::bShouldRun = false;
@@ -62,20 +57,16 @@ DWORD __stdcall FrameworkMainThread(LPVOID lpParam)
 
 	Framework::config = std::make_unique<Config>(); // Initalize the config class
 
-	Framework::lua = std::make_unique<Lua>();
-
 	Framework::bInitalized = true;
 	Utils::LogDebug(std::format("{}: Initialized", Framework::Title));
 
-	Framework::lua.get()->AutoRun();
-
 	while (Framework::bShouldRun)
 	{
-		#if ENGINE_UNREAL
-			Framework::unreal.get()->RefreshActorList();
-		#endif
+#if ENGINE_UNREAL
+		Framework::unreal.get()->RefreshActorList();
+#endif
 
-		for (auto& pFeature : g_vecFeatures)
+		for (auto& pFeature : Framework::g_vecFeatures)
 			pFeature->Run();
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -84,13 +75,11 @@ DWORD __stdcall FrameworkMainThread(LPVOID lpParam)
 	Framework::console->SetVisibility(true); // Set the console to be visible when the cheat is unloading
 	Utils::LogDebug(std::format("{}: Unloading...", Framework::Title)); // Log that the cheat is unloading
 
-	delete Framework::lua.release();
-
 	Framework::wndproc.get()->Destroy();
 	Framework::renderer.get()->Destroy();
 
 	// Destroy features
-	for (auto& pFeature : g_vecFeatures)
+	for (auto& pFeature : Framework::g_vecFeatures)
 		pFeature->Destroy();
 
 	std::this_thread::sleep_for(std::chrono::seconds(3));
@@ -102,7 +91,7 @@ DWORD __stdcall FrameworkMainThread(LPVOID lpParam)
 
 	// Unload the module and exit the thread
 	FreeLibraryAndExitThread(Framework::hModule, EXIT_SUCCESS);
-	return true; // Return true if the initalization was successful
+	return; // Return true if the initalization was successful
 }
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ulReasonForCall, LPVOID lpReserved)
@@ -117,13 +106,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ulReasonForCall, LPVOID lpReserved)
 	Framework::console->SetVisibility(true); // Set the console to be visible by default if the framework is in debug mode
 #endif
 
-#if SPOOF_THREAD_ADDRESS
-	Memory::SpoofThreadAddress(FrameworkInit, hModule);
-#else
-	HANDLE hThread = CreateThread(nullptr, NULL, FrameworkMainThread, hModule, NULL, nullptr);
-	if (hThread)
-		CloseHandle(hThread);
-#endif
+	std::thread(FrameworkMainThread, hModule).detach();
 
 	return TRUE;
 }

@@ -1,4 +1,5 @@
 #include "pch.h"
+#include "Includes.h"
 
 Console::Console(bool bVisibility, std::string sConsoleTitle, DWORD dwMode) noexcept
 {
@@ -53,6 +54,9 @@ void Console::Destroy()
 
 	if (m_pSTDOutDummy)
 		fclose(m_pSTDOutDummy);
+
+	if (m_pSTDErrDummy)
+		fclose(m_pSTDErrDummy);
 
 	if (m_pSTDInDummy)
 		fclose(m_pSTDInDummy);

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -13,7 +13,7 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{6b7dd26a-33ca-483e-9e84-3273c4b50026}</ProjectGuid>
+    <ProjectGuid>{bbd70849-7027-4c9b-8da1-dfa6df2b14a0}</ProjectGuid>
     <RootNamespace>Internal</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
@@ -33,7 +33,6 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
-    <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.props" />
   </ImportGroup>
   <ImportGroup Label="Shared">
   </ImportGroup>
@@ -45,13 +44,13 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(SolutionDir)Build\$(Platform)\$(Configuration)\$(ProjectName)\</OutDir>
-    <IntDir>$(SolutionDir)Intermediates\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
-    <TargetName>DEBUG_$(ProjectName)</TargetName>
+    <OutDir>$(SolutionDir)Build\$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(SolutionDir)Intermediates\$(Configuration)\$(ProjectName)\</IntDir>
+    <TargetName>$(ProjectName)_DEBUG</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(SolutionDir)Build\$(Platform)\$(Configuration)\$(ProjectName)\</OutDir>
-    <IntDir>$(SolutionDir)Intermediates\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <OutDir>$(SolutionDir)Build\$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(SolutionDir)Intermediates\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -61,16 +60,14 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdclatest</LanguageStandard_C>
+      <AdditionalIncludeDirectories>$(ProjectDir)PCH\;$(ProjectDir);$(ProjectDir)\Libs\ImGui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(ProjectDir)Precompiled Headers\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(ProjectDir)Libs\MinHook\include\minhook.x64d.lib;$(ProjectDir)Lua\Libs\lua51d.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AddModuleNamesToAssembly>
-      </AddModuleNamesToAssembly>
+      <AdditionalDependencies>$(ProjectDir)Libs\MinHook\build\lib\Debug\minhook.x64d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -82,19 +79,67 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <LanguageStandard_C>stdclatest</LanguageStandard_C>
+      <AdditionalIncludeDirectories>$(ProjectDir)PCH\;$(ProjectDir);$(ProjectDir)\Libs\ImGui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(ProjectDir)Precompiled Headers\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(ProjectDir)Libs\MinHook\include\minhook.x64.lib;$(ProjectDir)Lua\Libs\lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(ProjectDir)Libs\MinHook\build\lib\Release\minhook.x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="Config\Config.cpp" />
+    <ClCompile Include="dllmain.cpp" />
+    <ClCompile Include="Features\ExampleFeature\ExampleFeature.cpp" />
+    <ClCompile Include="GUI\GUI.cpp" />
+    <ClCompile Include="Hooks\Renderer\D3D11Hooks.cpp" />
+    <ClCompile Include="Hooks\Renderer\D3D12Hooks.cpp" />
+    <ClCompile Include="Hooks\Renderer\RendererHooks.cpp" />
+    <ClCompile Include="Hooks\WndProc\WndProcHooks.cpp" />
+    <ClCompile Include="Libs\ImGui\backends\imgui_impl_dx11.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Libs\ImGui\backends\imgui_impl_dx12.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Libs\ImGui\backends\imgui_impl_win32.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Libs\ImGUI\imgui.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Libs\ImGUI\imgui_draw.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Libs\ImGUI\imgui_tables.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Libs\ImGUI\imgui_widgets.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Localization\Localization.cpp" />
+    <ClCompile Include="Memory\Memory.cpp" />
+    <ClCompile Include="Memory\Windows\WindowsMemory.cpp" />
+    <ClCompile Include="PCH\pch.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Utils\Console\Console.cpp" />
+    <ClCompile Include="Utils\Logging\Logging.cpp" />
+    <ClCompile Include="Utils\Utils.cpp" />
+  </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Config\Config.h" />
     <ClInclude Include="Features\ExampleFeature\ExampleFeature.h" />
@@ -106,6 +151,8 @@
     <ClInclude Include="GUI\Watermark.h" />
     <ClInclude Include="Hooks\Renderer\RendererHooks.h" />
     <ClInclude Include="Hooks\WndProc\WndProcHooks.h" />
+    <ClInclude Include="Includes.h" />
+    <ClInclude Include="FrameworkConfig.h" />
     <ClInclude Include="Interfaces\Unity\Mono.h" />
     <ClInclude Include="Interfaces\Unity\Mono\jit\jit.h" />
     <ClInclude Include="Interfaces\Unity\Mono\metadata\appdomain.h" />
@@ -142,102 +189,41 @@
     <ClInclude Include="Interfaces\Unity\Mono\utils\mono-logger.h" />
     <ClInclude Include="Interfaces\Unity\Mono\utils\mono-publib.h" />
     <ClInclude Include="Interfaces\Unity\UnityConfig.h" />
-    <ClInclude Include="Interfaces\Unreal\BasicTypes.h" />
-    <ClInclude Include="Interfaces\Unreal\FNames.h" />
+    <ClInclude Include="Interfaces\Unreal\SDK.h" />
     <ClInclude Include="Interfaces\Unreal\Unreal.h" />
     <ClInclude Include="Interfaces\Unreal\UnrealConfig.h" />
     <ClInclude Include="Libs\CRC64\CRC64.h" />
+    <ClInclude Include="Libs\ImGui\backends\imgui_impl_dx11.h" />
+    <ClInclude Include="Libs\ImGui\backends\imgui_impl_dx12.h" />
+    <ClInclude Include="Libs\ImGui\backends\imgui_impl_win32.h" />
     <ClInclude Include="Libs\ImGUI\imconfig.h" />
     <ClInclude Include="Libs\ImGUI\imgui.h" />
-    <ClInclude Include="Libs\ImGUI\imgui_impl_dx11.h" />
-    <ClInclude Include="Libs\ImGUI\imgui_impl_dx12.h" />
-    <ClInclude Include="Libs\ImGUI\imgui_impl_win32.h" />
     <ClInclude Include="Libs\ImGUI\imgui_internal.h" />
     <ClInclude Include="Libs\ImGUI\imstb_rectpack.h" />
     <ClInclude Include="Libs\ImGUI\imstb_textedit.h" />
     <ClInclude Include="Libs\ImGUI\imstb_truetype.h" />
     <ClInclude Include="Libs\MinHook\include\MinHook.h" />
+    <ClInclude Include="Libs\MinHook\MinHook.h" />
     <ClInclude Include="Libs\Nlohmann.json\json.hpp" />
     <ClInclude Include="Libs\StringToBytes\stb.h" />
-    <ClInclude Include="FrameworkConfig.h" />
     <ClInclude Include="Localization\LocaleStructs.h" />
     <ClInclude Include="Localization\Locales\English.h" />
     <ClInclude Include="Localization\Locales\German.h" />
     <ClInclude Include="Localization\Locales\Polish.h" />
     <ClInclude Include="Localization\Localization.h" />
-    <ClInclude Include="Lua\Headers\lauxlib.h" />
-    <ClInclude Include="Lua\Headers\lua.h" />
-    <ClInclude Include="Lua\Headers\lua.hpp" />
-    <ClInclude Include="Lua\Headers\luaconf.h" />
-    <ClInclude Include="Lua\Headers\luajit.h" />
-    <ClInclude Include="Lua\Headers\lualib.h" />
-    <ClInclude Include="Lua\LuaAPI.h" />
     <ClInclude Include="Memory\Memory.h" />
     <ClInclude Include="Memory\Windows\WindowsMemory.h" />
     <ClInclude Include="Memory\Windows\WindowsTypes.h" />
-    <ClInclude Include="Precompiled Headers\pch.h" />
+    <ClInclude Include="PCH\pch.h" />
     <ClInclude Include="Utils\Console\Console.h" />
     <ClInclude Include="Utils\Logging\Colors.hpp" />
     <ClInclude Include="Utils\Logging\Logging.h" />
     <ClInclude Include="Utils\Utils.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Config\Config.cpp" />
-    <ClCompile Include="dllmain.cpp" />
-    <ClCompile Include="Features\ExampleFeature\ExampleFeature.cpp" />
-    <ClCompile Include="GUI\GUI.cpp" />
-    <ClCompile Include="Hooks\Renderer\D3D11Hooks.cpp" />
-    <ClCompile Include="Hooks\Renderer\D3D12Hooks.cpp" />
-    <ClCompile Include="Hooks\Renderer\RendererHooks.cpp" />
-    <ClCompile Include="Hooks\WndProc\WndProcHooks.cpp" />
-    <ClCompile Include="Libs\ImGUI\imgui.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="Libs\ImGUI\imgui_draw.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="Libs\ImGUI\imgui_impl_dx11.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="Libs\ImGUI\imgui_impl_dx12.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="Libs\ImGUI\imgui_impl_win32.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="Libs\ImGUI\imgui_tables.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="Libs\ImGUI\imgui_widgets.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="Localization\Localization.cpp" />
-    <ClCompile Include="Memory\Memory.cpp" />
-    <ClCompile Include="Memory\Windows\WindowsMemory.cpp" />
-    <ClCompile Include="Precompiled Headers\DO_NOT_DELETE.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">pch.h</PrecompiledHeaderFile>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="Utils\Console\Console.cpp" />
-    <ClCompile Include="Utils\Logging\Logging.cpp" />
-    <ClCompile Include="Utils\Utils.cpp" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="Interfaces\Unity\Mono\cil\opcode.def" />
-    <MASM Include="Memory\SpooferStub.asm">
-      <FileType>Document</FileType>
-    </MASM>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.targets" />
   </ImportGroup>
 </Project>

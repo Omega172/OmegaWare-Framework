@@ -39,11 +39,6 @@ namespace GUI
 	inline std::unique_ptr<Button> GuiLoadConfig = std::make_unique<Button>(std::string("LOAD_CONFIG"), "LOAD_CONFIG"Hashed, ElementBase::Style_t{
 		.eSameLine = ElementBase::ESameLine::Same });
 
-	inline std::unique_ptr<Child> GuiLua = std::make_unique<Child>(std::string("LUA"), "LUA"Hashed, ElementBase::Style_t{
-		.iFlags = ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeX | ImGuiChildFlags_AutoResizeY }, ImGuiWindowFlags_HorizontalScrollbar);
-	inline std::unique_ptr<Combo> GuiLuaFiles = std::make_unique<Combo>(std::string("LUA_FILES"), "LUA_FILES"Hashed, ElementBase::Style_t{
-		.iFlags = ImGuiComboFlags_WidthFitPreview });
-
 	void Render();
 
 	inline std::once_flag LoadFlag;

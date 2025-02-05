@@ -1,4 +1,5 @@
 #include "pch.h"
+#include "Includes.h"
 
 // https://stackoverflow.com/questions/48708440/check-if-i-can-write-to-memory
 // https://stackoverflow.com/questions/18394647/can-i-check-if-memory-block-is-readable-without-raising-exception-with-c
@@ -470,31 +471,4 @@ std::vector<Memory::ModuleScanResult_t> Memory::SignatureScan(const std::vector<
 	});
 
 	return vecReturned;
-}
-
-static std::vector<void*> g_vecTrampolineCollection{};
-bool Memory::ResetTrampolineCollection()
-{
-	g_vecTrampolineCollection.clear();
-	for (auto& stScanResult : SignatureScan({ { Signature("FF 23"), {} } }))
-	{
-		MEMORY_BASIC_INFORMATION mbi{};
-		for (auto& ptr : stScanResult.m_vecPointers)
-		{
-			if (VirtualQuery(ptr, &mbi, sizeof(mbi)) == 0)
-				continue;
-
-			if(mbi.Protect == PAGE_EXECUTE_READ)
-				g_vecTrampolineCollection.emplace_back(ptr);
-		}
-	}
-
-	Utils::LogDebug(std::format("Trampolines collected: {}", g_vecTrampolineCollection.size()));
-	return g_vecTrampolineCollection.size() > 0;
-}
-
-void* Memory::GetRandomTrampoline()
-{
-	assert(g_vecTrampolineCollection.size() != 0);
-	return g_vecTrampolineCollection.at(Utils::Random<size_t>(0, g_vecTrampolineCollection.size() - 1));
 }

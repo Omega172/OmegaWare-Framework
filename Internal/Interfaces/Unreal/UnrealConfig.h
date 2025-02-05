@@ -1,11 +1,9 @@
 #pragma once
 #if ENGINE_UNREAL
 
-#include "SDK.h"
-
 #define DUMPER_7 0
 
-#define SDK_IMPORTED 0
+#define SDK_IMPORTED 1
 static_assert(SDK_IMPORTED, "Did you remember to copy in the SDK?");
 
 // Reminder remember to incude these files in the project
@@ -18,7 +16,8 @@ static_assert(SDK_IMPORTED, "Did you remember to copy in the SDK?");
 // CoreUObject_functions.cpp
 // Engine_functions.cpp
 
-#include "FNames.h"
+#include "SDK.h"
+
 #include "Unreal.h"
 
 #endif
