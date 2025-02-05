@@ -16,20 +16,38 @@ jobs:
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Ensure full history is available for logs
 
     - name: Download all build artifacts
       uses: actions/download-artifact@v4
       with:
         path: artifacts  # Store all artifacts in this folder
 
+    - name: Generate Release Notes
+      id: generate_notes
+      run: |
+        git fetch --tags
+        LAST_TAG=$(git describe --tags --abbrev=0 || echo "")
+        if [ -z "$LAST_TAG" ]; then
+          echo "First release, including all commits."
+          RELEASE_NOTES=$(git log --pretty=format:"* %s" --no-merges)
+        else
+          echo "Generating changelog from $LAST_TAG"
+          RELEASE_NOTES=$(git log $LAST_TAG..HEAD --pretty=format:"* %s" --no-merges)
+        fi
+        echo "RELEASE_NOTES<<EOF" >> $GITHUB_ENV
+        echo "$RELEASE_NOTES" >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
+
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
       with:
-        tag_name: PreRelease.${{ github.run_number }}  # Auto-incrementing version number
-        name: OmegaWare Framework PreRelease ${{ github.run_number }}
+        tag_name: Draft.${{ github.run_number }}  # Auto-incrementing version number
+        name: Draft.${{ github.run_number }}
         body: |
           ## What's Changed
-          ${{ github.event.head_commit.message }}  # Automatically grabs the latest commit message as release notes
+          ${{ env.RELEASE_NOTES }}
         draft: true  # Set to true if you want to review before publishing
         prerelease: true
         files: artifacts/Internal_*.zip  # Upload all build ZIPs
