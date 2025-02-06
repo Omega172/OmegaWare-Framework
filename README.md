@@ -30,5 +30,5 @@ xmake -a <x64 | x86 | arm>
 xmake build 
 
 # Individual
-xmake build (Internal | FreeType | MinHook)
+xmake build <Internal | FreeType | MinHook>
 ```
