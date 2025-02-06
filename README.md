@@ -19,7 +19,7 @@ The framework itself can be configured inside of `FrameworkConfig.h`
 `DEFAULT_ASSEMBLY_NAME`: The path to the default Assemply-CSharp.dll, this should be changed and by default is `".\\GAME_NAME_Data\\Managed\\Assembly-CSharp.dll"`
 
 # How to Build
-This project it built using [Xmake](https://github.com/xmake-io/xmake).
+This project it built using [Xmake](https://github.com/xmake-io/xmake). I recommend using [this](https://marketplace.visualstudio.com/items?itemName=tboox.xmake-vscode) extension for VSCode.
 ```bash
 # Here are the commands you will need to build the project
 xmake -m <release | debug>
