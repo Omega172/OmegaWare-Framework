@@ -6,6 +6,7 @@ inline ImFont* CurrentFont;
 inline ImFont* CurrentFontESP;
 
 inline ImFont* TahomaFont;
+inline ImFont* TahomaBigFont;
 inline ImFont* TahomaFontESP; // A font with extra spacing for ESP
 
 inline ImFont* TahomaFontPolish;
@@ -15,103 +16,81 @@ inline void SetupStyle()
 {
 	ImGuiStyle& style = ImGui::GetStyle();
 
-	// Main
-	style.WindowPadding = ImVec2(8, 8);
-	style.FramePadding = ImVec2(4, 3);
-	style.ItemSpacing = ImVec2(8, 4);
-	style.ItemInnerSpacing = ImVec2(4, 4);
-	style.TouchExtraPadding = ImVec2(0, 0);
-	style.IndentSpacing = 15;
-	style.ScrollbarSize = 15;
+    style.WindowRounding = 10;
+    style.ChildRounding = 6;
+    style.FrameRounding = 3;
+    style.GrabRounding = 3;
+    style.PopupRounding = 6;
+    style.TabRounding = 4;
+    style.ScrollbarRounding = 3;
 
-	// Borders
-	style.WindowBorderSize = 1;
-	style.ChildBorderSize = 1;
-	style.PopupBorderSize = 1;
-	style.FrameBorderSize = 1;
-	style.TabBorderSize = 1;
+    style.ButtonTextAlign = { 0.5f, 0.5f };
+    style.WindowTitleAlign = { 0.5f, 0.5f };
+    style.FramePadding = { 8.0f, 8.0f };
+    style.WindowPadding = { 10.0f, 10.0f };
+    style.ItemSpacing = style.WindowPadding;
+    style.ItemInnerSpacing = { style.WindowPadding.x, style.FramePadding.y };
 
-	// Rounding
-	style.WindowRounding = 0;
-	style.ChildRounding = 0;
-	style.FrameRounding = 0;
-	style.PopupRounding = 0;
-	style.ScrollbarRounding = 0;
-	style.GrabRounding = 0;
-	style.TabRounding = 0;
+    style.WindowBorderSize = 1;
+    style.FrameBorderSize = 1;
 
-	// Alignment
-	style.WindowTitleAlign = ImVec2(0.0, 0.50);
-	style.WindowMenuButtonPosition = ImGuiDir_Right;
-	style.ColorButtonPosition = ImGuiDir_Right;
-	style.ButtonTextAlign = ImVec2(0.50, 0.50);
-	style.SelectableTextAlign = ImVec2(0.0, 0.0);
+    style.ScrollbarSize = 12.f;
+    style.GrabMinSize = 8.f;
 
-	// Safe Area Padding
-	style.DisplaySafeAreaPadding = ImVec2(3, 3);
+    style.Colors[ImGuiCol_WindowBg] = ImAdd::HexToColorVec4(0x1A1A1A, 1.0f);
+    style.Colors[ImGuiCol_PopupBg] = style.Colors[ImGuiCol_WindowBg];
+    style.Colors[ImGuiCol_ChildBg] = ImAdd::HexToColorVec4(0x202020, 1.0f);
 
-	// Colors
-	ImVec4* colors = ImGui::GetStyle().Colors;
-	colors[ImGuiCol_Text] = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
-	colors[ImGuiCol_TextDisabled] = ImVec4(0.62f, 0.62f, 0.62f, 0.50f);
-	colors[ImGuiCol_WindowBg] = ImVec4(0.06f, 0.06f, 0.06f, 1.00f);
-	colors[ImGuiCol_ChildBg] = ImVec4(0.13f, 0.13f, 0.13f, 1.00f);
-	colors[ImGuiCol_PopupBg] = ImVec4(0.08f, 0.08f, 0.08f, 0.94f);
-	colors[ImGuiCol_Border] = ImVec4(0.62f, 0.62f, 0.62f, 0.50f);
-	colors[ImGuiCol_BorderShadow] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
-	colors[ImGuiCol_FrameBg] = ImVec4(0.61f, 0.39f, 0.66f, 0.54f);
-	colors[ImGuiCol_FrameBgHovered] = ImVec4(0.83f, 0.00f, 1.00f, 1.00f);
-	colors[ImGuiCol_FrameBgActive] = ImVec4(0.83f, 0.00f, 1.00f, 0.50f);
-	colors[ImGuiCol_TitleBg] = ImVec4(0.04f, 0.04f, 0.04f, 1.00f);
-	colors[ImGuiCol_TitleBgActive] = ImVec4(0.04f, 0.04f, 0.04f, 1.00f);
-	colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.04f, 0.04f, 0.04f, 1.00f);
-	colors[ImGuiCol_MenuBarBg] = ImVec4(0.14f, 0.14f, 0.14f, 1.00f);
-	colors[ImGuiCol_ScrollbarBg] = ImVec4(0.02f, 0.02f, 0.02f, 0.53f);
-	colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.31f, 0.31f, 0.31f, 1.00f);
-	colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.41f, 0.41f, 0.41f, 1.00f);
-	colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(0.51f, 0.51f, 0.51f, 1.00f);
-	colors[ImGuiCol_CheckMark] = ImVec4(0.83f, 0.00f, 1.00f, 1.00f);
-	colors[ImGuiCol_SliderGrab] = ImVec4(0.62f, 0.62f, 0.62f, 0.50f);
-	colors[ImGuiCol_SliderGrabActive] = ImVec4(0.73f, 0.73f, 0.73f, 0.50f);
-	colors[ImGuiCol_Button] = ImVec4(0.62f, 0.38f, 0.66f, 0.54f);
-	colors[ImGuiCol_ButtonHovered] = ImVec4(0.84f, 0.00f, 1.00f, 1.00f);
-	colors[ImGuiCol_ButtonActive] = ImVec4(0.84f, 0.00f, 1.00f, 0.54f);
-	colors[ImGuiCol_Header] = ImVec4(0.62f, 0.38f, 0.66f, 0.54f);
-	colors[ImGuiCol_HeaderHovered] = ImVec4(0.84f, 0.00f, 1.00f, 1.00f);
-	colors[ImGuiCol_HeaderActive] = ImVec4(0.84f, 0.00f, 1.00f, 0.54f);
-	colors[ImGuiCol_Separator] = ImVec4(0.43f, 0.43f, 0.50f, 0.50f);
-	colors[ImGuiCol_SeparatorHovered] = ImVec4(0.84f, 0.00f, 1.00f, 1.00f);
-	colors[ImGuiCol_SeparatorActive] = ImVec4(0.84f, 0.00f, 1.00f, 0.54f);
-	colors[ImGuiCol_ResizeGrip] = ImVec4(0.62f, 0.38f, 0.66f, 0.54f);
-	colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.84f, 0.00f, 1.00f, 1.00f);
-	colors[ImGuiCol_ResizeGripActive] = ImVec4(0.84f, 0.00f, 1.00f, 0.54f);
-	colors[ImGuiCol_Tab] = ImVec4(0.62f, 0.38f, 0.66f, 0.54f);
-	colors[ImGuiCol_TabHovered] = ImVec4(0.84f, 0.00f, 1.00f, 1.00f);
-	colors[ImGuiCol_TabActive] = ImVec4(0.84f, 0.00f, 1.00f, 0.54f);
-	colors[ImGuiCol_TabUnfocused] = ImVec4(0.24f, 0.17f, 0.24f, 0.97f);
-	colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.29f, 0.19f, 0.31f, 1.00f);
-	colors[ImGuiCol_PlotLines] = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
-	colors[ImGuiCol_PlotLinesHovered] = ImVec4(0.84f, 0.00f, 1.00f, 1.00f);
-	colors[ImGuiCol_PlotHistogram] = ImVec4(0.91f, 0.56f, 0.97f, 1.00f);
-	colors[ImGuiCol_PlotHistogramHovered] = ImVec4(0.11f, 0.00f, 1.00f, 1.00f);
-	colors[ImGuiCol_TextSelectedBg] = ImVec4(0.84f, 0.00f, 1.00f, 0.54f);
-	colors[ImGuiCol_DragDropTarget] = ImVec4(0.91f, 0.63f, 0.97f, 1.00f);
-	colors[ImGuiCol_NavHighlight] = ImVec4(0.62f, 0.38f, 0.66f, 0.54f);
-	colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.00f, 1.00f, 1.00f, 0.70f);
-	colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.20f);
-	colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
+    style.Colors[ImGuiCol_Text] = ImAdd::HexToColorVec4(0xccccd4, 1.0f);
+    style.Colors[ImGuiCol_CheckMark] = style.Colors[ImGuiCol_Text];
+    style.Colors[ImGuiCol_TextDisabled] = ImAdd::HexToColorVec4(0x696969, 1.0f);
+
+    style.Colors[ImGuiCol_SliderGrab] = ImAdd::HexToColorVec4(0xA85CFFF, 1.0f);
+    style.Colors[ImGuiCol_SliderGrabActive] = ImAdd::HexToColorVec4(0xA85CFFF, 1.0f);
+
+    style.Colors[ImGuiCol_ScrollbarGrab] = style.Colors[ImGuiCol_SliderGrab];
+    style.Colors[ImGuiCol_ScrollbarGrabActive] = style.Colors[ImGuiCol_SliderGrabActive];
+    style.Colors[ImGuiCol_ScrollbarBg] = ImVec4(0, 0, 0, 0);
+
+    style.Colors[ImGuiCol_TextSelectedBg] = style.Colors[ImGuiCol_SliderGrab];
+
+    style.Colors[ImGuiCol_Border] = ImAdd::HexToColorVec4(0x323232, 1.0f);
+    style.Colors[ImGuiCol_Separator] = style.Colors[ImGuiCol_Border];
+
+    style.Colors[ImGuiCol_Button] = ImAdd::HexToColorVec4(0x1A1A1A, 1.0f);
+    style.Colors[ImGuiCol_ButtonHovered] = ImAdd::HexToColorVec4(0x1A1A1A, 0.7f);
+    style.Colors[ImGuiCol_ButtonActive] = ImAdd::HexToColorVec4(0x1A1A1A, 0.5f);
+
+    style.Colors[ImGuiCol_FrameBg] = style.Colors[ImGuiCol_Button];
+    style.Colors[ImGuiCol_FrameBgHovered] = style.Colors[ImGuiCol_ButtonHovered];
+    style.Colors[ImGuiCol_FrameBgActive] = style.Colors[ImGuiCol_ButtonActive];
+
+    style.Colors[ImGuiCol_Header] = ImAdd::HexToColorVec4(0x292929, 1.0f);
+    style.Colors[ImGuiCol_HeaderHovered] = ImAdd::HexToColorVec4(0x292929, 0.7f);
+    style.Colors[ImGuiCol_HeaderActive] = ImAdd::HexToColorVec4(0x292929, 0.5f);
+
+    style.Colors[ImGuiCol_TitleBg] = style.Colors[ImGuiCol_ChildBg];
+    style.Colors[ImGuiCol_TitleBgActive] = style.Colors[ImGuiCol_TitleBg];
 }
 
 inline void ImportFonts()
 {
 	ImGuiIO& io = ImGui::GetIO();
 
-	ImFontConfig Config;
-	//Config.GlyphExtraSpacing.x = 1.f; // Removed in latest ImGui
+    ImFontConfig cfg;
+    cfg.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags::ImGuiFreeTypeBuilderFlags_ForceAutoHint;
+    ImFont* TahomaFont = io.Fonts->AddFontFromMemoryCompressedTTF(Poppins_Medium_compressed_data, Poppins_Medium_compressed_size, 14, &cfg, io.Fonts->GetGlyphRangesDefault());
+    //ImFont* mainFont = io.Fonts->AddFontFromMemoryCompressedTTF(uiMuseoSansData, uiMuseoSansSize, 14, &cfg, io.Fonts->GetGlyphRangesDefault());
 
-	TahomaFont = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\Tahoma.ttf", 14.0f, NULL, io.Fonts->GetGlyphRangesDefault());
-	TahomaFontESP = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\Tahoma.ttf", 14.0f, &Config, io.Fonts->GetGlyphRangesDefault());
+    // merge in icons from Font Awesome
+    static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_16_FA, 0 };
+    static const ImWchar icons_ranges_brands[] = { ICON_MIN_FAB, ICON_MAX_16_FAB, 0 };
 
-	TahomaFontPolish = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\Tahoma.ttf", 14.0f, NULL, PolishRanges);
-	TahomaFontPolishESP = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\Tahoma.ttf", 14.0f, &Config, PolishRanges);
+    ImFontConfig fa_config; fa_config.MergeMode = true; fa_config.PixelSnapH = true;
+    fa_config.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags::ImGuiFreeTypeBuilderFlags_ForceAutoHint;
+
+    ImFont* fontAwesome = io.Fonts->AddFontFromMemoryCompressedTTF(fa6_solid_compressed_data, fa6_solid_compressed_size, 14, &fa_config, icons_ranges);
+    ImFont* fontAwesomeBrands = io.Fonts->AddFontFromMemoryCompressedTTF(fa_brands_400_compressed_data, fa_brands_400_compressed_size, 14, &fa_config, icons_ranges_brands);
+
+    TahomaBigFont = io.Fonts->AddFontFromMemoryCompressedTTF(Poppins_Medium_compressed_data, Poppins_Medium_compressed_size, 20, &cfg, io.Fonts->GetGlyphRangesDefault());
 }

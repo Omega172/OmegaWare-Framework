@@ -66,7 +66,15 @@
 
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "../Libs/ImGUI/imgui.h"
+#include "../Libs/ImGUI/misc/cpp/imgui_stdlib.h"
+#include "../Libs/ImGUI/misc/freetype/imgui_freetype.h"
+#include "../GUI/Addons/imgui_addons.h"
 #include "../Libs/ImGui/backends/imgui_impl_win32.h"
+
+#include "../GUI/Fonts/IconsFontAwesome6.h"
+#include "../GUI/Fonts/IconsFontAwesome6Brands.h"
+#include "../GUI/Fonts/MuseoSans.h"
+#include "../GUI/Fonts/Poppins_Medium.h"
 
 #include "../Libs/Nlohmann.json/single_include/nlohmann/json.hpp"
 

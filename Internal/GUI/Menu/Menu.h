@@ -484,11 +484,41 @@ public:
 		m_ucSameLinedElements = 1;
 		m_eLastSameLinedElement = EElementType::None;
 
+		ImGuiStyle& style = ImGui::GetStyle();
 
-		ImGui::SetNextWindowSize(m_stStyle.vec2Size);
-		ImGui::SetNextWindowSizeConstraints(m_vec2MinSize, m_vec2MaxSize);
-		ImGui::Begin(GetName().c_str(), NULL, m_stStyle.iFlags);
-		m_stStyle.vec2Size = ImGui::GetWindowSize();
+		static float SideBarWidth = 160;
+		float FooterHeight = ImGui::GetFrameHeight();
+		float HeaderHeight = ImGui::GetFrameHeight() + style.WindowPadding.y * 2;
+
+		ImGui::SetNextWindowSize(m_stStyle.vec2Size, ImGuiCond_Once);
+		ImGui::SetNextWindowPos(ImGui::GetIO().DisplaySize / 2 - m_stStyle.vec2Size / 2, ImGuiCond_Once);
+
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+		ImGui::Begin(GetName().c_str(), nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground);
+		ImGui::PopStyleVar(2);
+
+		// Renders
+		{
+			ImVec2 pos = ImGui::GetWindowPos();
+			ImVec2 size = ImGui::GetWindowSize();
+			ImDrawList* drawList = ImGui::GetWindowDrawList();
+
+			drawList->AddRectFilled(pos, pos + ImVec2(SideBarWidth, size.y), ImGui::GetColorU32(ImGuiCol_ChildBg), style.WindowRounding, ImDrawFlags_RoundCornersLeft);
+			drawList->AddRectFilled(pos + ImVec2(SideBarWidth, 0), pos + ImVec2(size.x, HeaderHeight), ImGui::GetColorU32(ImGuiCol_ChildBg), style.WindowRounding, ImDrawFlags_RoundCornersTopRight);
+			drawList->AddRectFilled(pos + ImVec2(SideBarWidth, HeaderHeight), pos + ImVec2(size.x, size.y - FooterHeight), ImGui::GetColorU32(ImGuiCol_WindowBg), style.WindowRounding, ImDrawFlags_RoundCornersNone);
+			drawList->AddRectFilled(pos + ImVec2(SideBarWidth, size.y - FooterHeight), pos + size, ImGui::GetColorU32(ImGuiCol_ChildBg), style.WindowRounding, ImDrawFlags_RoundCornersBottomRight);
+
+			if (style.WindowBorderSize > 0) {
+				drawList->AddLine(pos + ImVec2(SideBarWidth - style.WindowBorderSize, style.WindowBorderSize), pos + ImVec2(SideBarWidth - style.WindowBorderSize, size.y - style.WindowBorderSize), ImGui::GetColorU32(ImGuiCol_Border), style.WindowBorderSize);
+				drawList->AddLine(pos + ImVec2(SideBarWidth, HeaderHeight - style.WindowBorderSize), pos + ImVec2(size.x - style.WindowBorderSize, HeaderHeight - style.WindowBorderSize), ImGui::GetColorU32(ImGuiCol_Border), style.WindowBorderSize);
+				drawList->AddLine(pos + ImVec2(SideBarWidth, size.y - FooterHeight + style.WindowBorderSize), pos + ImVec2(size.x - style.WindowBorderSize, size.y - FooterHeight + style.WindowBorderSize), ImGui::GetColorU32(ImGuiCol_Border), style.WindowBorderSize);
+				drawList->AddRect(pos, pos + size, ImGui::GetColorU32(ImGuiCol_Border), style.WindowRounding);
+			}
+
+			drawList->AddText(pos + ImVec2(SideBarWidth + style.FramePadding.x, size.y - FooterHeight + style.FramePadding.y), ImGui::GetColorU32(ImGuiCol_TextDisabled), "OmegaWare.xyz");
+			drawList->AddText(pos + ImVec2(size.x - ImGui::CalcTextSize((std::string("v") + STR(FRAMEWORK_VERSION)).c_str()).x - style.FramePadding.x, size.y - FooterHeight + style.FramePadding.y), ImGui::GetColorU32(ImGuiCol_SliderGrab), (std::string("v") + STR(FRAMEWORK_VERSION)).c_str());
+		}
 
 		RenderChildren();
 		ImGui::End();
