@@ -69,7 +69,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(ProjectDir)Libs\MinHook\build\lib\Debug\minhook.x64d.lib;Libs\FreeType\objs\x64\Debug Static\freetype.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(ProjectDir)Libs\MinHook\build\lib\Debug\minhook.x64d.lib;$(ProjectDir)Libs\FreeType\objs\x64\Debug Static\freetype.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -91,7 +91,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(ProjectDir)Libs\MinHook\build\lib\Release\minhook.x64.lib;Libs\FreeType\objs\x64\Release Static\freetype.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(ProjectDir)Libs\MinHook\build\lib\Release\minhook.x64.lib;$(ProjectDir)Libs\FreeType\objs\x64\Release Static\freetype.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
