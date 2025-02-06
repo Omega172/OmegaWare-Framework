@@ -25,13 +25,16 @@ void GUI::Render()
 	for (auto& pFeature : Framework::g_vecFeatures)
 		pFeature->HandleInput();
 
+	/*
 	if (GuiWatermark->GetValue())
 		ShowWatermark(GuiWatermarkFPS->GetValue(), Framework::Title.c_str(), ImVec4(255, 255, 255, 255), ImVec4(255, 255, 255, 0));
+	*/
 
 	if (bMenuOpen)
 	{
 		static std::once_flag onceflag;
 		std::call_once(onceflag, []() {
+			/*
 			GuiCheat->SetCallback([]() {
 				ImGuiContext* pContext = ImGui::GetCurrentContext();
 
@@ -85,13 +88,37 @@ void GUI::Render()
 			GuiLoadConfig->SetCallback([]() {
 				Framework::config->LoadConfig();
 			});
+			*/
+
+			GuiSidebar->SetPushVarsCallback([]() {
+				ImGuiStyle& imStyle = ImGui::GetStyle();
+				ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, imStyle.ChildRounding);
+				ImGui::PushStyleColor(ImGuiCol_FrameBg, imStyle.Colors[ImGuiCol_Header]);
+			});
+
+			GuiSidebar->SetPopVarsCallback([]() {
+				ImGui::PopStyleColor();
+				ImGui::PopStyleVar();
+			});
+
+			GuiSidebar->AddElement(GuiMiscSeperator.get());
+			GuiSidebar->AddElement(GuiDeveloper.get());
+			GuiSidebar->AddElement(GuiStyle.get());
+			GuiSidebar->AddElement(GuiSettings.get());
+			GuiSidebar->AddElement(GuiConfig.get());
 		});
 
+		/*
 		GuiWatermarkFPS->SetVisible(GuiWatermark->GetValue());
 
 		if (!GuiCheat->HasParent())
 		{
 			Framework::menu->AddElement(GuiCheat.get());
+		}
+		*/
+
+		if (!GuiSidebar->HasParent()) {
+			Framework::menu->AddElement(GuiSidebar.get());
 		}
 
 		for (auto& pFeature : Framework::g_vecFeatures)
@@ -125,7 +152,7 @@ void GUI::Render()
 				SetCursor(NULL);
 
 			// Set localization preview to the loaded locale
-			GuiLocalization->SetPreviewLabel((Localization::GetInstance())->GetLocales()[(Localization::GetInstance())->GetCurrentLocaleIndex()].sKey.c_str());
+			//GuiLocalization->SetPreviewLabel((Localization::GetInstance())->GetLocales()[(Localization::GetInstance())->GetCurrentLocaleIndex()].sKey.c_str());
 
 			// Load the config
 			Framework::config->LoadConfig();

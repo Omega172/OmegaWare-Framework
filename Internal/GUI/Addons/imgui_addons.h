@@ -13,8 +13,8 @@ namespace ImAdd
 	bool    TextButton(const char* label, const ImVec2& size_arg = ImVec2(0, 0));
 	bool    Button(const char* label, const ImVec2& size_arg = ImVec2(0, 0));
 	bool    AcentButton(const char* label, const ImVec2& size_arg = ImVec2(0, 0));
-	bool    RadioButton(const char* label, int* v, int current_id, const ImVec2& size_arg = ImVec2(0, 0));
-	bool    RadioButtonIcon(const char* str_id, const char* icon, const char* label, int* v, int current_id, const ImVec2& size_arg = ImVec2(0, 0));
+	bool    RadioButton(const char* label, uint8_t* v, uint8_t current_id, const ImVec2& size_arg = ImVec2(0, 0));
+	bool    RadioButtonIcon(const char* str_id, const char* icon, const char* label, uint8_t* v, uint8_t current_id, const ImVec2& size_arg = ImVec2(0, 0));
 	bool    Selectable(const char* label, bool selected = false, const ImVec2& size_arg = ImVec2(0, 0));
 
 	// Toggles

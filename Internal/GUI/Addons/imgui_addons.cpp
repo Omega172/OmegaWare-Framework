@@ -223,7 +223,7 @@ bool ImAdd::AcentButton(const char* label, const ImVec2& size_arg)
     return pressed;
 }
 
-bool ImAdd::RadioButton(const char* label, int* v, int current_id, const ImVec2& size_arg)
+bool ImAdd::RadioButton(const char* label, uint8_t* v, uint8_t current_id, const ImVec2& size_arg)
 {
     ImGuiWindow* window = GetCurrentWindow();
     if (window->SkipItems)
@@ -286,7 +286,7 @@ bool ImAdd::RadioButton(const char* label, int* v, int current_id, const ImVec2&
     return pressed;
 }
 
-bool ImAdd::RadioButtonIcon(const char* str_id, const char* icon, const char* label, int* v, int current_id, const ImVec2& size_arg)
+bool ImAdd::RadioButtonIcon(const char* str_id, const char* icon, const char* label, uint8_t* v, uint8_t current_id, const ImVec2& size_arg)
 {
     ImGuiWindow* window = GetCurrentWindow();
     if (window->SkipItems)

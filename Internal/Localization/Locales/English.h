@@ -17,7 +17,11 @@ Locale_t localeEnglish{
 		{ "LOAD_CONFIG"Hashed, "Load Config" },
 		{ "LANGUAGE"Hashed, "Language" },
 
-		{ "LUA"Hashed, "Lua" },
-		{ "LUA_FILES"Hashed, "Files" }
+		{ "SIDEBAR"Hashed, "Sidebar" },
+		{ "MISC_SEPERATOR"Hashed, "Misc" },
+		{ "DEVELOPER_BUTTON"Hashed, "Developer" },
+		{ "STYLE_BUTTON"Hashed, "Style" },
+		{ "SETTINGS_BUTTON"Hashed, "Settings" },
+		{ "CONFIG_BUTTON"Hashed, "Config" },
 	}),
 };
