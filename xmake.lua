@@ -1,28 +1,105 @@
 add_rules("mode.debug", "mode.release")
 
-add_includedirs("Internal", "Internal/PCH", "Internal/Libs/ImGui", "Internal/Libs/FreeType/include")
-set_pcxxheader("Internal/PCH/pch.h")
+target("FreeType")
+    set_languages("clatest")
+    set_kind("static")
 
-if is_mode("debug") then
-    add_linkdirs("Internal/Libs/MinHook/build/lib/Debug/", "Internal/Libs/FreeType/objs/x64/Debug Static/")
-else
-    add_linkdirs("Internal/Libs/MinHook/build/lib/Release/", "Internal/Libs/FreeType/objs/x64/Release Static/")
-end 
+    if is_mode("debug") then
+        set_runtimes("MDd")
+        set_targetdir("Build/Debug/FreeType")
+    else
+        set_runtimes("MD")
+        set_targetdir("Build/Release/FreeType")
+    end
+
+    add_defines("_LIB", "_CRT_SECURE_NO_WARNINGS", "FT2_BUILD_LIBRARY", "DLL_EXPORT")
+
+    add_includedirs("Internal/Libs/FreeType/include")
+
+    add_files("Internal/Libs/FreeType/src/autofit/autofit.c")
+    add_files("Internal/Libs/FreeType/src/bdf/bdf.c")
+    add_files("Internal/Libs/FreeType/src/cff/cff.c")
+    add_files("Internal/Libs/FreeType/src/dlg/dlgwrap.c")
+    add_files("Internal/Libs/FreeType/src/base/ftbase.c")
+    add_files("Internal/Libs/FreeType/src/cache/ftcache.c")
+    add_files("Internal/Libs/FreeType/src/base/ftdebug.c")
+    add_files("Internal/Libs/FreeType/src/gzip/ftgzip.c")
+    add_files("Internal/Libs/FreeType/src/base/ftinit.c")
+    add_files("Internal/Libs/FreeType/src/lzw/ftlzw.c")
+    add_files("Internal/Libs/FreeType/src/base/ftsystem.c")
+    add_files("Internal/Libs/FreeType/src/pcf/pcf.c")
+    add_files("Internal/Libs/FreeType/src/pfr/pfr.c")
+    add_files("Internal/Libs/FreeType/src/psaux/psaux.c")
+    add_files("Internal/Libs/FreeType/src/pshinter/pshinter.c")
+    add_files("Internal/Libs/FreeType/src/psnames/psmodule.c")
+    add_files("Internal/Libs/FreeType/src/raster/raster.c")
+    add_files("Internal/Libs/FreeType/src/sdf/sdf.c")
+    add_files("Internal/Libs/FreeType/src/sfnt/sfnt.c")
+    add_files("Internal/Libs/FreeType/src/smooth/smooth.c")
+    add_files("Internal/Libs/FreeType/src/svg/svg.c")
+    add_files("Internal/Libs/FreeType/src/truetype/truetype.c")
+    add_files("Internal/Libs/FreeType/src/type1/type1.c")
+    add_files("Internal/Libs/FreeType/src/cid/type1cid.c")
+    add_files("Internal/Libs/FreeType/src/type42/type42.c")
+    add_files("Internal/Libs/FreeType/src/winfonts/winfnt.c")
+    add_files("Internal/Libs/FreeType/src/base/ftbbox.c")
+    add_files("Internal/Libs/FreeType/src/base/ftbdf.c")
+    add_files("Internal/Libs/FreeType/src/base/ftbitmap.c")
+    add_files("Internal/Libs/FreeType/src/base/ftcid.c")
+    add_files("Internal/Libs/FreeType/src/base/ftfstype.c")
+    add_files("Internal/Libs/FreeType/src/base/ftgasp.c")
+    add_files("Internal/Libs/FreeType/src/base/ftglyph.c")
+    add_files("Internal/Libs/FreeType/src/base/ftgxval.c")
+    add_files("Internal/Libs/FreeType/src/base/ftmm.c")
+    add_files("Internal/Libs/FreeType/src/base/ftotval.c")
+    add_files("Internal/Libs/FreeType/src/base/ftpatent.c")
+    add_files("Internal/Libs/FreeType/src/base/ftpfr.c")
+    add_files("Internal/Libs/FreeType/src/base/ftstroke.c")
+    add_files("Internal/Libs/FreeType/src/base/ftsynth.c")
+    add_files("Internal/Libs/FreeType/src/base/fttype1.c")
+    add_files("Internal/Libs/FreeType/src/base/ftwinfnt.c")
+
+target("MinHook")
+set_languages("clatest")
+    set_kind("static")
+
+    if is_mode("debug") then
+        set_runtimes("MDd")
+        set_targetdir("Build/Debug/MinHook")
+    else
+        set_runtimes("MD")
+        set_targetdir("Build/Release/MinHook")
+    end
+
+    add_files("Internal/Libs/MinHook/src/*.c")
+    add_files("Internal/Libs/MinHook/src/**/*.c")
 
 target("Internal")
+    set_languages("c++latest")
+    set_kind("shared")
+    set_pcxxheader("Internal/PCH/pch.h")
+
+    add_includedirs("Internal", "Internal/PCH", "Internal/Libs/ImGui", "Internal/Libs/FreeType/include")
+
+    if is_mode("debug") then
+        add_linkdirs("Build/Debug/MinHook", "Build/Debug/FreeType")
+    else
+        add_linkdirs("Build/Release/MinHook", "Build/Release/FreeType")
+    end
+
     add_links(
         "kernel32", "user32", "gdi32", "winspool", "comdlg32",
         "advapi32", "shell32", "ole32", "oleaut32", "uuid",
         "odbc32", "odbccp32"
     )
 
+    add_links("FreeType.lib")
+    add_links("MinHook.lib")
+
     if is_mode("debug") then
         set_runtimes("MDd")
         set_targetdir("Build/Debug/Internal")
-        add_links("minhook.x64d.lib")
-
         add_defines("_DEBUG")
-        set_strip("none")
 
         add_cxflags(
             "/permissive-",   -- Enforce standard C++ compliance
@@ -60,7 +137,6 @@ target("Internal")
     else
         set_runtimes("MD")
         set_targetdir("Build/Release/Internal")
-        add_links("minhook.x64.lib")
         add_undefines("_DEBUG")
 
         add_cxflags(
@@ -102,10 +178,6 @@ target("Internal")
         )
     end
 
-    add_links("freetype.lib")
-
-    set_languages("c++latest")
-    set_kind("shared")
     add_files("Internal/dllmain.cpp")
     add_files("Internal/PCH/pch.cpp")
 
