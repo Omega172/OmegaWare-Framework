@@ -1,3 +1,12 @@
+# OmegaWare Cheat Framework
+![Logo](Images/NewLogo.png)
+
+<div align="center">
+
+[![Stars](https://img.shields.io/github/stars/Omega172/OmegaWare-Framework?color=00ffff)](https://github.com/Omega172/OmegaWare-Framework/stargazers)<br>
+[![License](https://img.shields.io/github/license/Omega172/OmegaWare-Framework)](LICENSE) [![Build Status](https://img.shields.io/github/actions/workflow/status/Omega172/OmegaWare-Framework/MSBuild.yml?branch=main)](https://github.com/Omega172/OmegaWare-Framework/actions) [![Issues](https://img.shields.io/github/issues/Omega172/OmegaWare-Framework)](https://github.com/Omega172/OmegaWare-Framework/issues)
+
+</div>
 
 #  The Internal Framework
 The framework itself can be configured inside of `FrameworkConfig.h`
@@ -14,7 +23,7 @@ The framework itself can be configured inside of `FrameworkConfig.h`
 
 ## UnrealConfig.h
 `SDK_IMPORTED`: This is manually defined and is there to remind you to import an SDK before you attempt to build or add any features.
-- To generate an checkout [Dumper-7](https://github.com/Omega172/Dumper-7) or [CheatGear](https://cheatgear.com/) (Paid Service)
+- To generate an SDK checkout [Dumper-7](https://github.com/Omega172/Dumper-7) or [CheatGear](https://cheatgear.com/) (Paid Service)
 
 ## UnityConfig.h
 `MONO_DLL`: The name of the mono DLL the target application uses by default it is `mono-2.0-bdwgc.dll`
