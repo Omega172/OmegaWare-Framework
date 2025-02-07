@@ -1,3 +1,4 @@
+
 #  The Internal Framework
 The framework itself can be configured inside of `FrameworkConfig.h`
  
@@ -13,6 +14,7 @@ The framework itself can be configured inside of `FrameworkConfig.h`
 
 ## UnrealConfig.h
 `SDK_IMPORTED`: This is manually defined and is there to remind you to import an SDK before you attempt to build or add any features.
+- To generate an checkout [Dumper-7](https://github.com/Omega172/Dumper-7) or [CheatGear](https://cheatgear.com/) (Paid Service)
 
 ## UnityConfig.h
 `MONO_DLL`: The name of the mono DLL the target application uses by default it is `mono-2.0-bdwgc.dll`
