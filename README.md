@@ -43,7 +43,7 @@ xmake build
 # Individual
 xmake build <Internal | FreeType | MinHook>
 
-# Generate VisualStudio project
+# If you want to generate a VisualStudio project (Not recommended)
 xmake project -k vs -m "debug;release"
 # Or
 xmake project -k vsxmake2022 -m "debug;release"
