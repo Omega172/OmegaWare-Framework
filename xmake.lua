@@ -160,6 +160,7 @@ target("Internal")
             "/MD",            -- Use multi-threaded DLL runtime
             "/FC",            -- Show full path in diagnostics
             "/EHsc",          -- Enable C++ exception handling
+            "/FS",            -- Full program optimization
             "/nologo"         -- Suppress startup banner
         )
 
