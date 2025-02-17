@@ -30,6 +30,12 @@ jobs:
         git submodule sync --recursive
         git submodule update --init --recursive
 
+    - name: Install winget
+      uses: Cyberboss/install-winget@v1
+      with:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        wget_release_id: latest
+
     - name: Install XMake
       run: |
         winget install xmake
@@ -45,6 +51,6 @@ jobs:
     - name: Upload Build Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ matrix.build_configuration }}_${{ matrix.architecture }}_build
-        path: .Build/Debug/Internal/Internal.dll
+        name: ${{ matrix.build_configuration }}
+        path: .Build/${{ matrix.build_configuration }}/Internal/Internal.dll
 
