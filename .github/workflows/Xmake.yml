@@ -35,7 +35,7 @@ jobs:
 
     - name: Install XMake
       run: |
-        winget install xmake
+        winget install xmake --accept-source-agreements
 
     - name: Configure XMake
       run: |
