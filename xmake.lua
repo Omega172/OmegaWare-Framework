@@ -60,7 +60,7 @@ target("FreeType")
     add_files("Internal/Libs/FreeType/src/base/ftwinfnt.c")
 
 target("MinHook")
-set_languages("clatest")
+    set_languages("clatest")
     set_kind("static")
 
     if is_mode("debug") then
