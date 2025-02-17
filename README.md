@@ -4,7 +4,7 @@
 <div align="center">
 
 [![Stars](https://img.shields.io/github/stars/Omega172/OmegaWare-Framework?color=00ffff)](https://github.com/Omega172/OmegaWare-Framework/stargazers)<br>
-[![License](https://img.shields.io/github/license/Omega172/OmegaWare-Framework)](LICENSE) [![Build Status](https://img.shields.io/github/actions/workflow/status/Omega172/OmegaWare-Framework/MSBuild.yml?branch=main)](https://github.com/Omega172/OmegaWare-Framework/actions) [![Issues](https://img.shields.io/github/issues/Omega172/OmegaWare-Framework)](https://github.com/Omega172/OmegaWare-Framework/issues)
+[![License](https://img.shields.io/github/license/Omega172/OmegaWare-Framework)](LICENSE) [![Build Status](https://img.shields.io/github/actions/workflow/status/Omega172/OmegaWare-Framework/Xmake.yml?branch=main)](https://github.com/Omega172/OmegaWare-Framework/actions) [![Issues](https://img.shields.io/github/issues/Omega172/OmegaWare-Framework)](https://github.com/Omega172/OmegaWare-Framework/issues)
 
 </div>
 
