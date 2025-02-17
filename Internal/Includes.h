@@ -28,8 +28,8 @@ namespace Framework {
 	inline std::unique_ptr<RendererHooks> renderer = std::make_unique<RendererHooks>();
 
 	inline std::unique_ptr<Menu> menu = std::make_unique<Menu>(Framework::Title, Framework::Title, ElementBase::Style_t({
-	.vec2Size = ImVec2{ 800.f, 600.f },
-	.iFlags = ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize }));
+	.vec2Size = ImVec2{ 600.f, 506.f },
+	.iFlags = ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground }));
 
 #if ENGINE_UNREAL
 	inline std::unique_ptr<Unreal> unreal = std::make_unique<Unreal>();

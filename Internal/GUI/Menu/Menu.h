@@ -15,8 +15,10 @@ public:
 		Hotkey,
 		InputText,
 		Menu,
+		RadioButtonIcon,
 		SliderFloat,
 		SliderInt,
+		SeperatorText,
 		Spacing,
 		Text,
 	};
@@ -34,6 +36,7 @@ public:
 		bool bChildrenVisible : 1 = true;
 		ESameLine eSameLine : 2 = ESameLine::Dynamic;
 
+		float flOffset = 0.f;
 		float flSpacing = -1.f;
 
 		ImVec2 vec2Size = { 100.f, 0.f };
@@ -41,6 +44,14 @@ public:
 	} Style_t;
 
 	Style_t m_stStyle;
+
+	enum EPage : uint8_t // Cannot be an enum class without a shit ton of changes
+	{
+		Developer,
+		Style,
+		Settings,
+		Config
+	};
 
 protected:
 	// used to display a custom or unlocalized name for elements like buttons
@@ -60,7 +71,7 @@ protected:
 		{
 			// Force draw on the same line
 		case(ESameLine::Same):
-			ImGui::SameLine(0.f, m_stStyle.flSpacing);
+			ImGui::SameLine(m_stStyle.flOffset, m_stStyle.flSpacing);
 			break;
 
 			// Ask our parent if we should draw on the same line or not
@@ -265,6 +276,8 @@ public:
 		RenderChildren();
 	};
 };
+
+static uint8_t eCurrentPage = ElementBase::EPage::Developer;
 
 template<typename T>
 class ElementInput : public ElementBase
@@ -484,12 +497,41 @@ public:
 		m_ucSameLinedElements = 1;
 		m_eLastSameLinedElement = EElementType::None;
 
+		ImGuiStyle& style = ImGui::GetStyle();
 
-		ImGui::SetNextWindowSize(m_stStyle.vec2Size);
-		ImGui::SetNextWindowSizeConstraints(m_vec2MinSize, m_vec2MaxSize);
-		ImGui::Begin(GetName().c_str(), NULL, m_stStyle.iFlags);
-		m_stStyle.vec2Size = ImGui::GetWindowSize();
+		static float SideBarWidth = 160;
+		float FooterHeight = ImGui::GetFrameHeight();
+		float HeaderHeight = ImGui::GetFrameHeight() + style.WindowPadding.y * 2;
 
+		ImGui::SetNextWindowSize(m_stStyle.vec2Size, ImGuiCond_Once);
+		ImGui::SetNextWindowPos(ImGui::GetIO().DisplaySize / 2 - m_stStyle.vec2Size / 2, ImGuiCond_Once);
+
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+		ImGui::Begin(GetName().c_str(), nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground);
+		ImGui::PopStyleVar(2);
+
+		// Renders
+		{
+			ImVec2 pos = ImGui::GetWindowPos();
+			ImVec2 size = ImGui::GetWindowSize();
+			ImDrawList* drawList = ImGui::GetWindowDrawList();
+
+			drawList->AddRectFilled(pos, pos + ImVec2(SideBarWidth, size.y), ImGui::GetColorU32(ImGuiCol_ChildBg), style.WindowRounding, ImDrawFlags_RoundCornersLeft);
+			drawList->AddRectFilled(pos + ImVec2(SideBarWidth, 0), pos + ImVec2(size.x, HeaderHeight), ImGui::GetColorU32(ImGuiCol_ChildBg), style.WindowRounding, ImDrawFlags_RoundCornersTopRight);
+			drawList->AddRectFilled(pos + ImVec2(SideBarWidth, HeaderHeight), pos + ImVec2(size.x, size.y - FooterHeight), ImGui::GetColorU32(ImGuiCol_WindowBg), style.WindowRounding, ImDrawFlags_RoundCornersNone);
+			drawList->AddRectFilled(pos + ImVec2(SideBarWidth, size.y - FooterHeight), pos + size, ImGui::GetColorU32(ImGuiCol_ChildBg), style.WindowRounding, ImDrawFlags_RoundCornersBottomRight);
+
+			if (style.WindowBorderSize > 0) {
+				drawList->AddLine(pos + ImVec2(SideBarWidth - style.WindowBorderSize, style.WindowBorderSize), pos + ImVec2(SideBarWidth - style.WindowBorderSize, size.y - style.WindowBorderSize), ImGui::GetColorU32(ImGuiCol_Border), style.WindowBorderSize);
+				drawList->AddLine(pos + ImVec2(SideBarWidth, HeaderHeight - style.WindowBorderSize), pos + ImVec2(size.x - style.WindowBorderSize, HeaderHeight - style.WindowBorderSize), ImGui::GetColorU32(ImGuiCol_Border), style.WindowBorderSize);
+				drawList->AddLine(pos + ImVec2(SideBarWidth, size.y - FooterHeight + style.WindowBorderSize), pos + ImVec2(size.x - style.WindowBorderSize, size.y - FooterHeight + style.WindowBorderSize), ImGui::GetColorU32(ImGuiCol_Border), style.WindowBorderSize);
+				drawList->AddRect(pos, pos + size, ImGui::GetColorU32(ImGuiCol_Border), style.WindowRounding);
+			}
+
+			drawList->AddText(pos + ImVec2(SideBarWidth + style.FramePadding.x, size.y - FooterHeight + style.FramePadding.y), ImGui::GetColorU32(ImGuiCol_TextDisabled), "OmegaWare.xyz");
+			drawList->AddText(pos + ImVec2(size.x - ImGui::CalcTextSize((std::string("v") + STR(FRAMEWORK_VERSION)).c_str()).x - style.FramePadding.x, size.y - FooterHeight + style.FramePadding.y), ImGui::GetColorU32(ImGuiCol_SliderGrab), (std::string("v") + STR(FRAMEWORK_VERSION)).c_str());
+		}
 		RenderChildren();
 		ImGui::End();
 	}
@@ -500,6 +542,8 @@ class Child : public ElementBase
 protected:
 	ImGuiWindowFlags m_WindowFlags;
 	std::function<ImVec2()> m_Callback = nullptr;
+	std::function<void()> m_PushVarsCallback = nullptr;
+	std::function<void()> m_PopVarsCallback = nullptr;
 
 public:
 	Child(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {}, ImGuiWindowFlags WindowFlags = 0)
@@ -537,13 +581,27 @@ public:
 			m_stStyle.vec2Size = m_Callback();
 
 		ImGui::BeginChild(GetName().c_str(), m_stStyle.vec2Size, m_stStyle.iFlags, m_WindowFlags);
+		if (m_PushVarsCallback)
+			m_PushVarsCallback();
 		RenderChildren();
+		if (m_PopVarsCallback)
+			m_PopVarsCallback();
 		ImGui::EndChild();
 	};
 
 	void SetCallback(std::function<ImVec2()> Callback)
 	{
 		m_Callback = Callback;
+	};
+
+	void SetPushVarsCallback(std::function<void()> Callback)
+	{
+		m_PushVarsCallback = Callback;
+	};
+
+	void SetPopVarsCallback(std::function<void()> Callback)
+	{
+		m_PopVarsCallback = Callback;
 	};
 };
 
@@ -581,7 +639,6 @@ public:
 
 		ImGui::Text(GetName().c_str());
 	};
-
 };
 
 class Button : public ElementBase
@@ -1112,5 +1169,83 @@ public:
 		ImGui::ColorEdit4(GetName().c_str(), reinterpret_cast<float*>(&m_Value), m_stStyle.iFlags);
 
 		RenderChildren();
+	};
+};
+
+class SeperatorText : public ElementBase
+{
+protected:
+
+public:
+	SeperatorText(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {})
+	{
+		m_sUnique = sUnique;
+		m_ullLocalizedNameHash = ullLocalizedNameHash;
+		m_stStyle = stStyle;
+	};
+
+	SeperatorText(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle = {})
+	{
+		m_sUnique = sUnique;
+		m_bUnlocalizedName = true;
+		m_sUnlocalizedName = sUnlocalizedName;
+		m_stStyle = stStyle;
+	};
+
+	constexpr EElementType GetType() const override
+	{
+		return EElementType::SeperatorText;
+	};
+
+	void Render() override
+	{
+		if (!m_stStyle.bVisible)
+			return;
+
+		SameLine();
+
+		ImAdd::SeparatorText(GetName().c_str());
+	};
+};
+
+class RadioButtonIcon : public ElementBase
+{
+protected:
+	const char* m_sIcon;
+	uint8_t m_iPageId;
+
+public:
+	RadioButtonIcon(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {}, const char* sIcon = ICON_FA_QUESTION, uint8_t iPageId = EPage::Developer)
+	{
+		m_sUnique = sUnique;
+		m_ullLocalizedNameHash = ullLocalizedNameHash;
+		m_stStyle = stStyle;
+		m_sIcon = sIcon;
+		m_iPageId = iPageId;
+	};
+
+	RadioButtonIcon(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle = {}, const char* sIcon = ICON_FA_QUESTION, uint8_t iPageId = EPage::Developer)
+	{
+		m_sUnique = sUnique;
+		m_bUnlocalizedName = true;
+		m_sUnlocalizedName = sUnlocalizedName;
+		m_stStyle = stStyle;
+		m_sIcon = sIcon;
+		m_iPageId = iPageId;
+	};
+
+	constexpr EElementType GetType() const override
+	{
+		return EElementType::RadioButtonIcon;
+	};
+
+	void Render() override
+	{
+		if (!m_stStyle.bVisible)
+			return;
+
+		SameLine();
+
+		ImAdd::RadioButtonIcon(GetName().c_str(), m_sIcon, GetName().c_str(), &eCurrentPage, m_iPageId, m_stStyle.vec2Size);
 	};
 };

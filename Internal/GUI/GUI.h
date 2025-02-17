@@ -25,6 +25,18 @@ namespace GUI
 	inline float sWIDTH = float(GetSystemMetrics(SM_CXSCREEN));
 	inline float sHEIGHT = float(GetSystemMetrics(SM_CYSCREEN));
 
+	inline std::unique_ptr<Child> GuiSidebar = std::make_unique<Child>(std::string("SIDEBAR"), "SIDEBAR"Hashed, ElementBase::Style_t{
+		.vec2Size = ImVec2(160.f, 0.f), .iFlags = ImGuiChildFlags_Border }, ImGuiWindowFlags_NoBackground);
+	inline std::unique_ptr<SeperatorText> GuiMiscSeperator = std::make_unique<SeperatorText>(std::string("MISC_SEPERATOR"), "MISC_SEPERATOR"Hashed);
+	inline std::unique_ptr<RadioButtonIcon> GuiDeveloper = std::make_unique<RadioButtonIcon>(std::string("DEVELOPER_BUTTON"), "DEVELOPER_BUTTON"Hashed, ElementBase::Style_t{
+		.vec2Size = ImVec2(-0.1f, 0) }, ICON_FA_TERMINAL, ElementBase::EPage::Developer);
+	inline std::unique_ptr<RadioButtonIcon> GuiStyle = std::make_unique<RadioButtonIcon>(std::string("STYLE_BUTTON"), "STYLE_BUTTON"Hashed, ElementBase::Style_t{
+		.vec2Size = ImVec2(-0.1f, 0) }, ICON_FA_PALLET, ElementBase::EPage::Style);
+	inline std::unique_ptr<RadioButtonIcon> GuiSettings = std::make_unique<RadioButtonIcon>(std::string("SETTINGS_BUTTON"), "SETTINGS_BUTTON"Hashed, ElementBase::Style_t{
+		.vec2Size = ImVec2(-0.1f, 0) }, ICON_FA_GEAR, ElementBase::EPage::Settings);
+	inline std::unique_ptr<RadioButtonIcon> GuiConfig = std::make_unique<RadioButtonIcon>(std::string("CONFIG_BUTTON"), "CONFIG_BUTTON"Hashed, ElementBase::Style_t{
+		.vec2Size = ImVec2(-0.1f, 0) }, ICON_FA_FLOPPY_DISK, ElementBase::EPage::Config);
+	/*
 	inline std::unique_ptr<Child> GuiCheat = std::make_unique<Child>(std::string("CHEAT"), "CHEAT"Hashed, ElementBase::Style_t{
 		.iFlags = ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeX | ImGuiChildFlags_AutoResizeY }, ImGuiWindowFlags_HorizontalScrollbar);
 	inline std::unique_ptr<Spacing> GuiCheatSpacing1 = std::make_unique<Spacing>(std::string("SPACING_1"), "SPACING_1"Hashed);
@@ -38,6 +50,7 @@ namespace GUI
 	inline std::unique_ptr<Button> GuiSaveConfig = std::make_unique<Button>(std::string("SAVE_CONFIG"), "SAVE_CONFIG"Hashed);
 	inline std::unique_ptr<Button> GuiLoadConfig = std::make_unique<Button>(std::string("LOAD_CONFIG"), "LOAD_CONFIG"Hashed, ElementBase::Style_t{
 		.eSameLine = ElementBase::ESameLine::Same });
+	*/
 
 	void Render();
 

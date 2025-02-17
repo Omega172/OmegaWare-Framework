@@ -7,3 +7,6 @@
 [submodule "Internal/Libs/Nlohmann.json"]
 	path = Internal/Libs/Nlohmann.json
 	url = https://github.com/nlohmann/json.git
+[submodule "Internal/Libs/FreeType"]
+	path = Internal/Libs/FreeType
+	url = https://github.com/OmegaWareProjects/freetype.git

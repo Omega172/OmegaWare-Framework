@@ -1,13 +1,15 @@
-# Important Info
-After the refactor, I am still finding some instances where things were not renamed or fixed, if you notice any of these issues let me know or make a PR.
+# OmegaWare Cheat Framework
+![Logo](Images/NewLogo.png)
+
+<div align="center">
+
+[![Stars](https://img.shields.io/github/stars/Omega172/OmegaWare-Framework?color=00ffff)](https://github.com/Omega172/OmegaWare-Framework/stargazers)<br>
+[![License](https://img.shields.io/github/license/Omega172/OmegaWare-Framework)](LICENSE) [![Build Status](https://img.shields.io/github/actions/workflow/status/Omega172/OmegaWare-Framework/MSBuild.yml?branch=main)](https://github.com/Omega172/OmegaWare-Framework/actions) [![Issues](https://img.shields.io/github/issues/Omega172/OmegaWare-Framework)](https://github.com/Omega172/OmegaWare-Framework/issues)
+
+</div>
 
 #  The Internal Framework
 The framework itself can be configured inside of `FrameworkConfig.h`
-
-You can see this framework being used in these places:
--  [Satisfactory Cheat](https://github.com/Omega172/Satisfactory-Cheat)
--  [Crush Crush Cheat](https://github.com/Omega172/Crush-Crush-Cheat)
--  [Deep Rock Galactic](https://github.com/Omega172/Deep-Rock-Galactic-Cheat)
  
 ## FrameworkConfig.h
 `FRAMEWORK_VERSION`:  Is the current version of the framework in a Major.Minor.Rework format Ex. 6.8.6 which is the current version at the time of writing.
@@ -21,7 +23,28 @@ You can see this framework being used in these places:
 
 ## UnrealConfig.h
 `SDK_IMPORTED`: This is manually defined and is there to remind you to import an SDK before you attempt to build or add any features.
+- To generate an SDK checkout [Dumper-7](https://github.com/Omega172/Dumper-7) or [CheatGear](https://cheatgear.com/) (Paid Service)
 
 ## UnityConfig.h
 `MONO_DLL`: The name of the mono DLL the target application uses by default it is `mono-2.0-bdwgc.dll`
 `DEFAULT_ASSEMBLY_NAME`: The path to the default Assemply-CSharp.dll, this should be changed and by default is `".\\GAME_NAME_Data\\Managed\\Assembly-CSharp.dll"`
+
+# How to Build
+This project it built using [Xmake](https://github.com/xmake-io/xmake). I recommend using [this](https://marketplace.visualstudio.com/items?itemName=tboox.xmake-vscode) extension for VSCode.
+```bash
+# Here are the commands you will need to build the project
+xmake -m <release | debug>
+
+xmake -a <x64 | x86 | arm>
+
+# Build all
+xmake build 
+
+# Individual
+xmake build <Internal | FreeType | MinHook>
+
+# If you want to generate a VisualStudio project (Not recommended)
+xmake project -k vs -m "debug;release"
+# Or
+xmake project -k vsxmake2022 -m "debug;release"
+```

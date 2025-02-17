@@ -48,7 +48,7 @@ static bool FrameworkInit()
 	return true;
 }
 
-void FrameworkMainThread(HMODULE hModule)
+DWORD WINAPI FrameworkMainThread(LPVOID lpParam)
 {
 	if (!FrameworkInit()) {
 		Framework::bShouldRun = false;
@@ -91,7 +91,7 @@ void FrameworkMainThread(HMODULE hModule)
 
 	// Unload the module and exit the thread
 	FreeLibraryAndExitThread(Framework::hModule, EXIT_SUCCESS);
-	return; // Return true if the initalization was successful
+	return true; // Return true if the initalization was successful
 }
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ulReasonForCall, LPVOID lpReserved)
@@ -106,7 +106,11 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ulReasonForCall, LPVOID lpReserved)
 	Framework::console->SetVisibility(true); // Set the console to be visible by default if the framework is in debug mode
 #endif
 
-	std::thread(FrameworkMainThread, hModule).detach();
+	DisableThreadLibraryCalls(hModule);
+	HANDLE hThread = CreateThread(NULL, 0, FrameworkMainThread, hModule, 0, NULL);
+	if (hThread)
+		CloseHandle(hThread);
+
 
 	return TRUE;
 }

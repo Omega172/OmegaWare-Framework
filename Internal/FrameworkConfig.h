@@ -46,6 +46,9 @@
 #pragma once
 #pragma execution_character_set("utf-8")
 
+#define STRR(X) #X  
+#define STR(X) STRR(X)
+
 #define FRAMEWORK_MAJOR_VERSION 6
 #define FRAMEWORK_MINOR_VERSION 9
 #define FRAMEWORK_REWORK_VERSION 1
