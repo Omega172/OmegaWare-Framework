@@ -25,16 +25,13 @@ jobs:
         submodules: recursive  # Fetch submodules recursively
         fetch-depth: 0  # Ensures a full clone (needed for some submodules)
 
+    - name: Install winget
+      uses: Cyberboss/install-winget@v1
+
     - name: Initialize and Update Submodules (if needed)
       run: |
         git submodule sync --recursive
         git submodule update --init --recursive
-
-    - name: Install winget
-      uses: Cyberboss/install-winget@v1
-      with:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        wget_release_id: latest
 
     - name: Install XMake
       run: |
