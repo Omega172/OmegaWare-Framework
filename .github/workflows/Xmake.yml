@@ -49,5 +49,5 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.build_configuration }}
-        path: .Build/${{ matrix.build_configuration }}/Internal/Internal.dll
+        path: Build/${{ matrix.build_configuration }}/Internal/Internal.dll
 
