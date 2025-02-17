@@ -13,7 +13,9 @@ permissions:
 jobs:
   build:
     runs-on: windows-latest
+    timeout-minutes: 5
     strategy:
+      fail-fast: false
       matrix:
         build_configuration: [debug, release]  # Build both configurations
         architecture: [x64]
