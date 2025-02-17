@@ -11,13 +11,12 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  build-debug:
     runs-on: windows-latest
     timeout-minutes: 5
     strategy:
       fail-fast: false
       matrix:
-        build_configuration: [debug, release]  # Build both configurations
         architecture: [x64]
 
     steps:
@@ -37,17 +36,66 @@ jobs:
       with:
         xmake-version: latest
 
-    - name: Configure XMake
+    - name: Configure XMake (Debug)
       run: |
-        xmake f -m ${{ matrix.build_configuration }} -a ${{ matrix.architecture }}
+        xmake f -m debug -a ${{ matrix.architecture }}
 
-    - name: Build with XMake
+    - name: Build with XMake (Debug)
       run: |
         xmake build
 
-    - name: Upload Build Artifact
+    - name: Upload Build Artifact (Debug)
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ matrix.build_configuration }}
-        path: Build/${{ matrix.build_configuration }}/Internal/Internal.dll
+        name: debug_${{ matrix.architecture }}_build
+        path: Build/debug/Internal/Internal.dll
+
+    - name: XMake clean
+      run: |
+        xmake clean
+
+  build-release:
+    runs-on: windows-latest
+    needs: build-debug
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        architecture: [x64]
+
+    steps:
+    - name: Checkout Repository with Submodules
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive  # Fetch submodules recursively
+        fetch-depth: 0  # Ensures a full clone (needed for some submodules)
+
+    - name: Initialize and Update Submodules (if needed)
+      run: |
+        git submodule sync --recursive
+        git submodule update --init --recursive
+
+    - name: Install XMake
+      uses: xmake-io/github-action-setup-xmake@v1
+      with:
+        xmake-version: latest
+
+    - name: Configure XMake (Release)
+      run: |
+        xmake f -m release -a ${{ matrix.architecture }}
+
+    - name: Build with XMake (Release)
+      run: |
+        xmake build
+
+    - name: Upload Build Artifact (Release)
+      uses: actions/upload-artifact@v4
+      with:
+        name: release_${{ matrix.architecture }}_build
+        path: Build/release/Internal/Internal.dll
+  
+    - name: XMake clean
+      run: |
+        xmake clean
+  
 
