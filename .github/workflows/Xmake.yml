@@ -1,0 +1,50 @@
+name: XMake Build
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        build_configuration: [debug, release]  # Build both configurations
+        architecture: [x64]
+
+    steps:
+    - name: Checkout Repository with Submodules
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive  # Fetch submodules recursively
+        fetch-depth: 0  # Ensures a full clone (needed for some submodules)
+
+    - name: Initialize and Update Submodules (if needed)
+      run: |
+        git submodule sync --recursive
+        git submodule update --init --recursive
+
+    - name: Install XMake
+      run: |
+        choco install xmake
+
+    - name: Configure XMake
+      run: |
+        xmake f -m ${{ matrix.build_configuration }} -a ${{ matrix.architecture }}
+
+    - name: Build with XMake
+      run: |
+        xmake build
+
+    - name: Upload Build Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.build_configuration }}_${{ matrix.architecture }}_build
+        path: .Build/Debug/Internal/Internal.dll
+

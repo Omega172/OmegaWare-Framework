@@ -75,6 +75,8 @@ target("MinHook")
     add_files("Internal/Libs/MinHook/src/**/*.c")
 
 target("Internal")
+    add_deps("FreeType", "MinHook")
+
     set_languages("c++latest")
     set_kind("shared")
     set_pcxxheader("Internal/PCH/pch.h")
