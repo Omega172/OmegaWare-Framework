@@ -32,7 +32,7 @@ jobs:
 
     - name: Install XMake
       run: |
-        choco install xmake
+        winget install xmake
 
     - name: Configure XMake
       run: |
