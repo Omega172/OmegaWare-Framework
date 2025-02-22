@@ -45,7 +45,7 @@ git submodule update --init --recursive
 # Here are the commands you will need to build the project
 xmake -m <release | debug>
 
-xmake -a <x64> # The project is not intended for x86 or arm to build for these targets some changes must be made
+xmake -a x64 # The project is not intended for x86 or arm to build for these targets some changes must be made
 
 # Build all
 xmake build 
