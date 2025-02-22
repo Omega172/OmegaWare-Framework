@@ -35,7 +35,7 @@ This project it built using [Xmake](https://github.com/xmake-io/xmake). I recomm
 # Clone the repo and its submodules
 git clone --recurse-submodules -j8 https://github.com/Omega172/OmegaWare-Framework.git # For git 2.13 and later
 # or
-git clone --recursive git://github.com/foo/bar.git # Older
+git clone --recursive https://github.com/Omega172/OmegaWare-Framework.git # Older
 
 # For already cloned repos
 git clone https://github.com/Omega172/OmegaWare-Framework.git
