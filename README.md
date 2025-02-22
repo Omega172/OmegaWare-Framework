@@ -32,6 +32,16 @@ The framework itself can be configured inside of `FrameworkConfig.h`
 # How to Build
 This project it built using [Xmake](https://github.com/xmake-io/xmake). I recommend using [this](https://marketplace.visualstudio.com/items?itemName=tboox.xmake-vscode) extension for VSCode.
 ```bash
+# Clone the repo and its submodules
+git clone --recurse-submodules -j8 git://github.com/foo/bar.git # For git 2.13 and later
+# or
+git clone --recursive git://github.com/foo/bar.git # Older
+
+# For already cloned repos
+git clone git://github.com/foo/bar.git
+cd bar
+git submodule update --init --recursive
+
 # Here are the commands you will need to build the project
 xmake -m <release | debug>
 
