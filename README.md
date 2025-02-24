@@ -1,3 +1,6 @@
+# IMPORTANT
+The framework is in a weird spot right now so the menu builder is kinda fucked, while we are redesigning it it will be finished SoonTM
+
 # OmegaWare Cheat Framework
 ![Logo](Images/NewLogo.png)
 
