@@ -16,6 +16,9 @@ public:
 		InputText,
 		Menu,
 		RadioButtonIcon,
+		HeaderGroup,
+		Body,
+		BodyGroup,
 		SliderFloat,
 		SliderInt,
 		SeperatorText,
@@ -53,6 +56,12 @@ public:
 		Config
 	};
 
+	typedef struct Header_t
+	{
+		uint8_t m_iParentPageID;
+		std::vector<size_t> m_ullLocalizedNameHashes;
+	}  Header_t;
+
 protected:
 	// used to display a custom or unlocalized name for elements like buttons
 	bool m_bUnlocalizedName = false;
@@ -64,6 +73,9 @@ protected:
 
 	ElementBase* m_pParent = nullptr;
 	std::vector<ElementBase*> m_Children;
+
+	inline static uint8_t eCurrentPage = ElementBase::EPage::Developer;
+	inline static uint8_t eCurrentSubPage = 0;
 
 	inline void SameLine()
 	{
@@ -276,8 +288,6 @@ public:
 		RenderChildren();
 	};
 };
-
-static uint8_t eCurrentPage = ElementBase::EPage::Developer;
 
 template<typename T>
 class ElementInput : public ElementBase
@@ -1246,6 +1256,117 @@ public:
 
 		SameLine();
 
-		ImAdd::RadioButtonIcon(GetName().c_str(), m_sIcon, GetName().c_str(), &eCurrentPage, m_iPageId, m_stStyle.vec2Size);
+		if (ImAdd::RadioButtonIcon(GetName().c_str(), m_sIcon, GetName().c_str(), &eCurrentPage, m_iPageId, m_stStyle.vec2Size)) {
+			eCurrentPage = m_iPageId;
+		}
 	};
+};
+
+class HeaderGroup : public ElementBase
+{
+protected:
+	std::vector<Header_t> m_Headers;
+
+public:
+	HeaderGroup(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {}, std::vector<Header_t> Headers = {})
+	{
+		m_sUnique = sUnique;
+		m_ullLocalizedNameHash = ullLocalizedNameHash;
+		m_stStyle = stStyle;
+		m_Headers = Headers;
+	};
+
+	HeaderGroup(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle = {}, std::vector<Header_t> Headers = {})
+	{
+		m_sUnique = sUnique;
+		m_bUnlocalizedName = true;
+		m_sUnlocalizedName = sUnlocalizedName;
+		m_stStyle = stStyle;
+		m_Headers = Headers;
+	};
+
+	constexpr EElementType GetType() const override
+	{
+		return EElementType::HeaderGroup;
+	};
+
+	void Render() override
+	{
+		if (!m_stStyle.bVisible)
+			return;
+		
+		ImGui::SameLine(160);
+		ImGui::BeginChild(m_sUnique.c_str(), ImVec2(0, ImGui::GetFrameHeight() + 10.0f * 2), ImGuiChildFlags_Border, ImGuiWindowFlags_NoBackground);
+		{
+			for (auto Header : m_Headers)
+			{
+				if (Header.m_iParentPageID != eCurrentPage)
+					continue;
+
+				for (int i = 0; i < Header.m_ullLocalizedNameHashes.size(); i++) {
+					uint8_t test;
+					if (ImAdd::RadioButton(Localization::Get(Header.m_ullLocalizedNameHashes[i]).c_str(), &test, i)) {
+						eCurrentSubPage = i;
+					}
+					ImGui::SameLine();
+				}
+			}
+			ImGui::NewLine();
+
+			// Search bar
+			/*
+			ImGui::SameLine(ImGui::GetWindowWidth() - 160 - 10.0f - 10.0f - 1);
+			ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 6);
+			{
+				ImGui::BeginGroup();
+				{
+					if (1 > 0)
+					{
+						ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(NULL, 3));
+						{
+							ImAdd::VSeparator(1);
+						}
+						ImGui::PopStyleVar();
+						ImGui::SameLine();
+					}
+					static char cSearch[32] = "";
+					ImAdd::InputText("##Search", "Search", cSearch, IM_ARRAYSIZE(cSearch), 160);
+				}
+				ImGui::EndGroup();
+			}
+			ImGui::PopStyleVar();
+			*/
+		}
+		ImGui::EndChild();
+		RenderChildren();
+	}
+};
+
+class Body : public ElementBase
+{
+public:
+	Body(std::string sUnique, Style_t stStyle = {})
+	{
+		m_sUnique = sUnique;
+		m_stStyle = stStyle;
+	};
+
+	constexpr EElementType GetType() const override
+	{
+		return EElementType::Body;
+	};
+
+	void Render() override
+	{
+		if (!m_stStyle.bVisible)
+			return;
+
+		ImGui::SetCursorPosX(160);
+		ImGui::SetCursorPosY(ImGui::GetFrameHeight() + 10.0f * 2);	
+		ImGui::BeginChild(m_sUnique.c_str(), ImVec2(0, ImGui::GetWindowHeight() - ImGui::GetFrameHeight() - (ImGui::GetFrameHeight() + 10.0f * 2)), ImGuiChildFlags_Border, ImGuiWindowFlags_NoBackground);
+		{
+			RenderChildren();
+		}
+		ImGui::EndChild();
+	}
 };

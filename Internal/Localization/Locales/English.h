@@ -23,5 +23,9 @@ Locale_t localeEnglish{
 		{ "STYLE_BUTTON"Hashed, "Style" },
 		{ "SETTINGS_BUTTON"Hashed, "Settings" },
 		{ "CONFIG_BUTTON"Hashed, "Config" },
+
+		{ "MAIN"Hashed, "Main" },
+		{ "EXAMPLE"Hashed, "Example" },
+		{ "EXAMPLE2"Hashed, "Example2" }
 	}),
 };

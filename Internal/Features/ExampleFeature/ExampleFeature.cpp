@@ -24,34 +24,11 @@ bool ExampleFeature::SetupMenu()
 		{ "EXAMPLE_COLORPICKER"Hashed, "Przykładowy próbnik kolorów" }
 	});
 
-	GuiSection->SetCallback([]() {
-		ImGuiContext* pContext = ImGui::GetCurrentContext();
-
-		ImVec2 vec2Size = (Framework::menu->m_stStyle.vec2Size / ImVec2{ 3.f, 2.f }) - pContext->Style.ItemSpacing;
-		ImVec2 vec2MaxSize = ImGui::GetContentRegionAvail();
-
-		if (vec2Size.x > vec2MaxSize.x)
-			vec2Size.x = vec2MaxSize.x;
-
-		if (vec2Size.y > vec2MaxSize.y)
-			vec2Size.y = vec2MaxSize.y;
-
-		return vec2Size;
-	});
-
-	GuiSection->AddElement(GuiCheckbox.get());
-	GuiCheckbox->AddElement(GuiEnabledText.get());
-	GuiCheckbox->AddElement(GuiEnabledSlider.get());
-	GuiSection->AddElement(GuiColorPickerLabel.get());
-	GuiSection->AddElement(GuiColorPicker.get());
-
 	return true;
 }
 
 void ExampleFeature::HandleMenu()
 {
-	if (!GuiSection->HasParent())
-		Framework::menu->AddElement(GuiSection.get());
-
-	GuiCheckbox->SetChildrenVisible(GuiCheckbox->GetValue());
+	if (!m_pBodyGroup->HasParent())
+		Framework::menu->GetChild("HEADER_GROUP")->GetChild("BODY")->AddElement(m_pBodyGroup.get());
 }

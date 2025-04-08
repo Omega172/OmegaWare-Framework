@@ -36,6 +36,16 @@ namespace GUI
 		.vec2Size = ImVec2(-0.1f, 0) }, ICON_FA_GEAR, ElementBase::EPage::Settings);
 	inline std::unique_ptr<RadioButtonIcon> GuiConfig = std::make_unique<RadioButtonIcon>(std::string("CONFIG_BUTTON"), "CONFIG_BUTTON"Hashed, ElementBase::Style_t{
 		.vec2Size = ImVec2(-0.1f, 0) }, ICON_FA_FLOPPY_DISK, ElementBase::EPage::Config);
+	
+	inline std::vector<ElementBase::Header_t> HeaderGroupHeaders = {
+		{ ElementBase::EPage::Developer, { "MAIN"Hashed, "EXAMPLE"Hashed, "EXAMPLE2"Hashed } }
+	};
+	inline std::unique_ptr<HeaderGroup> GuiHeaderGroup = std::make_unique<HeaderGroup>(std::string("HEADER_GROUP"), "HEADER_GROUP"Hashed, ElementBase::Style_t{
+		.vec2Size = ImVec2(-0.1f, 0), }, HeaderGroupHeaders);
+
+	inline std::unique_ptr<Body> GuiBody = std::make_unique<Body>(std::string("BODY"), ElementBase::Style_t{
+		.vec2Size = ImVec2(-0.1f, 0), });
+
 	/*
 	inline std::unique_ptr<Child> GuiCheat = std::make_unique<Child>(std::string("CHEAT"), "CHEAT"Hashed, ElementBase::Style_t{
 		.iFlags = ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeX | ImGuiChildFlags_AutoResizeY }, ImGuiWindowFlags_HorizontalScrollbar);

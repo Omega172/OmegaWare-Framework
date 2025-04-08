@@ -106,6 +106,8 @@ void GUI::Render()
 			GuiSidebar->AddElement(GuiStyle.get());
 			GuiSidebar->AddElement(GuiSettings.get());
 			GuiSidebar->AddElement(GuiConfig.get());
+
+			GuiHeaderGroup->AddElement(GuiBody.get());
 		});
 
 		/*
@@ -119,6 +121,7 @@ void GUI::Render()
 
 		if (!GuiSidebar->HasParent()) {
 			Framework::menu->AddElement(GuiSidebar.get());
+			Framework::menu->AddElement(GuiHeaderGroup.get());
 		}
 
 		for (auto& pFeature : Framework::g_vecFeatures)

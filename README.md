@@ -1,5 +1,5 @@
 # IMPORTANT
-The framework is in a weird spot right now so the menu builder is kinda fucked, while we are redesigning it it will be finished SoonTM
+The menu overhall is nearing completion but it is still in a weird spot and is not as simple to implement as I would like it to be but it works!
 
 # OmegaWare Cheat Framework
 ![Logo](Images/NewLogo.png)
