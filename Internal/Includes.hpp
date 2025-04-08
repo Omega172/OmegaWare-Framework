@@ -1,7 +1,7 @@
 #pragma once
 
 #include "pch.h"
-#include "FrameworkConfig.h"
+#include "FrameworkConfig.hpp"
 
 class BaseFeature; //Forward declaration
 
@@ -43,4 +43,4 @@ namespace Framework {
 }
 
 // Framework Features
-#include "../Features/Feature.h"
+#include "../Features/Feature.hpp"

@@ -77,12 +77,12 @@ static_assert((FRAMEWORK_RENDER_DYNAMIC + FRAMEWORK_RENDER_D3D11 + FRAMEWORK_REN
 #define SPOOF_THREAD_ADDRESS 0
 #define SPOOF_RETURN_ADDRESSES 0
 
-#include "Utils/Utils.h"
+#include "Utils/Utils.hpp"
 
-#include "Config/Config.h"
-#include "Localization/Localization.h"
+#include "Config/Config.hpp"
+#include "Localization/Localization.hpp"
 
-#include "Memory/Memory.h"
+#include "Memory/Memory.hpp"
 
 // Unreal
 #if ENGINE_UNREAL
@@ -111,9 +111,9 @@ static_assert((FRAMEWORK_RENDER_DYNAMIC + FRAMEWORK_RENDER_D3D11 + FRAMEWORK_REN
 #include "Libs/ImGui/backends/imgui_impl_dx12.h"
 #endif
 
-#include "GUI/Styles.h" // Custom ImGUI colors and font
-#include "GUI/Custom.h" // Contains the custom ImGui widgets for the framework
-#include "GUI/GUI.h"	// Contains the GUI class that is used to create the all of the framework's menu elements
+#include "GUI/Styles.hpp" // Custom ImGUI colors and font
+#include "GUI/Custom.hpp" // Contains the custom ImGui widgets for the framework
+#include "GUI/GUI.hpp"	// Contains the GUI class that is used to create the all of the framework's menu elements
 
-#include "Hooks/WndProc/WndProcHooks.h"
-#include "Hooks/Renderer/RendererHooks.h"
+#include "Hooks/WndProc/WndProcHooks.hpp"
+#include "Hooks/Renderer/RendererHooks.hpp"

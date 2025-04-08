@@ -3,7 +3,7 @@
 #pragma warning(disable : 4302)
 #pragma warning(disable : 4312)
 #include "pch.h"
-#include "UnityConfig.h"
+#include "UnityConfig.hpp"
 
 // This is where the magic happens, for unity games running mono anyway.
 #if ENGINE_UNITY

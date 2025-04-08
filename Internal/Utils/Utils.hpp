@@ -3,8 +3,8 @@
 #include <filesystem>
 #include <optional>
 
-#include "Console/Console.h"
-#include "Logging/Logging.h"
+#include "Console/Console.hpp"
+#include "Logging/Logging.hpp"
 
 namespace Utils
 {

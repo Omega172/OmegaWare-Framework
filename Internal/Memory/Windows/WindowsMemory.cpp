@@ -1,6 +1,6 @@
 #include "pch.h"
-#include "Includes.h"
-#include "WindowsMemory.h"
+#include "Includes.hpp"
+#include "WindowsMemory.hpp"
 
 #include <random>
 
