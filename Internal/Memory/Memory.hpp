@@ -1,7 +1,7 @@
 #pragma once
 #include "pch.h"
 
-#include "Windows/WindowsMemory.h"
+#include "Windows/WindowsMemory.hpp"
 
 #define IsValidObjectPtr(lpAddress) (Memory::IsReadable(lpAddress, sizeof(*lpAddress)))
 #define IsValidPtr(lpAddress) (Memory::IsReadable(lpAddress, sizeof(void*)))

@@ -1,6 +1,6 @@
 #include "pch.h"
-#include "Includes.h"
-#include "Watermark.h"
+#include "Includes.hpp"
+#include "Watermark.hpp"
 
 void GUI::Render()
 {

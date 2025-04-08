@@ -1,8 +1,8 @@
 #include "pch.h"
-#include "Includes.h"
-#include "Locales/English.h"
-#include "Locales/German.h"
-#include "Locales/Polish.h"
+#include "Includes.hpp"
+#include "Locales/English.hpp"
+#include "Locales/German.hpp"
+#include "Locales/Polish.hpp"
 
 // Private functions
 

@@ -68,17 +68,17 @@
 #include "../Libs/ImGUI/imgui.h"
 #include "../Libs/ImGUI/misc/cpp/imgui_stdlib.h"
 #include "../Libs/ImGUI/misc/freetype/imgui_freetype.h"
-#include "../GUI/Addons/imgui_addons.h"
+#include "../GUI/Addons/imgui_addons.hpp"
 #include "../Libs/ImGui/backends/imgui_impl_win32.h"
 
-#include "../GUI/Fonts/IconsFontAwesome6.h"
-#include "../GUI/Fonts/IconsFontAwesome6Brands.h"
-#include "../GUI/Fonts/MuseoSans.h"
-#include "../GUI/Fonts/Poppins_Medium.h"
+#include "../GUI/Fonts/IconsFontAwesome6.hpp"
+#include "../GUI/Fonts/IconsFontAwesome6Brands.hpp"
+#include "../GUI/Fonts/MuseoSans.hpp"
+#include "../GUI/Fonts/Poppins_Medium.hpp"
 
 #include "../Libs/Nlohmann.json/single_include/nlohmann/json.hpp"
 
-#include "../Libs/CRC64/CRC64.h"
+#include "../Libs/CRC64/CRC64.hpp"
 
 #define STB_OMIT_TESTS
-#include "../Libs/StringToBytes/stb.h"
+#include "../Libs/StringToBytes/stb.hpp"

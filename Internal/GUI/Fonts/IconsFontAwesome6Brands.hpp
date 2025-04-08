@@ -3,7 +3,7 @@
 // for use with https://github.com/FortAwesome/Font-Awesome/blob/6.x/webfonts/fa-brands-400.ttf
 #pragma once
 
-#include "IconsFontAwesome6Brands_Bytes.h"
+#include "IconsFontAwesome6Brands_Bytes.hpp"
 
 #define ICON_MIN_FAB 0xe007
 #define ICON_MAX_16_FAB 0xf8e8

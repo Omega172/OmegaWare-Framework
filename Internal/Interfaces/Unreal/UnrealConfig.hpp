@@ -18,6 +18,6 @@ static_assert(SDK_IMPORTED, "Did you remember to copy in the SDK?");
 
 #include "SDK.h"
 
-#include "Unreal.h"
+#include "Unreal.hpp"
 
 #endif

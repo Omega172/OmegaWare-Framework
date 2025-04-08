@@ -1,7 +1,7 @@
 #pragma once
 
 #include "pch.h"
-#include "WindowsTypes.h"
+#include "WindowsTypes.hpp"
 
 namespace Memory
 {

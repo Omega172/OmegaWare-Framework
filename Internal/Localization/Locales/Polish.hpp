@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include "../Localization.h"
+#include "../Localization.hpp"
 
 Locale_t localePolish{
 	.sKey = "Polski",

@@ -1,6 +1,6 @@
 #include "pch.h"
 #include <fstream>
-#include "../Utils/Logging/Logging.h"
+#include "../Utils/Logging/Logging.hpp"
 
 Config::Config()
 {
