@@ -3,6 +3,10 @@ The menu overhall is nearing completion but it is still in a weird spot and is n
 
 # OmegaWare Cheat Framework
 ![Logo](Images/NewLogo.png)
+<br><br>Menu Design:<br>
+![Menu](Images/menu.png)
+<br><br>Console Appearence:<br>
+![Menu](Images/console.png)
 
 <div align="center">
 
