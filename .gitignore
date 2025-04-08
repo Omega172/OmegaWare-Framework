@@ -401,4 +401,7 @@ FodyWeavers.xsd
 
 OmegaWare Framework/enc_temp_folder
 
-Internal/Libs
+Internal/Libs/FreeType
+Internal/Libs/ImGui
+Internal/Libs/MinHook
+Internal/Libs/Nlohmann.json
