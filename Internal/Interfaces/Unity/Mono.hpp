@@ -6,7 +6,6 @@
 #include "UnityConfig.hpp"
 
 // This is where the magic happens, for unity games running mono anyway.
-#if ENGINE_UNITY
 
 #include "Mono\metadata\threads.h"
 #include "Mono\metadata\object.h"
@@ -260,5 +259,3 @@ public:
 		return mono_runtime_invoke(method, obj, params, &exc);
 	}
 };
-
-#endif

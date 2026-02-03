@@ -1,0 +1,113 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "xmake: Build (Debug)",
+			"type": "shell",
+			"command": "xmake",
+			"args": [
+				"config",
+				"-m",
+				"debug",
+				"-a",
+				"x64",
+				"-p",
+				"windows",
+				"&&",
+				"xmake",
+				"build"
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"problemMatcher": [],
+			"detail": "Build in debug mode for Windows x64"
+		},
+		{
+			"label": "xmake: Build (Release)",
+			"type": "shell",
+			"command": "xmake",
+			"args": [
+				"config",
+				"-m",
+				"release",
+				"-a",
+				"x64",
+				"-p",
+				"windows",
+				"&&",
+				"xmake",
+				"build"
+			],
+			"group": "build",
+			"problemMatcher": [],
+			"detail": "Build in release mode for Windows x64"
+		},
+		{
+			"label": "xmake: Clean",
+			"type": "shell",
+			"command": "xmake",
+			"args": [
+				"clean"
+			],
+			"group": "build",
+			"problemMatcher": [],
+			"detail": "Clean build artifacts"
+		},
+		{
+			"label": "xmake: Rebuild (Debug)",
+			"type": "shell",
+			"command": "xmake",
+			"args": [
+				"config",
+				"-m",
+				"debug",
+				"-a",
+				"x64",
+				"-p",
+				"windows",
+				"&&",
+				"xmake",
+				"clean",
+				"&&",
+				"xmake",
+				"build"
+			],
+			"group": "build",
+			"problemMatcher": [],
+			"detail": "Clean and rebuild in debug mode"
+		},
+		{
+			"label": "xmake: Rebuild (Release)",
+			"type": "shell",
+			"command": "xmake",
+			"args": [
+				"config",
+				"-m",
+				"release",
+				"-a",
+				"x64",
+				"-p",
+				"windows",
+				"&&",
+				"xmake",
+				"clean",
+				"&&",
+				"xmake",
+				"build"
+			],
+			"group": "build",
+			"problemMatcher": [],
+			"detail": "Clean and rebuild in release mode"
+		},
+		{
+			"label": "xmake: Update Compile Commands",
+			"type": "shell",
+			"command": "update_compile_commands.bat",
+			"group": "none",
+			"problemMatcher": [],
+			"detail": "Regenerate compile_commands.json for IntelliSense"
+		}
+	]
+}

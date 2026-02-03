@@ -539,7 +539,7 @@ public:
 				drawList->AddRect(pos, pos + size, ImGui::GetColorU32(ImGuiCol_Border), style.WindowRounding);
 			}
 
-			drawList->AddText(pos + ImVec2(SideBarWidth + style.FramePadding.x, size.y - FooterHeight + style.FramePadding.y), ImGui::GetColorU32(ImGuiCol_TextDisabled), "OmegaWare.xyz");
+			drawList->AddText(pos + ImVec2(SideBarWidth + style.FramePadding.x, size.y - FooterHeight + style.FramePadding.y), ImGui::GetColorU32(ImGuiCol_TextDisabled), "Hello, World!");
 			drawList->AddText(pos + ImVec2(size.x - ImGui::CalcTextSize((std::string("v") + STR(FRAMEWORK_VERSION)).c_str()).x - style.FramePadding.x, size.y - FooterHeight + style.FramePadding.y), ImGui::GetColorU32(ImGuiCol_SliderGrab), (std::string("v") + STR(FRAMEWORK_VERSION)).c_str());
 		}
 		RenderChildren();
@@ -615,19 +615,19 @@ public:
 	};
 };
 
-class Text : public ElementBase
+class _Text : public ElementBase
 {
 protected:
 
 public:
-	Text(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {})
+	_Text(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {})
 	{
 		m_sUnique = sUnique;
 		m_ullLocalizedNameHash = ullLocalizedNameHash;
 		m_stStyle = stStyle;
 	};
 
-	Text(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle = {})
+	_Text(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle = {})
 	{
 		m_sUnique = sUnique;
 		m_bUnlocalizedName = true;
@@ -1304,38 +1304,13 @@ public:
 					continue;
 
 				for (int i = 0; i < Header.m_ullLocalizedNameHashes.size(); i++) {
-					uint8_t test;
-					if (ImAdd::RadioButton(Localization::Get(Header.m_ullLocalizedNameHashes[i]).c_str(), &test, i)) {
+					if (ImAdd::RadioButton(Localization::Get(Header.m_ullLocalizedNameHashes[i]).c_str(), &eCurrentSubPage, i)) {
 						eCurrentSubPage = i;
 					}
 					ImGui::SameLine();
 				}
 			}
 			ImGui::NewLine();
-
-			// Search bar
-			/*
-			ImGui::SameLine(ImGui::GetWindowWidth() - 160 - 10.0f - 10.0f - 1);
-			ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 6);
-			{
-				ImGui::BeginGroup();
-				{
-					if (1 > 0)
-					{
-						ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(NULL, 3));
-						{
-							ImAdd::VSeparator(1);
-						}
-						ImGui::PopStyleVar();
-						ImGui::SameLine();
-					}
-					static char cSearch[32] = "";
-					ImAdd::InputText("##Search", "Search", cSearch, IM_ARRAYSIZE(cSearch), 160);
-				}
-				ImGui::EndGroup();
-			}
-			ImGui::PopStyleVar();
-			*/
 		}
 		ImGui::EndChild();
 		RenderChildren();

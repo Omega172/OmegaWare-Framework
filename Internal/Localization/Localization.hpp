@@ -1,6 +1,5 @@
 #pragma once
 #include "pch.h"
-#include "Includes.hpp"
 
 // http://zuga.net/articles/unicode-all-characters-supported-by-the-font-tahoma/
 const ImWchar DefaultRanges[] = { 0x0020, 0x00FF, 0x0 };

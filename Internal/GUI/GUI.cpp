@@ -1,5 +1,4 @@
 #include "pch.h"
-#include "Includes.hpp"
 #include "Watermark.hpp"
 
 void GUI::Render()
@@ -134,16 +133,8 @@ void GUI::Render()
 	//	Other Render Stuff
 	//
 
-#if ENGINE_UNREAL
-	Framework::unreal->ActorLock.lock();
-#endif
-
 	for (auto& pFeature : Framework::g_vecFeatures)
 		pFeature->Render();
-
-#if ENGINE_UNREAL
-	Framework::unreal->ActorLock.unlock();
-#endif
 
 	// Gui init shit 
 	if (Framework::menu->HasChildren()) // We have to wait till the menu has children to do the init
