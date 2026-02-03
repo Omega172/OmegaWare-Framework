@@ -39,7 +39,7 @@ jobs:
 
     - name: Configure XMake
       run: |
-        xmake f -m ${{ matrix.build_configuration }} -a ${{ matrix.architecture }}
+        xmake f -m ${{ matrix.build_configuration }} -a ${{ matrix.architecture }} -y
 
     - name: Build with XMake
       run: |
