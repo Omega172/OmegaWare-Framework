@@ -5,7 +5,7 @@ Locale_t localeEnglish{
 	.sKey = "English",
 	.ullKeyHash = "ENG"Hashed,
 	.hMenuFont = &TahomaFont,
-	.hFeatureFont = &TahomaFont,
+	.hFeatureFont = &TahomaFontFeature,
 	.umLocalizedStrings = std::unordered_map<size_t, std::string>({
 		{ "CHEAT"Hashed, "Cheat"},
 		{ "UNLOAD_BTN"Hashed, "Unload" },

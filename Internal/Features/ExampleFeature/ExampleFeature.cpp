@@ -15,17 +15,25 @@ bool ExampleFeature::SetupMenu()
 	});
 
 	Localization::AddToLocale("GER", std::initializer_list<std::pair<size_t, std::string>>{
-		{ "EXAMPLE_FEATURE"Hashed, "Beispiel funktion" },
+		{ "EXAMPLE_FEATURE"Hashed, "Beispiel Funktion" },
 		{ "EXAMPLE_FEATURE_HW"Hashed, "Hallo Welt!" },
-		{ "EXAMPLE_FEATURE_SLIDER"Hashed, "Beispiel Slider" },
-		{ "EXAMPLE_COLORPICKER"Hashed, "Beispiel Farbwähler" }
+		{ "EXAMPLE_FEATURE_SLIDER"Hashed, "Beispiel-Schieberegler" },
+		{ "EXAMPLE_COLORPICKER"Hashed, "Beispiel Farbwähler" },
+
+		{ "EXAMPLE_FEATURE_BUTTON"Hashed, "Beispiel Funktion"},
+		{ "EXAMPLE_MAIN"Hashed, "Haupt" },
+		{ "EXAMPLE_SECONDARY"Hashed, "Sekundär" }
 	});
 
 	Localization::AddToLocale("POL", std::initializer_list<std::pair<size_t, std::string>>{
 		{ "EXAMPLE_FEATURE"Hashed, "Przykładowa Funkcja" },
 		{ "EXAMPLE_FEATURE_HW"Hashed, "Cześć Świecie!" },
 		{ "EXAMPLE_FEATURE_SLIDER"Hashed, "Przykładowy suwak" },
-		{ "EXAMPLE_COLORPICKER"Hashed, "Przykładowy próbnik kolorów" }
+		{ "EXAMPLE_COLORPICKER"Hashed, "Przykładowy próbnik kolorów" },
+
+		{ "EXAMPLE_FEATURE_BUTTON"Hashed, "Przykładowa Funkcja"},
+		{ "EXAMPLE_MAIN"Hashed, "Główna" },
+		{ "EXAMPLE_SECONDARY"Hashed, "Przykład" }
 	});
 
 	m_pBodyGroup->SetCallback([this]() {

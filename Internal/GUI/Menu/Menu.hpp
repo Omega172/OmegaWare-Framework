@@ -1466,7 +1466,8 @@ public:
 					continue;
 
 				for (int i = 0; i < Header.m_ullLocalizedNameHashes.size(); i++) {
-					if (ImAdd::RadioButton(Localization::Get(Header.m_ullLocalizedNameHashes[i]).c_str(), &eCurrentSubPage, i)) {
+					std::string sHeaderName = Localization::Get(Header.m_ullLocalizedNameHashes[i]);
+					if (ImAdd::RadioButton(sHeaderName.c_str(), &eCurrentSubPage, i)) {
 						eCurrentSubPage = i;
 					}
 					ImGui::SameLine();

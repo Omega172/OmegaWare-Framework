@@ -5,6 +5,7 @@ inline ImFont* CurrentFont;
 
 inline ImFont* TahomaFont;
 inline ImFont* TahomaBigFont;
+inline ImFont* TahomaFontFeature;
 
 inline void SetupStyle()
 {
@@ -93,7 +94,7 @@ inline void ImportFonts()
     builder.BuildRanges(&mergedRanges);
 
     TahomaFont = io.Fonts->AddFontFromMemoryCompressedTTF(Poppins_Medium_compressed_data, Poppins_Medium_compressed_size, 14, &cfg, mergedRanges.Data);
-    
+
     // merge in icons from Font Awesome
     static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_16_FA, 0 };
     static const ImWchar icons_ranges_brands[] = { ICON_MIN_FAB, ICON_MAX_16_FAB, 0 };
@@ -105,4 +106,6 @@ inline void ImportFonts()
     ImFont* fontAwesomeBrands = io.Fonts->AddFontFromMemoryCompressedTTF(fa_brands_400_compressed_data, fa_brands_400_compressed_size, 14, &fa_config, icons_ranges_brands);
 
     TahomaBigFont = io.Fonts->AddFontFromMemoryCompressedTTF(Poppins_Medium_compressed_data, Poppins_Medium_compressed_size, 20, &cfg, mergedRanges.Data);
+
+    TahomaFontFeature = TahomaFont;
 }
