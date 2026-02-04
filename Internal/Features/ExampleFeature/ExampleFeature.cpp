@@ -110,6 +110,8 @@ void ExampleFeature::HandleMenu()
 			return ImVec2(ImGui::GetWindowWidth() - 10.0f - ImGui::GetFontSize() * 2, 0);
 		});
 
+		m_pExampleColorPicker->SetValue(ImVec4(0.0f, 1.0f, 1.0f, 1.0f));
+
 		m_pMainPageGroupChild->AddElement(m_pExampleColorPicker.get());
 		m_pMainPageGroup->AddElement(m_pMainPageGroupChild.get());
 
