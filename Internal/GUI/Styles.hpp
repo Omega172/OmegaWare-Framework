@@ -2,14 +2,9 @@
 #include "pch.h"
 
 inline ImFont* CurrentFont;
-inline ImFont* CurrentFontESP;
 
 inline ImFont* TahomaFont;
 inline ImFont* TahomaBigFont;
-inline ImFont* TahomaFontESP; // A font with extra spacing for ESP
-
-inline ImFont* TahomaFontPolish;
-inline ImFont* TahomaFontPolishESP;
 
 inline void SetupStyle()
 {
@@ -78,9 +73,27 @@ inline void ImportFonts()
 
     ImFontConfig cfg;
     cfg.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags::ImGuiFreeTypeBuilderFlags_ForceAutoHint;
-    ImFont* TahomaFont = io.Fonts->AddFontFromMemoryCompressedTTF(Poppins_Medium_compressed_data, Poppins_Medium_compressed_size, 14, &cfg, io.Fonts->GetGlyphRangesDefault());
-    //ImFont* mainFont = io.Fonts->AddFontFromMemoryCompressedTTF(uiMuseoSansData, uiMuseoSansSize, 14, &cfg, io.Fonts->GetGlyphRangesDefault());
 
+    // Build merged glyph ranges for all languages
+    ImFontGlyphRangesBuilder builder;
+    builder.AddRanges(io.Fonts->GetGlyphRangesDefault());        // ASCII + Latin-1
+    builder.AddRanges(io.Fonts->GetGlyphRangesVietnamese());     // Vietnamese
+    builder.AddRanges(io.Fonts->GetGlyphRangesCyrillic());       // Russian, Ukrainian, etc.
+    builder.AddRanges(io.Fonts->GetGlyphRangesJapanese());       // Japanese
+    builder.AddRanges(io.Fonts->GetGlyphRangesKorean());         // Korean
+    builder.AddRanges(io.Fonts->GetGlyphRangesChineseFull());    // Chinese
+    builder.AddRanges(io.Fonts->GetGlyphRangesThai());           // Thai
+    builder.AddRanges(io.Fonts->GetGlyphRangesGreek());          // Greek
+    
+    // Latin Extended-A for Polish (ą, ć, ę, ł, ń, ó, ś, ź, ż) and other European languages
+    static const ImWchar latinExtendedA[] = { 0x0100, 0x017F, 0 };
+    builder.AddRanges(latinExtendedA);
+    
+    static ImVector<ImWchar> mergedRanges;
+    builder.BuildRanges(&mergedRanges);
+
+    TahomaFont = io.Fonts->AddFontFromMemoryCompressedTTF(Poppins_Medium_compressed_data, Poppins_Medium_compressed_size, 14, &cfg, mergedRanges.Data);
+    
     // merge in icons from Font Awesome
     static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_16_FA, 0 };
     static const ImWchar icons_ranges_brands[] = { ICON_MIN_FAB, ICON_MAX_16_FAB, 0 };
@@ -91,5 +104,5 @@ inline void ImportFonts()
     ImFont* fontAwesome = io.Fonts->AddFontFromMemoryCompressedTTF(fa6_solid_compressed_data, fa6_solid_compressed_size, 14, &fa_config, icons_ranges);
     ImFont* fontAwesomeBrands = io.Fonts->AddFontFromMemoryCompressedTTF(fa_brands_400_compressed_data, fa_brands_400_compressed_size, 14, &fa_config, icons_ranges_brands);
 
-    TahomaBigFont = io.Fonts->AddFontFromMemoryCompressedTTF(Poppins_Medium_compressed_data, Poppins_Medium_compressed_size, 20, &cfg, io.Fonts->GetGlyphRangesDefault());
+    TahomaBigFont = io.Fonts->AddFontFromMemoryCompressedTTF(Poppins_Medium_compressed_data, Poppins_Medium_compressed_size, 20, &cfg, mergedRanges.Data);
 }

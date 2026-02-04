@@ -1,5 +1,4 @@
 #include "pch.h"
-#include "Watermark.hpp"
 
 void GUI::Render()
 {
@@ -24,70 +23,56 @@ void GUI::Render()
 	for (auto& pFeature : Framework::g_vecFeatures)
 		pFeature->HandleInput();
 
-	/*
-	if (GuiWatermark->GetValue())
-		ShowWatermark(GuiWatermarkFPS->GetValue(), Framework::Title.c_str(), ImVec4(255, 255, 255, 255), ImVec4(255, 255, 255, 0));
-	*/
-
 	if (bMenuOpen)
 	{
 		static std::once_flag onceflag;
 		std::call_once(onceflag, []() {
-			/*
-			GuiCheat->SetCallback([]() {
-				ImGuiContext* pContext = ImGui::GetCurrentContext();
+			// Setup Developer Page
+			GuiDeveloperBodyGroup->SetCallback([]() {
+				GuiUnloadButton->SetCallback([]() {
+					Framework::bShouldRun = false;
+				});
+				GuiUnloadButton->Render();
 
-				ImVec2 vec2Size = (Framework::menu->m_stStyle.vec2Size / ImVec2{ 3.f, 2.f }) - pContext->Style.ItemSpacing;
-				ImVec2 vec2MaxSize = ImGui::GetContentRegionAvail();
+				GuiConsoleVisibility->SetCallback([]() {
+					Framework::console->ToggleVisibility();
+					GuiConsoleVisibility->SetName(Framework::console->GetVisibility() ? "CONSOLE_HIDE"Hashed : "CONSOLE_SHOW"Hashed);
+				});
+				GuiConsoleVisibility->Render();
 
-				if (vec2Size.x > vec2MaxSize.x)
-					vec2Size.x = vec2MaxSize.x;
-
-				if (vec2Size.y > vec2MaxSize.y)
-					vec2Size.y = vec2MaxSize.y;
-
-				return vec2Size;
-			});
-
-			GuiCheat->AddElement(GuiCheatSpacing1.get());
-			GuiCheat->AddElement(GuiUnloadButton.get());
-			GuiUnloadButton->SetCallback([]() {
-				Framework::bShouldRun = false;
-			});
-			GuiCheat->AddElement(GuiConsoleVisibility.get());
-			GuiConsoleVisibility->SetCallback([]() {
-				Framework::console->ToggleVisibility();
-
-				GuiConsoleVisibility->SetName(Framework::console->GetVisibility() ? "CONSOLE_HIDE"Hashed : "CONSOLE_SHOW"Hashed);
-			});
-			GuiCheat->AddElement(GuiLocalization.get());
-			GuiLocalization->SetCallback([]() {
-				std::vector<Locale_t> vecLocales = Localization::GetLocales();
-				for (size_t i = 0; i < vecLocales.size(); ++i)
-				{
-					bool bSelected = Localization::GetCurrentLocaleIndex() == i;
-					Locale_t stLocale = vecLocales.at(i);
-					if (ImGui::Selectable(stLocale.sKey.c_str(), bSelected))
+				GuiLocalization->SetCallback([]() {
+					std::vector<Locale_t> vecLocales = Localization::GetLocales();
+					for (size_t i = 0; i < vecLocales.size(); ++i)
 					{
-						Localization::SetLocale(stLocale.ullKeyHash);
-						GuiLocalization->SetPreviewLabel(stLocale.sKey.c_str());
-					}
+						bool bSelected = Localization::GetCurrentLocaleIndex() == i;
+						Locale_t stLocale = vecLocales.at(i);
+						if (ImGui::Selectable(stLocale.sKey.c_str(), bSelected))
+						{
+							Localization::SetLocale(stLocale.ullKeyHash);
+							GuiLocalization->SetPreviewLabel(stLocale.sKey.c_str());
+						}
 
-					if (bSelected)
-						ImGui::SetItemDefaultFocus();
-				}
+						if (bSelected)
+							ImGui::SetItemDefaultFocus();
+					}
+				});
+				GuiLocalization->Render();
 			});
-			GuiCheat->AddElement(GuiWatermark.get());
-			GuiCheat->AddElement(GuiWatermarkFPS.get());
-			GuiCheat->AddElement(GuiSaveConfig.get());
-			GuiSaveConfig->SetCallback([]() {
-				Framework::config->SaveConfig();
+
+			// Setup Config Page
+			GuiConfigBodyGroup->SetCallback([]() {
+				GuiSaveConfig->SetCallback([]() {
+					Framework::config->SaveConfig();
+				});
+				GuiSaveConfig->Render();
+
+				GuiLoadConfig->SetCallback([]() {
+					Framework::config->LoadConfig();
+				});
+				GuiLoadConfig->Render();
 			});
-			GuiCheat->AddElement(GuiLoadConfig.get());
-			GuiLoadConfig->SetCallback([]() {
-				Framework::config->LoadConfig();
-			});
-			*/
+
+			// Setup Sidebar
 
 			GuiSidebar->SetPushVarsCallback([]() {
 				ImGuiStyle& imStyle = ImGui::GetStyle();
@@ -100,23 +85,29 @@ void GUI::Render()
 				ImGui::PopStyleVar();
 			});
 
+			GuiSidebar->AddElement(GuiFeatureSeperator.get());
 			GuiSidebar->AddElement(GuiMiscSeperator.get());
 			GuiSidebar->AddElement(GuiDeveloper.get());
-			GuiSidebar->AddElement(GuiStyle.get());
-			GuiSidebar->AddElement(GuiSettings.get());
 			GuiSidebar->AddElement(GuiConfig.get());
 
+			// Set the default page (optional - defaults to 0 if not set)
+			ElementBase::SetDefaultPage(GuiConfig->GetPageId());
+
+			auto pHeaderGroup = static_cast<HeaderGroup*>(GuiHeaderGroup.get());
+			if (pHeaderGroup)
+			{
+				pHeaderGroup->AddHeaders(GuiDeveloper->GetPageId(), { "DEVELOPER_MAIN"Hashed });
+				pHeaderGroup->AddHeaders(GuiConfig->GetPageId(), { "CONFIG_MAIN"Hashed });
+			}
+
+			// Update page IDs for body groups
+			GuiDeveloperBodyGroup->SetPageId(GuiDeveloper->GetPageId());
+			GuiConfigBodyGroup->SetPageId(GuiConfig->GetPageId());
+
 			GuiHeaderGroup->AddElement(GuiBody.get());
+			GuiBody->AddElement(GuiDeveloperBodyGroup.get());
+			GuiBody->AddElement(GuiConfigBodyGroup.get());
 		});
-
-		/*
-		GuiWatermarkFPS->SetVisible(GuiWatermark->GetValue());
-
-		if (!GuiCheat->HasParent())
-		{
-			Framework::menu->AddElement(GuiCheat.get());
-		}
-		*/
 
 		if (!GuiSidebar->HasParent()) {
 			Framework::menu->AddElement(GuiSidebar.get());
@@ -145,8 +136,7 @@ void GUI::Render()
 			if (ImGui::GetIO().MouseDrawCursor)
 				SetCursor(NULL);
 
-			// Set localization preview to the loaded locale
-			//GuiLocalization->SetPreviewLabel((Localization::GetInstance())->GetLocales()[(Localization::GetInstance())->GetCurrentLocaleIndex()].sKey.c_str());
+			GuiLocalization->SetPreviewLabel((Localization::GetInstance())->GetLocales()[(Localization::GetInstance())->GetCurrentLocaleIndex()].sKey.c_str());
 
 			// Load the config
 			Framework::config->LoadConfig();

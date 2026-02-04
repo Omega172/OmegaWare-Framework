@@ -87,6 +87,12 @@ static void CleanupDevice() {
 		g_frameContext = nullptr;
 	}
 
+	if (g_pd3dCommandList)
+	{
+		g_pd3dCommandList->Release();
+		g_pd3dCommandList = nullptr;
+	}
+
 	if (g_pd3dSrvDescHeap)
 	{
 		g_pd3dSrvDescHeap->Release();
@@ -97,21 +103,10 @@ static void CleanupDevice() {
 		g_pd3dRtvDescHeap->Release();
 		g_pd3dRtvDescHeap = nullptr;
 	}
-	if (g_pd3dCommandQueue)
-	{
-		g_pd3dCommandQueue->Release();
-		g_pd3dCommandQueue = nullptr;
-	}
-	if (g_pd3dDevice)
-	{
-		g_pd3dDevice->Release();
-		g_pd3dDevice = nullptr;
-	}
-	if (g_pSwapChain)
-	{
-		g_pSwapChain->Release();
-		g_pSwapChain = nullptr;
-	}
+
+	g_pd3dCommandQueue = nullptr;
+	g_pd3dDevice = nullptr;
+	g_pSwapChain = nullptr;
 }
 
 // Initialize ImGui
@@ -553,6 +548,23 @@ void RendererHooks::D3D12Destroy()
 	g_bShuttingDown = true;
 	Sleep(100); // Give Present a chance to see shutdown flag
 
+	if (g_bInitialized)
+	{
+		if (ImGui::GetCurrentContext()) {
+			if (ImGui::GetIO().BackendRendererUserData)
+				ImGui_ImplDX12_Shutdown();
+
+			if (ImGui::GetIO().BackendPlatformUserData)
+				ImGui_ImplWin32_Shutdown();
+
+			ImGui::DestroyContext();
+		}
+
+		CleanupDevice();
+
+		g_bInitialized = false;
+	}
+
 	oPresent.Remove();
 	oPresent1.Remove();
 	oResizeBuffers.Remove();
@@ -563,17 +575,7 @@ void RendererHooks::D3D12Destroy()
 	oCreateSwapChainForComposition.Remove();
 	oExecuteCommandLists.Remove();
 
-	if (ImGui::GetCurrentContext()) {
-		if (ImGui::GetIO().BackendRendererUserData)
-			ImGui_ImplDX12_Shutdown();
-
-		if (ImGui::GetIO().BackendPlatformUserData)
-			ImGui_ImplWin32_Shutdown();
-
-		ImGui::DestroyContext();
-	}
-
-	CleanupDevice();
+	Utils::LogDebug("DirectX 12 hook shutdown complete");
 }
 
 #endif

@@ -1,6 +1,44 @@
 #pragma once
 #include "pch.h"
 
+class PageManager
+{
+public:
+	struct PageInfo
+	{
+		uint8_t iPageId;
+		size_t ullLocalizedNameHash;
+		std::string sUnlocalizedName;
+		const char* sIcon;
+		bool bUseUnlocalizedName;
+	};
+
+	static inline std::vector<PageInfo> s_RegisteredPages;
+	static inline uint8_t s_iNextPageId = 4; // Start after Developer, Style, Settings, Config
+
+	// Register a new page and return its ID
+	static uint8_t RegisterPage(size_t ullLocalizedNameHash, const char* sIcon = ICON_FA_CIRCLE)
+	{
+		uint8_t iNewPageId = s_iNextPageId++;
+		s_RegisteredPages.push_back({ iNewPageId, ullLocalizedNameHash, "", sIcon, false });
+		return iNewPageId;
+	}
+
+	// Register a new page with unlocalized name and return its ID
+	static uint8_t RegisterPage(std::string sUnlocalizedName, const char* sIcon = ICON_FA_CIRCLE)
+	{
+		uint8_t iNewPageId = s_iNextPageId++;
+		s_RegisteredPages.push_back({ iNewPageId, 0, sUnlocalizedName, sIcon, true });
+		return iNewPageId;
+	}
+
+	// Get all registered pages
+	static const std::vector<PageInfo>& GetPages()
+	{
+		return s_RegisteredPages;
+	}
+};
+
 class ElementBase
 {
 public:
@@ -48,14 +86,6 @@ public:
 
 	Style_t m_stStyle;
 
-	enum EPage : uint8_t // Cannot be an enum class without a shit ton of changes
-	{
-		Developer,
-		Style,
-		Settings,
-		Config
-	};
-
 	typedef struct Header_t
 	{
 		uint8_t m_iParentPageID;
@@ -74,7 +104,7 @@ protected:
 	ElementBase* m_pParent = nullptr;
 	std::vector<ElementBase*> m_Children;
 
-	inline static uint8_t eCurrentPage = ElementBase::EPage::Developer;
+	inline static uint8_t eCurrentPage = 0;
 	inline static uint8_t eCurrentSubPage = 0;
 
 	inline void SameLine()
@@ -128,6 +158,54 @@ public:
 	{
 		static_cast<ElementBase*>(pElement)->m_pParent = this;
 		m_Children.push_back(static_cast<ElementBase*>(pElement));
+	};
+
+	// Insert element at a specific index
+	void InsertElementAt(void* pElement, size_t index)
+	{
+		static_cast<ElementBase*>(pElement)->m_pParent = this;
+		if (index >= m_Children.size())
+			m_Children.push_back(static_cast<ElementBase*>(pElement));
+		else
+			m_Children.insert(m_Children.begin() + index, static_cast<ElementBase*>(pElement));
+	};
+
+	// Insert element before another element (by unique name)
+	void InsertElementBefore(void* pElement, const std::string& sBeforeUnique)
+	{
+		auto pElementBase = static_cast<ElementBase*>(pElement);
+		pElementBase->m_pParent = this;
+
+		for (auto it = m_Children.begin(); it != m_Children.end(); ++it)
+		{
+			if ((*it)->m_sUnique == sBeforeUnique)
+			{
+				m_Children.insert(it, pElementBase);
+				return;
+			}
+		}
+
+		// If not found, add to end
+		m_Children.push_back(pElementBase);
+	};
+
+	// Insert element after another element (by unique name)
+	void InsertElementAfter(void* pElement, const std::string& sAfterUnique)
+	{
+		auto pElementBase = static_cast<ElementBase*>(pElement);
+		pElementBase->m_pParent = this;
+
+		for (auto it = m_Children.begin(); it != m_Children.end(); ++it)
+		{
+			if ((*it)->m_sUnique == sAfterUnique)
+			{
+				m_Children.insert(it + 1, pElementBase);
+				return;
+			}
+		}
+
+		// If not found, add to end
+		m_Children.push_back(pElementBase);
 	};
 
 	void RemoveElement(std::string sUnique)
@@ -247,6 +325,43 @@ public:
 	{
 		return m_stStyle;
 	};
+
+	// Register a new page with localized name
+	static uint8_t AddPage(size_t ullLocalizedNameHash, const char* sIcon = ICON_FA_CIRCLE)
+	{
+		return PageManager::RegisterPage(ullLocalizedNameHash, sIcon);
+	}
+
+	// Register a new page with unlocalized name
+	static uint8_t AddPage(std::string sUnlocalizedName, const char* sIcon = ICON_FA_CIRCLE)
+	{
+		return PageManager::RegisterPage(sUnlocalizedName, sIcon);
+	}
+
+	// Get the next available page ID (for manual page ID management)
+	static uint8_t GetNextPageId()
+	{
+		return PageManager::s_iNextPageId;
+	}
+
+	// Set the default/current page
+	static void SetDefaultPage(uint8_t iPageId)
+	{
+		eCurrentPage = iPageId;
+		eCurrentSubPage = 0;
+	}
+
+	// Get the current page ID
+	static uint8_t GetCurrentPage()
+	{
+		return eCurrentPage;
+	}
+
+	// Get the current sub-page ID
+	static uint8_t GetCurrentSubPage()
+	{
+		return eCurrentSubPage;
+	}
 
 	inline void SetStyle(Style_t stStyle)
 	{
@@ -1225,7 +1340,8 @@ protected:
 	uint8_t m_iPageId;
 
 public:
-	RadioButtonIcon(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {}, const char* sIcon = ICON_FA_QUESTION, uint8_t iPageId = EPage::Developer)
+	// Constructor with manual page ID (for existing pages or manual control)
+	RadioButtonIcon(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle, const char* sIcon, uint8_t iPageId)
 	{
 		m_sUnique = sUnique;
 		m_ullLocalizedNameHash = ullLocalizedNameHash;
@@ -1234,7 +1350,7 @@ public:
 		m_iPageId = iPageId;
 	};
 
-	RadioButtonIcon(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle = {}, const char* sIcon = ICON_FA_QUESTION, uint8_t iPageId = EPage::Developer)
+	RadioButtonIcon(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle, const char* sIcon, uint8_t iPageId)
 	{
 		m_sUnique = sUnique;
 		m_bUnlocalizedName = true;
@@ -1242,6 +1358,39 @@ public:
 		m_stStyle = stStyle;
 		m_sIcon = sIcon;
 		m_iPageId = iPageId;
+	};
+
+	// Constructor with auto page registration (localized)
+	RadioButtonIcon(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle, const char* sIcon, bool bAutoRegisterPage)
+	{
+		m_sUnique = sUnique;
+		m_ullLocalizedNameHash = ullLocalizedNameHash;
+		m_stStyle = stStyle;
+		m_sIcon = sIcon;
+		if (bAutoRegisterPage)
+			m_iPageId = ElementBase::AddPage(ullLocalizedNameHash, sIcon);
+		else
+			m_iPageId = 0;
+	};
+
+	// Constructor with auto page registration (unlocalized)
+	RadioButtonIcon(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle, const char* sIcon, bool bAutoRegisterPage)
+	{
+		m_sUnique = sUnique;
+		m_bUnlocalizedName = true;
+		m_sUnlocalizedName = sUnlocalizedName;
+		m_stStyle = stStyle;
+		m_sIcon = sIcon;
+		if (bAutoRegisterPage)
+			m_iPageId = ElementBase::AddPage(sUnlocalizedName, sIcon);
+		else
+			m_iPageId = 0;
+	};
+
+	// Get the page ID this button represents
+	uint8_t GetPageId() const
+	{
+		return m_iPageId;
 	};
 
 	constexpr EElementType GetType() const override
@@ -1258,6 +1407,7 @@ public:
 
 		if (ImAdd::RadioButtonIcon(GetName().c_str(), m_sIcon, GetName().c_str(), &eCurrentPage, m_iPageId, m_stStyle.vec2Size)) {
 			eCurrentPage = m_iPageId;
+			eCurrentSubPage = 0;
 		}
 	};
 };
@@ -1289,6 +1439,18 @@ public:
 	{
 		return EElementType::HeaderGroup;
 	};
+
+	// Add headers for a specific page
+	void AddHeaders(uint8_t iPageId, std::vector<size_t> ullLocalizedNameHashes)
+	{
+		m_Headers.push_back({ iPageId, ullLocalizedNameHashes });
+	}
+
+	// Add headers for a specific page (with single header)
+	void AddHeader(uint8_t iPageId, size_t ullLocalizedNameHash)
+	{
+		m_Headers.push_back({ iPageId, { ullLocalizedNameHash } });
+	}
 
 	void Render() override
 	{
@@ -1344,4 +1506,53 @@ public:
 		}
 		ImGui::EndChild();
 	}
+};
+
+class BodyGroup : public ElementBase
+{
+protected:
+	uint8_t m_iPageId;
+	uint8_t m_iSubPageId;
+	std::function<void()> m_Callback = nullptr;
+
+public:
+	BodyGroup(std::string sUnique, Style_t stStyle = {}, uint8_t iPageId = 0, uint8_t iSubPageId = 0)
+	{
+		m_sUnique = sUnique;
+		m_stStyle = stStyle;
+		m_iPageId = iPageId;
+		m_iSubPageId = iSubPageId;
+	};
+	
+	constexpr EElementType GetType() const override
+	{
+		return EElementType::BodyGroup;
+	};
+
+	void Render() override
+	{
+		if (!m_stStyle.bVisible)
+			return;
+
+		if (m_iPageId != eCurrentPage || m_iSubPageId != eCurrentSubPage)
+			return;
+
+		if (m_Callback)
+			m_Callback();
+	}
+
+	void SetCallback(std::function<void()> Callback)
+	{
+		m_Callback = Callback;
+	};
+
+	void SetPageId(uint8_t iPageId)
+	{
+		m_iPageId = iPageId;
+	};
+
+	void SetSubPageId(uint8_t iSubPageId)
+	{
+		m_iSubPageId = iSubPageId;
+	};
 };
