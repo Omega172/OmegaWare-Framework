@@ -67,19 +67,15 @@ The framework itself can be configured inside of `FrameworkConfig.h`
 
 This project is built using [Xmake](https://github.com/xmake-io/xmake). Use the [VS Code extension](https://marketplace.visualstudio.com/items?itemName=tboox.xmake-vscode) for the best experience.
 
-### Clone Repository
+### Install Requirements
+- **Xmake**: Follow instructions at [xmake.io](https://xmake.io/guide/quick-start.html#installation)
+- **Vcpkg**: For dependency management. Follow instructions at the [vcpkg repo](https://github.com/microsoft/vcpkg)
+
 ### Clone Repository
 
 ```bash
-# Clone with submodules (Git 2.13+)
-git clone --recurse-submodules -j8 https://github.com/Omega172/OmegaWare-Framework.git
-
-# Or for older Git versions
-git clone --recursive https://github.com/Omega172/OmegaWare-Framework.git
-
-# For already cloned repos
+git clone https://github.com/Omega172/OmegaWare-Framework.git
 cd OmegaWare-Framework
-git submodule update --init --recursive
 ```
 
 ### Build Commands
