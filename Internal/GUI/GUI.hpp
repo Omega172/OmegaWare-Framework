@@ -44,7 +44,7 @@ namespace GUI
 		.vec2Size = ImVec2(-0.1f, 0), });
 
 	// Developer Page Elements
-	inline std::unique_ptr<BodyGroup> GuiDeveloperBodyGroup = std::make_unique<BodyGroup>("DEVELOPER_BODY_GROUP", ElementBase::Style_t(), 0, 0);
+	inline std::unique_ptr<Page> GuiDeveloperPage = std::make_unique<Page>("DEVELOPER_PAGE", ElementBase::Style_t(), 0, 0);
 	inline std::unique_ptr<Button> GuiUnloadButton = std::make_unique<Button>(std::string("UNLOAD_BTN"), "UNLOAD_BTN"Hashed);
 	inline std::unique_ptr<Button> GuiConsoleVisibility = std::make_unique<Button>(std::string("CONSOLE_VISIBILITY"), "CONSOLE_HIDE"Hashed, ElementBase::Style_t{
 		.eSameLine = ElementBase::ESameLine::Same });
@@ -52,7 +52,7 @@ namespace GUI
 		.iFlags = ImGuiComboFlags_WidthFitPreview });
 
 	// Config Page Elements
-	inline std::unique_ptr<BodyGroup> GuiConfigBodyGroup = std::make_unique<BodyGroup>("CONFIG_BODY_GROUP", ElementBase::Style_t(), 0, 0);
+	inline std::unique_ptr<Page> GuiConfigPage = std::make_unique<Page>("CONFIG_PAGE", ElementBase::Style_t(), 0, 0);
 	inline std::unique_ptr<Button> GuiSaveConfig = std::make_unique<Button>(std::string("SAVE_CONFIG"), "SAVE_CONFIG"Hashed);
 	inline std::unique_ptr<Button> GuiLoadConfig = std::make_unique<Button>(std::string("LOAD_CONFIG"), "LOAD_CONFIG"Hashed, ElementBase::Style_t{
 		.eSameLine = ElementBase::ESameLine::Same });

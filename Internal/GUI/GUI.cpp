@@ -27,53 +27,6 @@ void GUI::Render()
 	{
 		static std::once_flag onceflag;
 		std::call_once(onceflag, []() {
-			// Setup Developer Page
-			GuiDeveloperBodyGroup->SetCallback([]() {
-				GuiUnloadButton->SetCallback([]() {
-					Framework::bShouldRun = false;
-				});
-				GuiUnloadButton->Render();
-
-				GuiConsoleVisibility->SetCallback([]() {
-					Framework::console->ToggleVisibility();
-					GuiConsoleVisibility->SetName(Framework::console->GetVisibility() ? "CONSOLE_HIDE"Hashed : "CONSOLE_SHOW"Hashed);
-				});
-				GuiConsoleVisibility->Render();
-
-				GuiLocalization->SetCallback([]() {
-					std::vector<Locale_t> vecLocales = Localization::GetLocales();
-					for (size_t i = 0; i < vecLocales.size(); ++i)
-					{
-						bool bSelected = Localization::GetCurrentLocaleIndex() == i;
-						Locale_t stLocale = vecLocales.at(i);
-						if (ImGui::Selectable(stLocale.sKey.c_str(), bSelected))
-						{
-							Localization::SetLocale(stLocale.ullKeyHash);
-							GuiLocalization->SetPreviewLabel(stLocale.sKey.c_str());
-						}
-
-						if (bSelected)
-							ImGui::SetItemDefaultFocus();
-					}
-				});
-				GuiLocalization->Render();
-			});
-
-			// Setup Config Page
-			GuiConfigBodyGroup->SetCallback([]() {
-				GuiSaveConfig->SetCallback([]() {
-					Framework::config->SaveConfig();
-				});
-				GuiSaveConfig->Render();
-
-				GuiLoadConfig->SetCallback([]() {
-					Framework::config->LoadConfig();
-				});
-				GuiLoadConfig->Render();
-			});
-
-			// Setup Sidebar
-
 			GuiSidebar->SetPushVarsCallback([]() {
 				ImGuiStyle& imStyle = ImGui::GetStyle();
 				ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, imStyle.ChildRounding);
@@ -101,12 +54,47 @@ void GUI::Render()
 			}
 
 			// Update page IDs for body groups
-			GuiDeveloperBodyGroup->SetPageId(GuiDeveloper->GetPageId());
-			GuiConfigBodyGroup->SetPageId(GuiConfig->GetPageId());
+			GuiDeveloperPage->SetPageId(GuiDeveloper->GetPageId());
+			GuiUnloadButton->SetCallback([]() {
+				Framework::bShouldRun = false;
+			});
+			GuiDeveloperPage->AddElement(GuiUnloadButton.get());
+			GuiConsoleVisibility->SetCallback([]() {
+				Framework::console->ToggleVisibility();
+				GuiConsoleVisibility->SetName(Framework::console->GetVisibility() ? "CONSOLE_HIDE"Hashed : "CONSOLE_SHOW"Hashed);
+			});
+			GuiDeveloperPage->AddElement(GuiConsoleVisibility.get());
+			GuiLocalization->SetCallback([]() {
+				std::vector<Locale_t> vecLocales = Localization::GetLocales();
+				for (size_t i = 0; i < vecLocales.size(); ++i)
+				{
+					bool bSelected = Localization::GetCurrentLocaleIndex() == i;
+					Locale_t stLocale = vecLocales.at(i);
+					if (ImAdd::Selectable(stLocale.sKey.c_str(), bSelected))
+					{
+						Localization::SetLocale(stLocale.ullKeyHash);
+						GuiLocalization->SetPreviewLabel(stLocale.sKey.c_str());
+					}
+
+					if (bSelected)
+						ImGui::SetItemDefaultFocus();
+				}
+			});
+			GuiDeveloperPage->AddElement(GuiLocalization.get());
+
+			GuiConfigPage->SetPageId(GuiConfig->GetPageId());
+			GuiSaveConfig->SetCallback([]() {
+				Framework::config->SaveConfig();
+			});
+			GuiConfigPage->AddElement(GuiSaveConfig.get());
+			GuiLoadConfig->SetCallback([]() {
+				Framework::config->LoadConfig();
+			});
+			GuiConfigPage->AddElement(GuiLoadConfig.get());
 
 			GuiHeaderGroup->AddElement(GuiBody.get());
-			GuiBody->AddElement(GuiDeveloperBodyGroup.get());
-			GuiBody->AddElement(GuiConfigBodyGroup.get());
+			GuiBody->AddElement(GuiDeveloperPage.get());
+			GuiBody->AddElement(GuiConfigPage.get());
 		});
 
 		if (!GuiSidebar->HasParent()) {

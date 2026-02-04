@@ -46,7 +46,9 @@ public:
 	{
 		None,
 		Button,
+		AccentButton,
 		Checkbox,
+		Toggle,
 		Child,
 		ColorPicker,
 		Combo,
@@ -56,9 +58,12 @@ public:
 		RadioButtonIcon,
 		HeaderGroup,
 		Body,
-		BodyGroup,
+		Page,
+		Group,
+		GroupChild,
 		SliderFloat,
 		SliderInt,
+		Separator,
 		SeperatorText,
 		Spacing,
 		Text,
@@ -107,13 +112,18 @@ protected:
 	inline static uint8_t eCurrentPage = 0;
 	inline static uint8_t eCurrentSubPage = 0;
 
+	std::function<ImVec2()> m_SameLineSizeCallback = nullptr;
+
 	inline void SameLine()
 	{
 		switch (m_stStyle.eSameLine)
 		{
 			// Force draw on the same line
 		case(ESameLine::Same):
-			ImGui::SameLine(m_stStyle.flOffset, m_stStyle.flSpacing);
+			if (m_SameLineSizeCallback)
+				ImGui::SameLine(m_SameLineSizeCallback().x, m_SameLineSizeCallback().y);
+			else
+				ImGui::SameLine(m_stStyle.flOffset, m_stStyle.flSpacing);
 			break;
 
 			// Ask our parent if we should draw on the same line or not
@@ -401,6 +411,11 @@ public:
 			return;
 
 		RenderChildren();
+	};
+
+	void SetSameLineSizeCallback(std::function<ImVec2()> callback)
+	{
+		m_SameLineSizeCallback = callback;
 	};
 };
 
@@ -799,7 +814,54 @@ public:
 
 		SameLine();
 
-		if (ImGui::Button(GetName().c_str()))
+		if (ImAdd::Button(GetName().c_str(), m_stStyle.vec2Size))
+			if (m_Callback)
+				m_Callback();
+
+		RenderChildren();
+	};
+
+
+	void SetCallback(std::function<void()> Callback)
+	{
+		m_Callback = Callback;
+	};
+};
+
+class AccentButton : public ElementBase
+{
+protected:
+	std::function<void()> m_Callback = nullptr;
+
+public:
+	AccentButton(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {})
+	{
+		m_sUnique = sUnique;
+		m_ullLocalizedNameHash = ullLocalizedNameHash;
+		m_stStyle = stStyle;
+	};
+
+	AccentButton(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle = {})
+	{
+		m_sUnique = sUnique;
+		m_bUnlocalizedName = true;
+		m_sUnlocalizedName = sUnlocalizedName;
+		m_stStyle = stStyle;
+	};
+
+	constexpr EElementType GetType() const override
+	{
+		return EElementType::Button;
+	};
+
+	void Render() override
+	{
+		if (!m_stStyle.bVisible)
+			return;
+
+		SameLine();
+
+		if (ImAdd::AccentButton(GetName().c_str(), m_stStyle.vec2Size))
 			if (m_Callback)
 				m_Callback();
 
@@ -816,8 +878,16 @@ public:
 class Combo : public ElementBase
 {
 protected:
+	struct ComboOption
+	{
+		std::string sLabel;
+		std::function<void()> Callback;
+	};
+
 	std::string m_sPreviewlabel = "PreviewNotSet";
 	std::function<void()> m_Callback;
+	std::vector<ComboOption> m_Options;
+	int m_iSelectedIndex = -1;
 
 public:
 	Combo(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {})
@@ -847,10 +917,29 @@ public:
 
 		SameLine();
 
-		if (ImGui::BeginCombo(GetName().c_str(), m_sPreviewlabel.c_str(), m_stStyle.iFlags))
+		if (ImAdd::BeginCombo(GetName().c_str(), m_sPreviewlabel.c_str(), m_stStyle.iFlags))
 		{
 			if (m_Callback)
+			{
 				m_Callback();
+			}
+			else if (!m_Options.empty())
+			{
+				for (size_t i = 0; i < m_Options.size(); ++i)
+				{
+					bool bSelected = m_iSelectedIndex == static_cast<int>(i);
+					if (ImAdd::Selectable(m_Options[i].sLabel.c_str(), bSelected))
+					{
+						m_iSelectedIndex = static_cast<int>(i);
+						m_sPreviewlabel = m_Options[i].sLabel;
+						if (m_Options[i].Callback)
+							m_Options[i].Callback();
+					}
+
+					if (bSelected)
+						ImGui::SetItemDefaultFocus();
+				}
+			}
 
 			ImGui::EndCombo();
 		}
@@ -866,6 +955,32 @@ public:
 	void SetPreviewLabel(std::string s)
 	{
 		m_sPreviewlabel = s;
+	};
+
+	void AddOption(std::string sLabel, std::function<void()> Callback = nullptr)
+	{
+		m_Options.push_back({ sLabel, Callback });
+		
+		// Set preview label to first option if not set
+		if (m_iSelectedIndex == -1 && !m_Options.empty())
+		{
+			m_iSelectedIndex = 0;
+			m_sPreviewlabel = m_Options[0].sLabel;
+		}
+	};
+
+	int GetSelectedIndex() const
+	{
+		return m_iSelectedIndex;
+	};
+
+	void SetSelectedIndex(int iIndex)
+	{
+		if (iIndex >= 0 && iIndex < static_cast<int>(m_Options.size()))
+		{
+			m_iSelectedIndex = iIndex;
+			m_sPreviewlabel = m_Options[iIndex].sLabel;
+		}
 	};
 };
 
@@ -901,7 +1016,45 @@ public:
 
 		SameLine();
 
-		ImGui::Checkbox(GetName().c_str(), &m_Value);
+		ImAdd::SmallCheckbox(GetName().c_str(), &m_Value);
+
+		RenderChildren();
+	};
+};
+
+class Toggle : public ElementInput<bool>
+{
+protected:
+
+public:
+	Toggle(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {})
+	{
+		m_sUnique = sUnique;
+		m_ullLocalizedNameHash = ullLocalizedNameHash;
+		m_stStyle = stStyle;
+	};
+
+	Toggle(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle = {})
+	{
+		m_sUnique = sUnique;
+		m_bUnlocalizedName = true;
+		m_sUnlocalizedName = sUnlocalizedName;
+		m_stStyle = stStyle;
+	};
+
+	constexpr EElementType GetType() const override
+	{
+		return EElementType::Toggle;
+	};
+
+	void Render() override
+	{
+		if (!m_stStyle.bVisible)
+			return;
+
+		SameLine();
+
+		ImAdd::Togglebutton(GetName().c_str(), &m_Value);
 
 		RenderChildren();
 	};
@@ -967,33 +1120,33 @@ public:
 
 		SameLine();
 
-		if (ImGui::BeginCombo(("##CMB" + GetName()).c_str(), "##", ImGuiComboFlags_NoPreview))
+		if (ImAdd::BeginCombo(("##CMB" + GetName()).c_str(), "##", ImGuiComboFlags_NoPreview))
 		{
 			bool bSelected;
 
 			bSelected = m_eMode == EHotkeyMode::AlwaysOn;
-			if (ImGui::Selectable("Always On", bSelected))
+			if (ImAdd::Selectable("Always On", bSelected))
 				m_eMode = EHotkeyMode::AlwaysOn;
 
 			if (bSelected)
 				ImGui::SetItemDefaultFocus();
 
 			bSelected = m_eMode == EHotkeyMode::Hold;
-			if (ImGui::Selectable("Hold", bSelected))
+			if (ImAdd::Selectable("Hold", bSelected))
 				m_eMode = EHotkeyMode::Hold;
 
 			if (bSelected)
 				ImGui::SetItemDefaultFocus();
 
 			bSelected = m_eMode == EHotkeyMode::Toggle;
-			if (ImGui::Selectable("Toggle", bSelected))
+			if (ImAdd::Selectable("Toggle", bSelected))
 				m_eMode = EHotkeyMode::Toggle;
 
 			if (bSelected)
 				ImGui::SetItemDefaultFocus();
 
 			bSelected = m_eMode == EHotkeyMode::HoldOff;
-			if (ImGui::Selectable("Hold Off", bSelected))
+			if (ImAdd::Selectable("Hold Off", bSelected))
 				m_eMode = EHotkeyMode::HoldOff;
 
 			if (bSelected)
@@ -1012,7 +1165,7 @@ public:
 
 		if (ImGui::GetActiveID() == id) {
 			ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetColorU32(ImGuiCol_ButtonActive));
-			ImGui::Button("...", m_stStyle.vec2Size);
+			ImAdd::Button("...", m_stStyle.vec2Size);
 			ImGui::PopStyleColor();
 
 			ImGui::GetCurrentContext()->ActiveIdAllowOverlap = true;
@@ -1022,7 +1175,7 @@ public:
 				m_bSetting = false;
 			}
 		}
-		else if (ImGui::Button(BtnName.c_str(), m_stStyle.vec2Size) || m_bSetting) {
+		else if (ImAdd::Button(BtnName.c_str(), m_stStyle.vec2Size) || m_bSetting) {
 			ImGui::SetActiveID(id, ImGui::GetCurrentWindow());
 			m_bSetting = true;
 		}
@@ -1152,7 +1305,7 @@ public:
 
 		SameLine();
 
-		ImGui::SliderFloat(GetName().c_str(), &m_Value, m_Min, m_Max, m_sFormat, m_stStyle.iFlags);
+		ImAdd::SliderFloat(GetName().c_str(), &m_Value, m_Min, m_Max, m_stStyle.vec2Size.x, m_sFormat);
 
 		RenderChildren();
 	};
@@ -1199,7 +1352,7 @@ public:
 
 		SameLine();
 
-		ImGui::SliderInt(GetName().c_str(), &m_Value, m_Min, m_Max, m_sFormat, m_stStyle.iFlags);
+		ImAdd::SliderInt(GetName().c_str(), &m_Value, m_Min, m_Max, m_stStyle.vec2Size.x, m_sFormat);
 
 		RenderChildren();
 	};
@@ -1210,6 +1363,7 @@ class InputText : public ElementInput<std::string>
 protected:
 	ImGuiInputTextCallback m_Callback = nullptr;
 	void* m_pUserData = nullptr;
+	std::string m_sPreview = "";
 
 public:
 	InputText(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {}, size_t ullBufferSize = 1024)
@@ -1243,7 +1397,7 @@ public:
 
 		SameLine();
 
-		ImGui::InputText(GetName().c_str(), m_Value.data(), m_Value.capacity(), m_stStyle.iFlags, m_Callback, m_pUserData);
+		ImAdd::InputText(GetName().c_str(), m_sPreview.c_str(), m_Value.data(), m_Value.capacity(), m_stStyle.vec2Size.x, m_stStyle.iFlags, m_Callback, m_pUserData);
 
 		RenderChildren();
 	};
@@ -1256,6 +1410,11 @@ public:
 	void SetCallback(ImGuiInputTextCallback Callback)
 	{
 		m_Callback = Callback;
+	};
+
+	void SetPreviewText(const std::string& s)
+	{
+		m_sPreview = s;
 	};
 };
 
@@ -1291,9 +1450,36 @@ public:
 
 		SameLine();
 
-		ImGui::ColorEdit4(GetName().c_str(), reinterpret_cast<float*>(&m_Value), m_stStyle.iFlags);
+		ImAdd::ColorEdit4(GetName().c_str(), reinterpret_cast<float*>(&m_Value));
 
 		RenderChildren();
+	};
+};
+
+class Seperator : public ElementBase
+{
+protected:
+
+public:
+	Seperator(std::string sUnique, Style_t stStyle = {})
+	{
+		m_sUnique = sUnique;
+		m_stStyle = stStyle;
+	};
+
+	constexpr EElementType GetType() const override
+	{
+		return EElementType::Separator;
+	};
+
+	void Render() override
+	{
+		if (!m_stStyle.bVisible)
+			return;
+
+		SameLine();
+
+		ImGui::Separator();
 	};
 };
 
@@ -1509,15 +1695,14 @@ public:
 	}
 };
 
-class BodyGroup : public ElementBase
+class Page : public ElementBase
 {
 protected:
 	uint8_t m_iPageId;
 	uint8_t m_iSubPageId;
-	std::function<void()> m_Callback = nullptr;
 
 public:
-	BodyGroup(std::string sUnique, Style_t stStyle = {}, uint8_t iPageId = 0, uint8_t iSubPageId = 0)
+	Page(std::string sUnique, Style_t stStyle = {}, uint8_t iPageId = 0, uint8_t iSubPageId = 0)
 	{
 		m_sUnique = sUnique;
 		m_stStyle = stStyle;
@@ -1527,7 +1712,7 @@ public:
 	
 	constexpr EElementType GetType() const override
 	{
-		return EElementType::BodyGroup;
+		return EElementType::Page;
 	};
 
 	void Render() override
@@ -1538,14 +1723,8 @@ public:
 		if (m_iPageId != eCurrentPage || m_iSubPageId != eCurrentSubPage)
 			return;
 
-		if (m_Callback)
-			m_Callback();
+		RenderChildren();
 	}
-
-	void SetCallback(std::function<void()> Callback)
-	{
-		m_Callback = Callback;
-	};
 
 	void SetPageId(uint8_t iPageId)
 	{
@@ -1555,5 +1734,98 @@ public:
 	void SetSubPageId(uint8_t iSubPageId)
 	{
 		m_iSubPageId = iSubPageId;
+	};
+};
+
+class Group : public ElementBase {
+	public:
+		Group(std::string sUnique, Style_t stStyle = {}) {
+			m_sUnique = sUnique;
+			m_stStyle = stStyle;
+		};
+
+		constexpr EElementType GetType() const override
+		{
+			return EElementType::Group;
+		};
+
+		void Render() override {
+			if (!m_stStyle.bVisible)
+				return;
+
+			SameLine();
+
+			ImGui::BeginGroup();
+			RenderChildren();
+			ImGui::EndGroup();
+		};
+};
+
+class GroupChild : public ElementBase
+{
+	protected:
+	ImGuiWindowFlags m_WindowFlags;
+	std::function<ImVec2()> m_Callback = nullptr;
+	std::function<void()> m_PushVarsCallback = nullptr;
+	std::function<void()> m_PopVarsCallback = nullptr;
+
+public:
+	GroupChild(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {}, ImGuiWindowFlags WindowFlags = 0)
+	{
+		m_sUnique = sUnique;
+		m_ullLocalizedNameHash = ullLocalizedNameHash;
+		m_stStyle = stStyle;
+
+		m_WindowFlags = WindowFlags;
+	};
+
+	GroupChild(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle = {}, ImGuiWindowFlags WindowFlags = 0)
+	{
+		m_sUnique = sUnique;
+		m_bUnlocalizedName = true;
+		m_sUnlocalizedName = sUnlocalizedName;
+		m_stStyle = stStyle;
+
+		m_WindowFlags = WindowFlags;
+	};
+
+	constexpr EElementType GetType() const override
+	{
+		return EElementType::Child;
+	};
+
+	void Render() override
+	{
+		if (!m_stStyle.bVisible)
+			return;
+
+		SameLine();
+
+		if (m_Callback)
+			m_stStyle.vec2Size = m_Callback();
+
+		ImGui::BeginChild(GetName().c_str(), m_stStyle.vec2Size, m_stStyle.iFlags, m_WindowFlags);
+		if (m_PushVarsCallback)
+			m_PushVarsCallback();
+		ImGui::TextDisabled(GetName().c_str());
+		RenderChildren();
+		if (m_PopVarsCallback)
+			m_PopVarsCallback();
+		ImGui::EndChild();
+	};
+
+	void SetCallback(std::function<ImVec2()> Callback)
+	{
+		m_Callback = Callback;
+	};
+
+	void SetPushVarsCallback(std::function<void()> Callback)
+	{
+		m_PushVarsCallback = Callback;
+	};
+
+	void SetPopVarsCallback(std::function<void()> Callback)
+	{
+		m_PopVarsCallback = Callback;
 	};
 };
