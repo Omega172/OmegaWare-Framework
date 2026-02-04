@@ -1,5 +1,4 @@
 #include "pch.h"
-#include "Includes.hpp"
 
 bool RendererHooks::Setup()
 {
@@ -7,16 +6,16 @@ bool RendererHooks::Setup()
 	if (Memory::GetModule("d3d12.dll"))
 	{
 		iActiveRendererType = D3D12;
-		Utils::LogError(Utils::GetLocation(CurrentLoc), (std::stringstream() << "D3D12 Found @ " << Memory::GetModule("d3d12.dll")).str());
+		Utils::LogDebug("D3D12 found!");
 	}
 	else if (Memory::GetModule("d3d11.dll"))
 	{
 		iActiveRendererType = D3D11;
-		Utils::LogDebug(Utils::GetLocation(CurrentLoc), "D3D11 found!");
+		Utils::LogDebug("D3D11 found!");
 	}
 	else
 	{
-		Utils::LogError(Utils::GetLocation(CurrentLoc), "Couldnt find renderer LAWL!");
+		Utils::LogError("Couldnt find renderer RIP!");
 	}
 
 	switch (iActiveRendererType) {

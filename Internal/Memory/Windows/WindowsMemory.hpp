@@ -5,6 +5,9 @@
 
 namespace Memory
 {
+	// Check if a module is loaded
+	HMODULE GetModule(std::string_view sModuleName);
+
 	// Gets loaded module info
 	LPMODULEINFO GetModuleInfo(std::string_view sModuleName);
 	LPMODULEINFO GetModuleInfo(HMODULE hModule);

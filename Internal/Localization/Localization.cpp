@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "Includes.hpp"
+
 #include "Locales/English.hpp"
 #include "Locales/German.hpp"
 #include "Locales/Polish.hpp"
@@ -82,7 +82,6 @@ bool Localization::_SetLocale(size_t ullKeyHash)
 		m_iCurrentLocale = i;
 
 		CurrentFont = *stLocale.hMenuFont;
-		CurrentFontESP = *stLocale.hFeatureFont;
 
 		return true;
 	}
@@ -118,7 +117,6 @@ void Localization::_AddToLocale(std::string sLocaleKey, size_t ullKeyHash, std::
 		.ullKeyHash = ullKeyHash,
 
 		.hMenuFont = &TahomaFont,
-		.hFeatureFont = &TahomaFontESP,
 
 		.umLocalizedStrings = std::unordered_map<size_t, std::string>({
 			{ ullKeyHash, sLocalizedString },

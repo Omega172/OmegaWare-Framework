@@ -1,8 +1,12 @@
 #include "pch.h"
-#include "Includes.hpp"
 #include "WindowsMemory.hpp"
 
 #include <random>
+
+HMODULE Memory::GetModule(std::string_view sModuleName)
+{
+	return GetModuleHandleA(sModuleName.data());
+}
 
 static std::unordered_map<size_t, MODULEINFO> aCachedModules{};
 LPMODULEINFO Memory::GetModuleInfo(std::string_view sModuleName)

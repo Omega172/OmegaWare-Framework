@@ -1,7 +1,7 @@
 #pragma once
 #include "pch.h"
 #define IMGUI_DEFINE_MATH_OPERATORS
-#include "../Libs/ImGUI/imgui_internal.h"
+#include <imgui_internal.h>
 
 
 #include <algorithm>
@@ -104,12 +104,12 @@ namespace ImGui
         ImU32 Black = ColorConvertFloat4ToU32({ 0.f, 0.f, 0.f, 1.f });
         auto* pDL = GetBackgroundDrawList();
 
-        pDL->AddText(CurrentFontESP, CurrentFontESP->FontSize, Pos + ImVec2(-1, -1), Black, Text);
-        pDL->AddText(CurrentFontESP, CurrentFontESP->FontSize, Pos + ImVec2(1, -1), Black, Text);
-        pDL->AddText(CurrentFontESP, CurrentFontESP->FontSize, Pos + ImVec2(-1, 1), Black, Text);
-        pDL->AddText(CurrentFontESP, CurrentFontESP->FontSize, Pos + ImVec2(1, 1), Black, Text);
+        pDL->AddText(CurrentFont, CurrentFont->FontSize, Pos + ImVec2(-1, -1), Black, Text);
+        pDL->AddText(CurrentFont, CurrentFont->FontSize, Pos + ImVec2(1, -1), Black, Text);
+        pDL->AddText(CurrentFont, CurrentFont->FontSize, Pos + ImVec2(-1, 1), Black, Text);
+        pDL->AddText(CurrentFont, CurrentFont->FontSize, Pos + ImVec2(1, 1), Black, Text);
 
-        pDL->AddText(CurrentFontESP, CurrentFontESP->FontSize, Pos, Color, Text);
+        pDL->AddText(CurrentFont, CurrentFont->FontSize, Pos, Color, Text);
     }
 
     static ImVector<ImRect> s_GroupPanelLabelStack;

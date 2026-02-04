@@ -167,7 +167,7 @@ bool ImAdd::Button(const char* label, const ImVec2& size_arg)
     return pressed;
 }
 
-bool ImAdd::AcentButton(const char* label, const ImVec2& size_arg)
+bool ImAdd::AccentButton(const char* label, const ImVec2& size_arg)
 {
     ImGuiWindow* window = GetCurrentWindow();
     if (window->SkipItems)
@@ -217,7 +217,23 @@ bool ImAdd::AcentButton(const char* label, const ImVec2& size_arg)
 
     if (g.LogEnabled)
         LogSetNextTextDecoration("[", "]");
-    RenderTextClipped(bb.Min + style.FramePadding, bb.Max - style.FramePadding, label, NULL, &label_size, style.ButtonTextAlign, &bb);
+    
+    // Detect if text color is white/bright and darken it for better contrast
+    ImVec4 textColor = GetStyleColorVec4(ImGuiCol_Text);
+    float brightness = (textColor.x + textColor.y + textColor.z) / 3.0f;
+    if (brightness > 0.7f) // If color is bright
+    {
+        textColor.x *= 0.3f;
+        textColor.y *= 0.3f;
+        textColor.z *= 0.3f;
+        PushStyleColor(ImGuiCol_Text, textColor);
+        RenderTextClipped(bb.Min + style.FramePadding, bb.Max - style.FramePadding, label, NULL, &label_size, style.ButtonTextAlign, &bb);
+        PopStyleColor();
+    }
+    else
+    {
+        RenderTextClipped(bb.Min + style.FramePadding, bb.Max - style.FramePadding, label, NULL, &label_size, style.ButtonTextAlign, &bb);
+    }
 
     IMGUI_TEST_ENGINE_ITEM_INFO(id, label, g.LastItemData.StatusFlags);
     return pressed;

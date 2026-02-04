@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "Includes.hpp"
+
 
 static bool FrameworkInit()
 {
@@ -27,8 +27,6 @@ static bool FrameworkInit()
 #if ENGINE_UNREAL
 	Utils::LogDebug("Initializing FNames, this can take a bit.");
 	Utils::LogDebug(std::format("Unreal: {:#010x}", reinterpret_cast<uintptr_t>(Framework::unreal.get())));
-	FNames::Initialize();
-	Utils::LogDebug("FNames initialized!");
 #endif
 
 	try {
@@ -62,10 +60,6 @@ DWORD WINAPI FrameworkMainThread(LPVOID lpParam)
 
 	while (Framework::bShouldRun)
 	{
-#if ENGINE_UNREAL
-		Framework::unreal.get()->RefreshActorList();
-#endif
-
 		for (auto& pFeature : Framework::g_vecFeatures)
 			pFeature->Run();
 
@@ -106,7 +100,6 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ulReasonForCall, LPVOID lpReserved)
 	Framework::console->SetVisibility(true); // Set the console to be visible by default if the framework is in debug mode
 #endif
 
-	DisableThreadLibraryCalls(hModule);
 	HANDLE hThread = CreateThread(NULL, 0, FrameworkMainThread, hModule, 0, NULL);
 	if (hThread)
 		CloseHandle(hThread);

@@ -49,13 +49,13 @@
 #define STRR(X) #X  
 #define STR(X) STRR(X)
 
-#define FRAMEWORK_MAJOR_VERSION 6
-#define FRAMEWORK_MINOR_VERSION 9
-#define FRAMEWORK_REWORK_VERSION 1
+#define FRAMEWORK_MAJOR_VERSION 7
+#define FRAMEWORK_MINOR_VERSION 0
+#define FRAMEWORK_REWORK_VERSION 0
 #define FRAMEWORK_VERSION FRAMEWORK_MAJOR_VERSION.FRAMEWORK_MINOR_VERSION.FRAMEWORK_REWORK_VERSION
 
 #define FRAMEWORK_CODENAME "OmegaWare"
-#define TARGET_GAME_NAME "TEST"
+#define TARGET_GAME_NAME ""
 
 #pragma warning( push ) // disable "operator '!=': deprecated for array types" warning
 #pragma warning( disable : 5056)
@@ -64,13 +64,13 @@ static_assert(TARGET_GAME_NAME != "", "Target game not set, this HAS to be set o
 
 #define ENGINE_UNREAL	0
 #define ENGINE_UNITY	0
-#define ENGINE_OTHER	1 // Other is just the catch all for any other game engine or project
+#define ENGINE_OTHER	1// Other is just the catch all for any other game engine or project
 
 static_assert((ENGINE_UNREAL + ENGINE_UNITY + ENGINE_OTHER) == 1, "Only one target engine type can be selected at a time."); // Don't allow both frameworks to be used)
 
 // Make sure a rendering API is selected and only one rendering API is selected
-#define FRAMEWORK_RENDER_DYNAMIC	0
-#define FRAMEWORK_RENDER_D3D11		1
+#define FRAMEWORK_RENDER_DYNAMIC	1
+#define FRAMEWORK_RENDER_D3D11		0
 #define FRAMEWORK_RENDER_D3D12		0
 static_assert((FRAMEWORK_RENDER_DYNAMIC + FRAMEWORK_RENDER_D3D11 + FRAMEWORK_RENDER_D3D12) == 1, "Only one rendering API can be selected at a time,");
 
@@ -86,12 +86,12 @@ static_assert((FRAMEWORK_RENDER_DYNAMIC + FRAMEWORK_RENDER_D3D11 + FRAMEWORK_REN
 
 // Unreal
 #if ENGINE_UNREAL
-#include "Interfaces/Unreal/UnrealConfig.h"
+#include "Interfaces/Unreal/UnrealConfig.hpp"
 #endif
 
 // Unity
 #if ENGINE_UNITY
-#include "Interfaces/Unity/UnityConfig.h"
+#include "Interfaces/Unity/UnityConfig.hpp"
 #endif
 
 // Include the ImGui implementation for the rendering API that is being used
@@ -100,7 +100,7 @@ static_assert((FRAMEWORK_RENDER_DYNAMIC + FRAMEWORK_RENDER_D3D11 + FRAMEWORK_REN
 #pragma comment(lib, "dxgi.lib")
 #include <d3d11.h>
 #include <dxgi1_2.h>
-#include "Libs/ImGui/backends/imgui_impl_dx11.h"
+#include <imgui_impl_dx11.h>
 #endif
 
 #if FRAMEWORK_RENDER_D3D12 || FRAMEWORK_RENDER_DYNAMIC
@@ -108,7 +108,7 @@ static_assert((FRAMEWORK_RENDER_DYNAMIC + FRAMEWORK_RENDER_D3D11 + FRAMEWORK_REN
 #pragma comment(lib, "dxgi.lib")
 #include <D3D12.h>
 #include <dxgi1_4.h>
-#include "Libs/ImGui/backends/imgui_impl_dx12.h"
+#include <imgui_impl_dx12.h>
 #endif
 
 #include "GUI/Styles.hpp" // Custom ImGUI colors and font
