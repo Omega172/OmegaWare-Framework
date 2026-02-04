@@ -55,7 +55,7 @@
 #define FRAMEWORK_VERSION FRAMEWORK_MAJOR_VERSION.FRAMEWORK_MINOR_VERSION.FRAMEWORK_REWORK_VERSION
 
 #define FRAMEWORK_CODENAME "OmegaWare"
-#define TARGET_GAME_NAME "TESTING"
+#define TARGET_GAME_NAME ""
 
 #pragma warning( push ) // disable "operator '!=': deprecated for array types" warning
 #pragma warning( disable : 5056)
