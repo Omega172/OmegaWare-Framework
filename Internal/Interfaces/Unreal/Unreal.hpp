@@ -132,4 +132,88 @@ public:
 
 		return out;
 	}
+
+	enum class EActorType{
+		Other,
+		Guard,
+		Shield,
+		Dozer,
+		Cloaker,
+		Sniper,
+		Grenadier,
+		Taser,
+		Techie,
+		Civilian,
+		ObjectiveItem,
+		InteractableItem,
+		LootBag,
+		
+		Max
+	};
+
+	struct ActorInfo{
+		EActorType m_eType;
+		float m_flDistance;
+		SDK::AActor* m_pActor;
+	};
+
+	EActorType DetermineActorType(SDK::AActor* pActor){
+        if (pActor->IsA(SDK::ACH_SWAT_SHIELD_C::StaticClass()))
+            return EActorType::Shield;
+        else if (pActor->IsA(SDK::ACH_Dozer_C::StaticClass()))
+            return EActorType::Dozer;
+        else if (pActor->IsA(SDK::ACH_Cloaker_C::StaticClass()))
+            return EActorType::Cloaker;
+        else if (pActor->IsA(SDK::ACH_Sniper_C::StaticClass()))
+            return EActorType::Sniper;
+        else if (pActor->IsA(SDK::ACH_Grenadier_C::StaticClass()))
+            return EActorType::Grenadier;
+        else if (pActor->IsA(SDK::ACH_Taser_C::StaticClass()))
+            return EActorType::Taser;
+        else if (pActor->IsA(SDK::ACH_Tower_C::StaticClass()))
+            return EActorType::Techie;
+
+        if(pActor->IsA(SDK::ACH_BaseCop_C::StaticClass()))
+            return EActorType::Guard;
+
+        if(pActor->IsA(SDK::ACH_BaseCivilian_C::StaticClass()))
+            return EActorType::Civilian;
+
+        static std::vector<SDK::UClass*> aObjectiveItemClasses = {
+            SDK::ABP_RFIDTagBase_C::StaticClass(),
+            SDK::ABP_KeycardBase_C::StaticClass(),
+            SDK::ABP_CarriedInteractableBase_C::StaticClass(),
+            SDK::UGE_CarKeys_C::StaticClass(),
+            SDK::UGA_Phone_C::StaticClass()
+        };
+        if(!std::none_of(aObjectiveItemClasses.begin(), aObjectiveItemClasses.end(), [pActor](SDK::UClass* pClass) { return pActor->IsA(pClass); }))
+            return EActorType::ObjectiveItem;
+        
+        if(pActor->IsA(SDK::ASBZInteractionActor::StaticClass()))
+            return EActorType::InteractableItem;
+
+        if(pActor->IsA(SDK::ABP_BaseValuableBag_C::StaticClass()))
+            return EActorType::LootBag;
+
+        return EActorType::Other;        
+    }
+
+	bool ShouldSkipActor(SDK::AActor* pActor, EActorType eType){
+        switch(eType){
+        case EActorType::Guard:
+        case EActorType::Shield:
+        case EActorType::Dozer:
+        case EActorType::Cloaker:
+        case EActorType::Sniper:
+        case EActorType::Grenadier:
+        case EActorType::Taser:
+        case EActorType::Techie:
+        case EActorType::Civilian:
+            return !reinterpret_cast<SDK::ASBZCharacter*>(pActor)->bIsAlive;
+
+        default:
+            break;
+        }
+        return false;
+    }
 };

@@ -55,7 +55,7 @@ public:
 		Hotkey,
 		InputText,
 		Menu,
-		RadioButtonIcon,
+		SidebarButton,
 		HeaderGroup,
 		Body,
 		Page,
@@ -989,20 +989,25 @@ class Checkbox : public ElementInput<bool>
 protected:
 
 public:
-	Checkbox(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {})
+	Checkbox(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {}, bool initialValue = false)
 	{
 		m_sUnique = sUnique;
 		m_ullLocalizedNameHash = ullLocalizedNameHash;
 		m_stStyle = stStyle;
+
+		SetValue(initialValue);
 	};
 
-	Checkbox(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle = {})
+	Checkbox(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle = {}, bool initialValue = false)
 	{
 		m_sUnique = sUnique;
 		m_bUnlocalizedName = true;
 		m_sUnlocalizedName = sUnlocalizedName;
 		m_stStyle = stStyle;
+
+		SetValue(initialValue);
 	};
+
 
 	constexpr EElementType GetType() const override
 	{
@@ -1027,19 +1032,23 @@ class Toggle : public ElementInput<bool>
 protected:
 
 public:
-	Toggle(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {})
+	Toggle(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {}, bool initialValue = false)
 	{
 		m_sUnique = sUnique;
 		m_ullLocalizedNameHash = ullLocalizedNameHash;
 		m_stStyle = stStyle;
+
+		SetValue(initialValue);
 	};
 
-	Toggle(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle = {})
+	Toggle(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle = {}, bool initialValue = false)
 	{
 		m_sUnique = sUnique;
 		m_bUnlocalizedName = true;
 		m_sUnlocalizedName = sUnlocalizedName;
 		m_stStyle = stStyle;
+
+		SetValue(initialValue);
 	};
 
 	constexpr EElementType GetType() const override
@@ -1519,7 +1528,7 @@ public:
 	};
 };
 
-class RadioButtonIcon : public ElementBase
+class SidebarButton : public ElementBase
 {
 protected:
 	const char* m_sIcon;
@@ -1527,7 +1536,7 @@ protected:
 
 public:
 	// Constructor with manual page ID (for existing pages or manual control)
-	RadioButtonIcon(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle, const char* sIcon, uint8_t iPageId)
+	SidebarButton(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle, const char* sIcon, uint8_t iPageId)
 	{
 		m_sUnique = sUnique;
 		m_ullLocalizedNameHash = ullLocalizedNameHash;
@@ -1536,7 +1545,7 @@ public:
 		m_iPageId = iPageId;
 	};
 
-	RadioButtonIcon(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle, const char* sIcon, uint8_t iPageId)
+	SidebarButton(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle, const char* sIcon, uint8_t iPageId)
 	{
 		m_sUnique = sUnique;
 		m_bUnlocalizedName = true;
@@ -1547,7 +1556,7 @@ public:
 	};
 
 	// Constructor with auto page registration (localized)
-	RadioButtonIcon(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle, const char* sIcon, bool bAutoRegisterPage)
+	SidebarButton(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle, const char* sIcon, bool bAutoRegisterPage)
 	{
 		m_sUnique = sUnique;
 		m_ullLocalizedNameHash = ullLocalizedNameHash;
@@ -1560,7 +1569,7 @@ public:
 	};
 
 	// Constructor with auto page registration (unlocalized)
-	RadioButtonIcon(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle, const char* sIcon, bool bAutoRegisterPage)
+	SidebarButton(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle, const char* sIcon, bool bAutoRegisterPage)
 	{
 		m_sUnique = sUnique;
 		m_bUnlocalizedName = true;
@@ -1581,7 +1590,7 @@ public:
 
 	constexpr EElementType GetType() const override
 	{
-		return EElementType::RadioButtonIcon;
+		return EElementType::SidebarButton;
 	};
 
 	void Render() override

@@ -64,13 +64,34 @@ static void APlayerControllerGetPlayerViewPoint_hk(SDK::APlayerController* _this
 
 class Hooks : public BaseFeature
 {
-public:
+private:
+    static SDK::FVector m_vecOriginalLocation;
+    static SDK::FRotator m_rotOriginalRotation;
+    static bool m_bFoundAimbotTarget;
+    static SDK::ACH_BaseCop_C* m_pATarget;
 
+    std::unique_ptr<Toggle> m_pAimbotToggle = std::make_unique<Toggle>(
+		"AIMBOT_TOGGLE",
+		"AIMBOT_TOGGLE"Hashed);
+
+    std::unique_ptr<Toggle> m_pSilentAimToggle = std::make_unique<Toggle>(
+		"SILENT_AIM_TOGGLE",
+		"SILENT_AIM_TOGGLE"Hashed);
+
+    std::unique_ptr<Toggle> m_pMagicBulletToggle = std::make_unique<Toggle>(
+		"MAGIC_BULLET_TOGGLE",
+		"MAGIC_BULLET_TOGGLE"Hashed);
+
+public:
 	bool Setup();
 
 	void Destroy();
 
-	void Run() {};
+    bool SetupMenu();
+
+	void HandleMenu();
+
+	void Run();
 
 	std::string GetName() { return "Hooks"; };
 };

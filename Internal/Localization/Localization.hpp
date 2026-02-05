@@ -1,10 +1,6 @@
 #pragma once
 #include "pch.h"
 
-// http://zuga.net/articles/unicode-all-characters-supported-by-the-font-tahoma/
-const ImWchar DefaultRanges[] = { 0x0020, 0x00FF, 0x0 };
-const ImWchar PolishRanges[] = { 0x0020, 0x00FF, 0x0100, 0x017F, 0x0 };
-
 typedef struct Locale_t
 {
 	std::string sKey;

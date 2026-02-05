@@ -92,11 +92,9 @@ void ExampleFeature::HandleMenu()
 {
 	static std::once_flag onceflag;
 	std::call_once(onceflag, [this]() {
-		Framework::menu->GetChild("SIDEBAR")->InsertElementAfter(m_pExampleFeatureButton.get(), "FEATURE_SEPERATOR");
+		Framework::menu->GetChild("SIDEBAR")->InsertElementAfter(m_pExampleFeatureSidebarButton.get(), "FEATURE_SEPERATOR");
 		
-		auto pHeaderGroup = static_cast<HeaderGroup*>(Framework::menu->GetChild("HEADER_GROUP"));
-		if (pHeaderGroup)
-			pHeaderGroup->AddHeaders(ExampleFeature::s_iExamplePageId, { "EXAMPLE_MAIN"Hashed, "EXAMPLE_SECONDARY"Hashed });
+		reinterpret_cast<HeaderGroup*>(Framework::menu->GetChild("HEADER_GROUP"))->AddHeaders(ExampleFeature::s_iExamplePageId, { "EXAMPLE_MAIN"Hashed, "EXAMPLE_SECONDARY"Hashed });
 
 		m_pMainPageGroupChild->SetCallback([]() {
 			float fGroupWidth = (ImGui::GetWindowWidth() - 10.0f - 10.0f * 2) / 2;

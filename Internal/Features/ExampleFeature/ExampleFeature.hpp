@@ -5,7 +5,7 @@ class ExampleFeature : public BaseFeature
 private:
 	inline static uint8_t s_iExamplePageId = ElementBase::AddPage("EXAMPLE_FEATURE_BUTTON"Hashed, ICON_FA_STAR);
 	
-	std::unique_ptr<RadioButtonIcon> m_pExampleFeatureButton = std::make_unique<RadioButtonIcon>(
+	std::unique_ptr<SidebarButton> m_pExampleFeatureSidebarButton = std::make_unique<SidebarButton>(
 		std::string("EXAMPLE_FEATURE_BUTTON"), 
 		"EXAMPLE_FEATURE_BUTTON"Hashed, 
 		ElementBase::Style_t({ .vec2Size = ImVec2(-0.1f, 0) }), 
@@ -62,7 +62,6 @@ private:
 		"EXAMPLE_COMBO",
 		"EXAMPLE_COMBO"Hashed);
 
-	//input text, slider int, slider float, seperator, AcentButton
 	std::unique_ptr<InputText> m_pExampleInputText = std::make_unique<InputText>(
 		"EXAMPLE_INPUTTEXT",
 		"EXAMPLE_INPUTTEXT"Hashed,

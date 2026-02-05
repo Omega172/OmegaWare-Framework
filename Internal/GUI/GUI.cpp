@@ -25,8 +25,12 @@ void GUI::Render()
 
 	if (bMenuOpen)
 	{
+		// One-time GUI setup
 		static std::once_flag onceflag;
 		std::call_once(onceflag, []() {
+			ElementBase::SetDefaultPage(GuiConfigSidebarButton->GetPageId());
+
+			// Setup Sidebar
 			GuiSidebar->SetPushVarsCallback([]() {
 				ImGuiStyle& imStyle = ImGui::GetStyle();
 				ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, imStyle.ChildRounding);
@@ -40,30 +44,43 @@ void GUI::Render()
 
 			GuiSidebar->AddElement(GuiFeatureSeperator.get());
 			GuiSidebar->AddElement(GuiMiscSeperator.get());
-			GuiSidebar->AddElement(GuiDeveloper.get());
-			GuiSidebar->AddElement(GuiConfig.get());
 
-			// Set the default page (optional - defaults to 0 if not set)
-			ElementBase::SetDefaultPage(GuiConfig->GetPageId());
+			GuiSidebar->InsertElementAfter(GuiAllFeaturesSidebarButton.get(), "FEATURE_SEPERATOR");
+			GuiSidebar->InsertElementAfter(GuiDeveloperSidebarButton.get(), "MISC_SEPERATOR");
+			GuiSidebar->InsertElementAfter(GuiConfigSidebarButton.get(), "DEVELOPER_BUTTON");
 
-			auto pHeaderGroup = static_cast<HeaderGroup*>(GuiHeaderGroup.get());
-			if (pHeaderGroup)
-			{
-				pHeaderGroup->AddHeaders(GuiDeveloper->GetPageId(), { "DEVELOPER_MAIN"Hashed });
-				pHeaderGroup->AddHeaders(GuiConfig->GetPageId(), { "CONFIG_MAIN"Hashed });
-			}
+			// Header
+			GuiHeaderGroup->AddHeaders(GuiAllFeaturesSidebarButton->GetPageId(), { "ALL_FEATURES_MAIN"Hashed });
+			GuiHeaderGroup->AddHeaders(GuiDeveloperSidebarButton->GetPageId(), { "DEVELOPER_MAIN"Hashed });
+			GuiHeaderGroup->AddHeaders(GuiConfigSidebarButton->GetPageId(), { "CONFIG_MAIN"Hashed });
 
-			// Update page IDs for body groups
-			GuiDeveloperPage->SetPageId(GuiDeveloper->GetPageId());
+			GuiHeaderGroup->AddElement(GuiBody.get());
+
+			// Body
+			GuiBody->AddElement(GuiAllFeaturesPage.get());
+			GuiBody->AddElement(GuiDeveloperPage.get());
+			GuiBody->AddElement(GuiConfigPage.get());
+
+			// Pages
+			GuiAllFeaturesPage->SetPageId(GuiAllFeaturesSidebarButton->GetPageId());
+
+			GuiDeveloperPage->SetPageId(GuiDeveloperSidebarButton->GetPageId());
+			GuiDeveloperPage->AddElement(GuiUnloadButton.get());
+			GuiDeveloperPage->AddElement(GuiConsoleVisibility.get());
+			GuiDeveloperPage->AddElement(GuiLocalization.get());
+			
+			GuiConfigPage->SetPageId(GuiConfigSidebarButton->GetPageId());
+			GuiConfigPage->AddElement(GuiSaveConfig.get());
+			GuiConfigPage->AddElement(GuiLoadConfig.get());
+
+			// Developer Page Elements
 			GuiUnloadButton->SetCallback([]() {
 				Framework::bShouldRun = false;
 			});
-			GuiDeveloperPage->AddElement(GuiUnloadButton.get());
 			GuiConsoleVisibility->SetCallback([]() {
 				Framework::console->ToggleVisibility();
 				GuiConsoleVisibility->SetName(Framework::console->GetVisibility() ? "CONSOLE_HIDE"Hashed : "CONSOLE_SHOW"Hashed);
 			});
-			GuiDeveloperPage->AddElement(GuiConsoleVisibility.get());
 			GuiLocalization->SetCallback([]() {
 				std::vector<Locale_t> vecLocales = Localization::GetLocales();
 				for (size_t i = 0; i < vecLocales.size(); ++i)
@@ -80,21 +97,14 @@ void GUI::Render()
 						ImGui::SetItemDefaultFocus();
 				}
 			});
-			GuiDeveloperPage->AddElement(GuiLocalization.get());
 
-			GuiConfigPage->SetPageId(GuiConfig->GetPageId());
+			// Config Page Elements
 			GuiSaveConfig->SetCallback([]() {
 				Framework::config->SaveConfig();
 			});
-			GuiConfigPage->AddElement(GuiSaveConfig.get());
 			GuiLoadConfig->SetCallback([]() {
 				Framework::config->LoadConfig();
 			});
-			GuiConfigPage->AddElement(GuiLoadConfig.get());
-
-			GuiHeaderGroup->AddElement(GuiBody.get());
-			GuiBody->AddElement(GuiDeveloperPage.get());
-			GuiBody->AddElement(GuiConfigPage.get());
 		});
 
 		if (!GuiSidebar->HasParent()) {

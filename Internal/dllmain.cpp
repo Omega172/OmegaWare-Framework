@@ -76,12 +76,15 @@ DWORD WINAPI FrameworkMainThread(LPVOID lpParam)
 	for (auto& pFeature : Framework::g_vecFeatures)
 		pFeature->Destroy();
 
+	MH_STATUS mhStatus = MH_Uninitialize();
+	if (mhStatus == MH_OK)
+		Utils::LogDebug("MinHook uninitialized successfully");
+	else
+		Utils::LogHook("MinHook Uninitialize", mhStatus);
+
 	std::this_thread::sleep_for(std::chrono::seconds(3));
 
 	Framework::console->Destroy();
-
-	// Uninitialize MinHook, will also disable any lurking hooks still active as a safety net
-	MH_Uninitialize();
 
 	// Unload the module and exit the thread
 	FreeLibraryAndExitThread(Framework::hModule, EXIT_SUCCESS);

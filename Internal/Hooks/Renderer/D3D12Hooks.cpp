@@ -8,6 +8,7 @@ struct FrameContext
 	ID3D12CommandAllocator* pCommandAllocator = nullptr;
 	ID3D12Resource* pBackBuffer = nullptr;
 	D3D12_CPU_DESCRIPTOR_HANDLE rtvDescriptor = {};
+	UINT64 fenceValue = 0;
 };
 
 // D3D12 resources
@@ -23,6 +24,9 @@ static HWND g_hWindow = nullptr;
 static bool g_bInitialized = false;
 static bool g_bShuttingDown = false;
 static std::mutex g_initMutex;
+static ID3D12Fence* g_pFence = nullptr;
+static HANDLE g_hFenceEvent = nullptr;
+static UINT64 g_fenceLastSignaledValue = 0;
 
 // Create render targets
 static void CreateRenderTarget()
@@ -85,6 +89,18 @@ static void CleanupDevice() {
 		}
 		delete[] g_frameContext;
 		g_frameContext = nullptr;
+	}
+
+	if (g_hFenceEvent)
+	{
+		CloseHandle(g_hFenceEvent);
+		g_hFenceEvent = nullptr;
+	}
+
+	if (g_pFence)
+	{
+		g_pFence->Release();
+		g_pFence = nullptr;
 	}
 
 	if (g_pd3dCommandList)
@@ -186,7 +202,23 @@ static void RenderImGui(IDXGISwapChain3* pSwapChain)
 				}
 			}
 
-			// Create command allocator
+			// Create fence for frame synchronization
+			if (FAILED(g_pd3dDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&g_pFence))))
+			{
+				Utils::LogError("Failed to create fence");
+				return;
+			}
+			g_fenceLastSignaledValue = 0;
+
+			// Create event for fence synchronization
+			g_hFenceEvent = CreateEventW(nullptr, FALSE, FALSE, nullptr);
+			if (!g_hFenceEvent)
+			{
+				Utils::LogError("Failed to create fence event");
+				return;
+			}
+
+			// Create command allocator (shared across all frames)
 			ID3D12CommandAllocator* allocator = nullptr;
 			if (FAILED(g_pd3dDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&allocator))))
 			{
@@ -203,11 +235,12 @@ static void RenderImGui(IDXGISwapChain3* pSwapChain)
 			}
 			g_pd3dCommandList->Close();
 
-			// Create frame contexts
+			// Create frame contexts with shared command allocator
 			g_frameContext = new FrameContext[g_numBackBuffers];
 			for (UINT i = 0; i < g_numBackBuffers; i++)
 			{
 				g_frameContext[i].pCommandAllocator = allocator;
+				g_frameContext[i].fenceValue = 0;
 			}
 
 			g_pSwapChain = pSwapChain;

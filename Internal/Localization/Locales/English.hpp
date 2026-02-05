@@ -17,10 +17,12 @@ Locale_t localeEnglish{
 
 		{ "SIDEBAR"Hashed, "Sidebar" },
 		{ "FEATURE_SEPERATOR"Hashed, "Features" },
+		{ "ALL_FEATURES_BUTTON"Hashed, "All Features" },
 		{ "MISC_SEPERATOR"Hashed, "Misc" },
 		{ "DEVELOPER_BUTTON"Hashed, "Developer" },
 		{ "CONFIG_BUTTON"Hashed, "Config" },
 
+		{ "ALL_FEATURES_MAIN"Hashed, "Main" },
 		{ "DEVELOPER_MAIN"Hashed, "Main" },
 		{ "CONFIG_MAIN"Hashed, "Main" }
 	}),
