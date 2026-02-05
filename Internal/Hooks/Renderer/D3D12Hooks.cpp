@@ -2,45 +2,41 @@
 
 #if FRAMEWORK_RENDER_D3D12 || FRAMEWORK_RENDER_DYNAMIC
 
-// Frame context structure
-struct FrameContext
-{
-	ID3D12CommandAllocator* pCommandAllocator = nullptr;
-	ID3D12Resource* pBackBuffer = nullptr;
-	D3D12_CPU_DESCRIPTOR_HANDLE rtvDescriptor = {};
-	UINT64 fenceValue = 0;
-};
-
 // D3D12 resources
 static ID3D12Device* g_pd3dDevice = nullptr;
 static ID3D12DescriptorHeap* g_pd3dRtvDescHeap = nullptr;
 static ID3D12DescriptorHeap* g_pd3dSrvDescHeap = nullptr;
 static ID3D12CommandQueue* g_pd3dCommandQueue = nullptr;
+static ID3D12CommandAllocator* g_pd3dCommandAllocator = nullptr;
 static ID3D12GraphicsCommandList* g_pd3dCommandList = nullptr;
 static IDXGISwapChain3* g_pSwapChain = nullptr;
-static FrameContext* g_frameContext = nullptr;
+static ID3D12Resource** g_pBackBuffers = nullptr;
+static D3D12_CPU_DESCRIPTOR_HANDLE* g_rtvDescriptors = nullptr;
 static UINT g_numBackBuffers = 0;
 static HWND g_hWindow = nullptr;
 static bool g_bInitialized = false;
 static bool g_bShuttingDown = false;
 static std::mutex g_initMutex;
-static ID3D12Fence* g_pFence = nullptr;
-static HANDLE g_hFenceEvent = nullptr;
-static UINT64 g_fenceLastSignaledValue = 0;
 
 // Create render targets
 static void CreateRenderTarget()
 {
-	if (!g_pSwapChain || !g_pd3dDevice || !g_pd3dRtvDescHeap || !g_frameContext || g_numBackBuffers == 0)
+	if (!g_pSwapChain || !g_pd3dDevice || !g_pd3dRtvDescHeap || g_numBackBuffers == 0)
 		return;
+
+	// Allocate arrays if not already allocated
+	if (!g_pBackBuffers)
+		g_pBackBuffers = new ID3D12Resource * [g_numBackBuffers];
+	if (!g_rtvDescriptors)
+		g_rtvDescriptors = new D3D12_CPU_DESCRIPTOR_HANDLE[g_numBackBuffers];
 
 	SIZE_T rtvDescriptorSize = g_pd3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = g_pd3dRtvDescHeap->GetCPUDescriptorHandleForHeapStart();
 
-	// Initialize descriptors
+	// Store descriptor handles
 	for (UINT i = 0; i < g_numBackBuffers; i++)
 	{
-		g_frameContext[i].rtvDescriptor = rtvHandle;
+		g_rtvDescriptors[i] = rtvHandle;
 		rtvHandle.ptr += rtvDescriptorSize;
 	}
 
@@ -50,8 +46,8 @@ static void CreateRenderTarget()
 		ID3D12Resource* pBackBuffer = nullptr;
 		if (SUCCEEDED(g_pSwapChain->GetBuffer(i, IID_PPV_ARGS(&pBackBuffer))))
 		{
-			g_pd3dDevice->CreateRenderTargetView(pBackBuffer, nullptr, g_frameContext[i].rtvDescriptor);
-			g_frameContext[i].pBackBuffer = pBackBuffer;
+			g_pd3dDevice->CreateRenderTargetView(pBackBuffer, nullptr, g_rtvDescriptors[i]);
+			g_pBackBuffers[i] = pBackBuffer;
 		}
 	}
 }
@@ -59,15 +55,15 @@ static void CreateRenderTarget()
 // Cleanup render targets
 static void CleanupRenderTarget()
 {
-	if (!g_frameContext || g_numBackBuffers == 0)
-		return;
-
-	for (UINT i = 0; i < g_numBackBuffers; i++)
+	if (g_pBackBuffers)
 	{
-		if (g_frameContext[i].pBackBuffer)
+		for (UINT i = 0; i < g_numBackBuffers; i++)
 		{
-			g_frameContext[i].pBackBuffer->Release();
-			g_frameContext[i].pBackBuffer = nullptr;
+			if (g_pBackBuffers[i])
+			{
+				g_pBackBuffers[i]->Release();
+				g_pBackBuffers[i] = nullptr;
+			}
 		}
 	}
 }
@@ -77,30 +73,22 @@ static void CleanupDevice() {
 
 	CleanupRenderTarget();
 
-	if (g_frameContext)
+	if (g_pBackBuffers)
 	{
-		for (UINT i = 0; i < g_numBackBuffers; i++)
-		{
-			if (g_frameContext[i].pCommandAllocator)
-			{
-				g_frameContext[i].pCommandAllocator->Release();
-				g_frameContext[i].pCommandAllocator = nullptr;
-			}
-		}
-		delete[] g_frameContext;
-		g_frameContext = nullptr;
+		delete[] g_pBackBuffers;
+		g_pBackBuffers = nullptr;
 	}
 
-	if (g_hFenceEvent)
+	if (g_rtvDescriptors)
 	{
-		CloseHandle(g_hFenceEvent);
-		g_hFenceEvent = nullptr;
+		delete[] g_rtvDescriptors;
+		g_rtvDescriptors = nullptr;
 	}
 
-	if (g_pFence)
+	if (g_pd3dCommandAllocator)
 	{
-		g_pFence->Release();
-		g_pFence = nullptr;
+		g_pd3dCommandAllocator->Release();
+		g_pd3dCommandAllocator = nullptr;
 	}
 
 	if (g_pd3dCommandList)
@@ -202,46 +190,20 @@ static void RenderImGui(IDXGISwapChain3* pSwapChain)
 				}
 			}
 
-			// Create fence for frame synchronization
-			if (FAILED(g_pd3dDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&g_pFence))))
-			{
-				Utils::LogError("Failed to create fence");
-				return;
-			}
-			g_fenceLastSignaledValue = 0;
-
-			// Create event for fence synchronization
-			g_hFenceEvent = CreateEventW(nullptr, FALSE, FALSE, nullptr);
-			if (!g_hFenceEvent)
-			{
-				Utils::LogError("Failed to create fence event");
-				return;
-			}
-
 			// Create command allocator (shared across all frames)
-			ID3D12CommandAllocator* allocator = nullptr;
-			if (FAILED(g_pd3dDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&allocator))))
+			if (FAILED(g_pd3dDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&g_pd3dCommandAllocator))))
 			{
 				Utils::LogError("Failed to create command allocator");
 				return;
 			}
 
 			// Create command list
-			if (FAILED(g_pd3dDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, allocator, nullptr, IID_PPV_ARGS(&g_pd3dCommandList))))
+			if (FAILED(g_pd3dDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, g_pd3dCommandAllocator, nullptr, IID_PPV_ARGS(&g_pd3dCommandList))))
 			{
-				allocator->Release();
 				Utils::LogError("Failed to create command list");
 				return;
 			}
 			g_pd3dCommandList->Close();
-
-			// Create frame contexts with shared command allocator
-			g_frameContext = new FrameContext[g_numBackBuffers];
-			for (UINT i = 0; i < g_numBackBuffers; i++)
-			{
-				g_frameContext[i].pCommandAllocator = allocator;
-				g_frameContext[i].fenceValue = 0;
-			}
 
 			g_pSwapChain = pSwapChain;
 
@@ -260,7 +222,7 @@ static void RenderImGui(IDXGISwapChain3* pSwapChain)
 	}
 
 	// Check if all required objects exist
-	if (!g_pd3dCommandQueue || !g_pd3dDevice || !g_frameContext || !g_pd3dSrvDescHeap)
+	if (!g_pd3dCommandQueue || !g_pd3dDevice || !g_pBackBuffers || !g_rtvDescriptors || !g_pd3dSrvDescHeap || !g_pd3dCommandAllocator)
 		return;
 
 	// If shutting down, skip rendering entirely
@@ -282,21 +244,13 @@ static void RenderImGui(IDXGISwapChain3* pSwapChain)
 
 	// Get current back buffer
 	UINT backBufferIdx = g_pSwapChain->GetCurrentBackBufferIndex();
-	FrameContext& frameCtx = g_frameContext[backBufferIdx];
+	ID3D12Resource* pBackBuffer = g_pBackBuffers[backBufferIdx];
+	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = g_rtvDescriptors[backBufferIdx];
 
 	// Reset command allocator
-	frameCtx.pCommandAllocator->Reset();
+	g_pd3dCommandAllocator->Reset();
 
-	// Prepare resource barriers
-	D3D12_RESOURCE_BARRIER barrier = {};
-	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-	barrier.Transition.pResource = frameCtx.pBackBuffer;
-	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-
-	// Wait for GPU to finish previous work to avoid state conflicts
+	// Create temporary fence for this frame
 	ID3D12Fence* pFence = nullptr;
 	if (SUCCEEDED(g_pd3dDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&pFence))))
 	{
@@ -311,10 +265,19 @@ static void RenderImGui(IDXGISwapChain3* pSwapChain)
 		pFence->Release();
 	}
 
+	// Prepare resource barriers
+	D3D12_RESOURCE_BARRIER barrier = {};
+	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	barrier.Transition.pResource = pBackBuffer;
+	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+
 	// Execute rendering commands
-	g_pd3dCommandList->Reset(frameCtx.pCommandAllocator, nullptr);
+	g_pd3dCommandList->Reset(g_pd3dCommandAllocator, nullptr);
 	g_pd3dCommandList->ResourceBarrier(1, &barrier);
-	g_pd3dCommandList->OMSetRenderTargets(1, &frameCtx.rtvDescriptor, FALSE, nullptr);
+	g_pd3dCommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
 	g_pd3dCommandList->SetDescriptorHeaps(1, &g_pd3dSrvDescHeap);
 
 	// Render ImGui draw data

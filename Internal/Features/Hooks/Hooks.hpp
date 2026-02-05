@@ -21,6 +21,15 @@ static void UObjectProcessEvent_hk(const SDK::UObject* pObject, class SDK::UFunc
         return;
     }
 
+    /*
+    std::string sClassName = pObject->GetName();
+	std::string sFnName = pFunction->GetName();
+
+	if (sFnName.contains("ClientPlayForceFeedback_Internal")) {
+		return;
+	}
+    */
+
     if (m_vecUObjectProcessEventCallbacks.size() > 0) {
         for (const auto& callback : m_vecUObjectProcessEventCallbacks) {
             if (callback(pObject, pFunction, pParams))
@@ -65,10 +74,13 @@ static void APlayerControllerGetPlayerViewPoint_hk(SDK::APlayerController* _this
 class Hooks : public BaseFeature
 {
 private:
-    static SDK::FVector m_vecOriginalLocation;
-    static SDK::FRotator m_rotOriginalRotation;
-    static bool m_bFoundAimbotTarget;
-    static SDK::ACH_BaseCop_C* m_pATarget;
+    SDK::FVector m_vecOriginalLocation;
+    SDK::FRotator m_rotOriginalRotation;
+    bool m_bFoundAimbotTarget;
+    SDK::ACH_BaseCop_C* m_pATarget;
+    std::chrono::milliseconds m_durationPing{ 100 };
+    bool m_bIsSoloGame;
+
 
     std::unique_ptr<Toggle> m_pAimbotToggle = std::make_unique<Toggle>(
 		"AIMBOT_TOGGLE",
@@ -81,6 +93,22 @@ private:
     std::unique_ptr<Toggle> m_pMagicBulletToggle = std::make_unique<Toggle>(
 		"MAGIC_BULLET_TOGGLE",
 		"MAGIC_BULLET_TOGGLE"Hashed);
+
+    std::unique_ptr<Toggle> m_pInstantInteractToggle = std::make_unique<Toggle>(
+        "INSTANT_INTERACT_TOGGLE",
+        "INSTANT_INTERACT_TOGGLE"Hashed);
+
+    std::unique_ptr<Toggle> m_pInstantMinigameToggle = std::make_unique<Toggle>(
+        "INSTANT_MINIGAME_TOGGLE",
+        "INSTANT_MINIGAME_TOGGLE"Hashed);
+
+    std::unique_ptr<Toggle> m_pKeypadHelperToggle = std::make_unique<Toggle>(
+        "KEYPAD_HELPER_TOGGLE",
+        "KEYPAD_HELPER_TOGGLE"Hashed);
+
+    std::unique_ptr<Toggle> m_pClientMoveToggle = std::make_unique<Toggle>(
+        "CLIENT_MOVE_TOGGLE",
+        "CLIENT_MOVE_TOGGLE"Hashed);
 
 public:
 	bool Setup();

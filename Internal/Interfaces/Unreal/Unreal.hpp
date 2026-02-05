@@ -216,4 +216,13 @@ public:
         }
         return false;
     }
+
+	static SDK::ASBZPlayerCharacter* GetSBZLocalPlayer()
+	{
+		SDK::APawn* pAcknowledgedPawn = GetAcknowledgedPawn();
+		if (!IsValidObjectPtr(pAcknowledgedPawn))
+			return nullptr;
+
+		return reinterpret_cast<SDK::ASBZPlayerCharacter*>(pAcknowledgedPawn);
+	}
 };
