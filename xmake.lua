@@ -51,9 +51,9 @@ target("Internal")
     add_files("Internal/Features/*/*.cpp")
 
     -- If targeting Unreal Engine games, include the SDK files
-    --add_files("Internal/Interfaces/Unreal/SDK/Basic.cpp")
-    --add_files("Internal/Interfaces/Unreal/SDK/CoreUObject_functions.cpp")
-    --add_files("Internal/Interfaces/Unreal/SDK/Engine_functions.cpp")
+    add_files("Internal/Interfaces/Unreal/SDK/Basic.cpp")
+    add_files("Internal/Interfaces/Unreal/SDK/CoreUObject_functions.cpp")
+    add_files("Internal/Interfaces/Unreal/SDK/Engine_functions.cpp")
 
     add_packages("vcpkg::minhook", "vcpkg::imgui", "vcpkg::freetype", "vcpkg::nlohmann-json", "vcpkg::libpng", "vcpkg::brotli", "vcpkg::zlib", "vcpkg::bzip2")
     add_syslinks("d3d11", "d3d12", "dxgi")

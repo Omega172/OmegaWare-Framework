@@ -55,16 +55,16 @@
 #define FRAMEWORK_VERSION FRAMEWORK_MAJOR_VERSION.FRAMEWORK_MINOR_VERSION.FRAMEWORK_REWORK_VERSION
 
 #define FRAMEWORK_CODENAME "OmegaWare"
-#define TARGET_GAME_NAME ""
+#define TARGET_GAME_NAME "Payday 3"
 
 #pragma warning( push ) // disable "operator '!=': deprecated for array types" warning
 #pragma warning( disable : 5056)
 static_assert(TARGET_GAME_NAME != "", "Target game not set, this HAS to be set or it fucks up the logging system, the console, the menu, and the config system.");
 #pragma warning( pop )
 
-#define ENGINE_UNREAL	0
+#define ENGINE_UNREAL	1
 #define ENGINE_UNITY	0
-#define ENGINE_OTHER	1// Other is just the catch all for any other game engine or project
+#define ENGINE_OTHER	0 // Other is just the catch all for any other game engine or project
 
 static_assert((ENGINE_UNREAL + ENGINE_UNITY + ENGINE_OTHER) == 1, "Only one target engine type can be selected at a time."); // Don't allow both frameworks to be used)
 
