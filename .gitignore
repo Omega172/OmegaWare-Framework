@@ -1,5 +1,3 @@
 .vscode/compile_commands.json
 Build/
 .xmake
-Internal/Interfaces/Unreal/SDK/
-Internal/Interfaces/Unreal/SDK.hpp
