@@ -1,0 +1,26 @@
+; Exports for the Proxy target when built as version.dll (see proxy_dll_name in xmake.lua).
+; Each of these is implemented in ProxyMain.cpp as a thin forwarder to the genuine version.dll,
+; loaded and resolved at runtime via LoadLibrary/GetProcAddress rather than linker-level
+; forwarding, so no renamed copy of the system DLL needs to exist anywhere.
+;
+; List taken from `dumpbin /exports C:\Windows\System32\version.dll`. If you retarget this to a
+; different DLL (winmm.dll, dinput8.dll, ...), regenerate this list and ProxyMain.cpp's
+; forwarders from that DLL instead, and update proxy_dll_name to match.
+EXPORTS
+    GetFileVersionInfoA
+    GetFileVersionInfoByHandle
+    GetFileVersionInfoExA
+    GetFileVersionInfoExW
+    GetFileVersionInfoSizeA
+    GetFileVersionInfoSizeExA
+    GetFileVersionInfoSizeExW
+    GetFileVersionInfoSizeW
+    GetFileVersionInfoW
+    VerFindFileA
+    VerFindFileW
+    VerInstallFileA
+    VerInstallFileW
+    VerLanguageNameA
+    VerLanguageNameW
+    VerQueryValueA
+    VerQueryValueW

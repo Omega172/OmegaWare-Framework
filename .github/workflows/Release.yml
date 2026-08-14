@@ -14,7 +14,7 @@ permissions:
 jobs:
   build:
     runs-on: windows-latest
-    timeout-minutes: 5
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -22,16 +22,8 @@ jobs:
         architecture: [x64]
 
     steps:
-    - name: Checkout Repository with Submodules
+    - name: Checkout Repository
       uses: actions/checkout@v4
-      with:
-        submodules: recursive  # Fetch submodules recursively
-        fetch-depth: 0  # Ensures a full clone (needed for some submodules)
-
-    - name: Initialize and Update Submodules (if needed)
-      run: |
-        git submodule sync --recursive
-        git submodule update --init --recursive
 
     - name: Install XMake
       uses: xmake-io/github-action-setup-xmake@v1
@@ -46,20 +38,22 @@ jobs:
       run: |
         xmake build
 
-    - name: Upload Build Artifact
+    - name: Upload Build Artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: Internal-${{ matrix.build_configuration }}-${{ matrix.architecture }}
-        path: Build/${{ matrix.build_configuration }}/Internal.dll
+        name: OmegaWare-${{ matrix.build_configuration }}-${{ matrix.architecture }}
+        path: |
+          Build/Release/Internal/Internal.dll
+          Build/Release/Proxy/version.dll
 
     - name: Create Release Archive
       run: |
-        Compress-Archive -Path Build/${{ matrix.build_configuration }}/Internal.dll -DestinationPath Internal-${{ matrix.build_configuration }}-${{ matrix.architecture }}.zip
+        Compress-Archive -Path Build/Release/Internal/Internal.dll,Build/Release/Proxy/version.dll -DestinationPath OmegaWare-${{ matrix.build_configuration }}-${{ matrix.architecture }}.zip
 
     - name: Upload Release Asset
       if: github.event_name == 'release'
       uses: softprops/action-gh-release@v1
       with:
-        files: Internal-${{ matrix.build_configuration }}-${{ matrix.architecture }}.zip
+        files: OmegaWare-${{ matrix.build_configuration }}-${{ matrix.architecture }}.zip
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

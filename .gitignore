@@ -1,6 +1,4 @@
+.claude
 .vscode/compile_commands.json
-Build/
 .xmake
-.github/*
-!.github/workflows/
-!.github/FUNDING.yml
+Build
