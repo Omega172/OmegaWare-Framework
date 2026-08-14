@@ -30,7 +30,7 @@ namespace Framework {
 	inline std::unique_ptr<RendererHooks> renderer = std::make_unique<RendererHooks>();
 
 	inline std::unique_ptr<Menu> menu = std::make_unique<Menu>(Framework::Title, Framework::Title, ElementBase::Style_t({
-	.vec2Size = ImVec2{ 600.f, 506.f },
+	.vec2Size = GUI::kBaseMenuSize,
 	.iFlags = ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground }));
 
 #if ENGINE_UNREAL

@@ -76,7 +76,7 @@ namespace CRC64
     {
         size_t crc = 0xffffffffffffffff;
         for (size_t i = 0; i < size; i++)
-            crc = (crc >> 8) ^ table[(crc & sz[i]) & 0xff];
+            crc = (crc >> 8) ^ table[(crc ^ sz[i]) & 0xff];
 
         return crc ^ 0xffffffffffffffff;
     };
@@ -85,7 +85,7 @@ namespace CRC64
     {
         size_t crc = 0xffffffffffffffff;
         for (char c : s)
-            crc = (crc >> 8) ^ table[(crc & c) & 0xff];
+            crc = (crc >> 8) ^ table[(crc ^ c) & 0xff];
 
         return crc ^ 0xffffffffffffffff;
     };

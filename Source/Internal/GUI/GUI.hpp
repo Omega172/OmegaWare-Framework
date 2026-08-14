@@ -21,11 +21,15 @@ namespace GUI
 {
 	inline bool bMenuOpen = true;
 
+	// Single source of truth for the menu's un-scaled size, shared between Includes.hpp
+	// (initial Menu construction) and GUI.cpp's UI_SCALE handling (Menu::RequestResize()).
+	inline constexpr ImVec2 kBaseMenuSize = ImVec2(900.f, 650.f);
+
 	inline float sWIDTH = float(GetSystemMetrics(SM_CXSCREEN));
 	inline float sHEIGHT = float(GetSystemMetrics(SM_CYSCREEN));
 
 	inline std::unique_ptr<Child> GuiSidebar = std::make_unique<Child>(std::string("SIDEBAR"), "SIDEBAR"Hashed, ElementBase::Style_t{
-		.vec2Size = ImVec2(160.f, 0.f), .iFlags = ImGuiChildFlags_Border }, ImGuiWindowFlags_NoBackground);
+		.vec2Size = ImVec2(kSidebarWidth, 0.f), .iFlags = ImGuiChildFlags_Border }, ImGuiWindowFlags_NoBackground);
 	inline std::unique_ptr<SeperatorText> GuiFeatureSeperator = std::make_unique<SeperatorText>(std::string("FEATURE_SEPERATOR"), "FEATURE_SEPERATOR"Hashed);
 	inline std::unique_ptr<SeperatorText> GuiMiscSeperator = std::make_unique<SeperatorText>(std::string("MISC_SEPERATOR"), "MISC_SEPERATOR"Hashed);
 	inline std::unique_ptr<RadioButtonIcon> GuiDeveloper = std::make_unique<RadioButtonIcon>(std::string("DEVELOPER_BUTTON"), "DEVELOPER_BUTTON"Hashed, ElementBase::Style_t{
@@ -49,6 +53,14 @@ namespace GUI
 		.eSameLine = ElementBase::ESameLine::Same });
 	inline std::unique_ptr<Combo> GuiLocalization = std::make_unique<Combo>(std::string("LANGUAGE"), "LANGUAGE"Hashed, ElementBase::Style_t{
 		.iFlags = ImGuiComboFlags_WidthFitPreview });
+	inline std::unique_ptr<SliderFloat> GuiUIScale = std::make_unique<SliderFloat>(std::string("UI_SCALE"), "UI_SCALE"Hashed, ElementBase::Style_t{
+		.iFlags = ImGuiComboFlags_WidthFitPreview }, 1.0f, 0.5f, 2.0f, "%.2fx");
+
+	// Snapshot of ImGui::GetStyle() taken right after SetupStyle() runs (see GUI::Render()'s
+	// once-only chrome setup), so UI_SCALE can be reapplied from a stable base each time it
+	// changes instead of compounding ScaleAllSizes() on top of an already-scaled style.
+	inline ImGuiStyle BaseStyle{};
+	inline float fLastAppliedUIScale = 1.0f;
 
 	// Config Page Elements
 	inline std::unique_ptr<Page> GuiConfigPage = std::make_unique<Page>("CONFIG_PAGE", ElementBase::Style_t(), 0, 0);

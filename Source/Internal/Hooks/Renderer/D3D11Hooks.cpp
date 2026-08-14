@@ -7,6 +7,7 @@ static ID3D11Device* g_pDevice = NULL;
 static ID3D11DeviceContext* g_pDeviceContext = NULL;
 static ID3D11RenderTargetView* g_pRenderTargetView = NULL;
 static IDXGISwapChain* g_pSwapChain = NULL;
+static bool g_bShuttingDown = false;
 
 static DXGI_FORMAT GetCorrectDXGIFormat(DXGI_FORMAT currentFormat) {
 	switch (currentFormat) {
@@ -99,6 +100,12 @@ static void CleanupDevice() {
 
 static void RenderImGui(IDXGISwapChain* pSwapChain) {
 	if (!ImGui::GetCurrentContext())
+		return;
+
+	// If shutting down, skip rendering entirely - see the g_bShuttingDown + Sleep(100) in
+	// D3D11Destroy(): without this, the render thread can still be in here using the ImGui
+	// backend data at the exact moment the unload thread frees it via ImGui_ImplDX11_Shutdown().
+	if (g_bShuttingDown)
 		return;
 
 	if (!ImGui::GetIO().BackendRendererUserData) {
@@ -306,8 +313,24 @@ bool RendererHooks::D3D11Setup()
 	return true;
 }
 
+void RendererHooks::D3D11RebuildFontTexture()
+{
+	// Only meaningful once ImGui_ImplDX11_Init() has actually run (see RenderImGui() - it's
+	// lazy, tied to the first successful Present call), otherwise there's no GPU-side font
+	// texture yet to invalidate; ImportFonts() having rebuilt the atlas is enough on its own
+	// and the fresh sizes get picked up the first time Init() does run.
+	if (!ImGui::GetCurrentContext() || !ImGui::GetIO().BackendRendererUserData)
+		return;
+
+	ImGui_ImplDX11_InvalidateDeviceObjects();
+	ImGui_ImplDX11_CreateDeviceObjects();
+}
+
 void RendererHooks::D3D11Destroy()
 {
+	g_bShuttingDown = true;
+	Sleep(100); // Give an in-flight Present call a chance to see the shutdown flag and return
+
 	oPresent.Remove();
 	oPresent1.Remove();
 	oResizeBuffers.Remove();

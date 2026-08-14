@@ -68,7 +68,14 @@ inline void SetupStyle()
     style.Colors[ImGuiCol_TitleBgActive] = style.Colors[ImGuiCol_TitleBg];
 }
 
-inline void ImportFonts()
+inline constexpr float kBaseFontSize = 14.f;
+inline constexpr float kBaseBigFontSize = 20.f;
+
+// flScale re-rasterizes every font at scale * its base pixel size via FreeType, rather than
+// stretching already-rasterized bitmaps (which is what a naive io.FontGlobalScale-only
+// approach does, and why that gets blurry/pixelated above 1.0x) - see GUI.cpp's UI_SCALE
+// handling, which clears and rebuilds the atlas through this whenever the slider changes.
+inline void ImportFonts(float flScale = 1.0f)
 {
 	ImGuiIO& io = ImGui::GetIO();
 
@@ -93,7 +100,7 @@ inline void ImportFonts()
     static ImVector<ImWchar> mergedRanges;
     builder.BuildRanges(&mergedRanges);
 
-    TahomaFont = io.Fonts->AddFontFromMemoryCompressedTTF(Poppins_Medium_compressed_data, Poppins_Medium_compressed_size, 14, &cfg, mergedRanges.Data);
+    TahomaFont = io.Fonts->AddFontFromMemoryCompressedTTF(Poppins_Medium_compressed_data, Poppins_Medium_compressed_size, kBaseFontSize * flScale, &cfg, mergedRanges.Data);
 
     // merge in icons from Font Awesome
     static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_16_FA, 0 };
@@ -102,10 +109,10 @@ inline void ImportFonts()
     ImFontConfig fa_config; fa_config.MergeMode = true; fa_config.PixelSnapH = true;
     fa_config.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags::ImGuiFreeTypeBuilderFlags_ForceAutoHint;
 
-    ImFont* fontAwesome = io.Fonts->AddFontFromMemoryCompressedTTF(fa6_solid_compressed_data, fa6_solid_compressed_size, 14, &fa_config, icons_ranges);
-    ImFont* fontAwesomeBrands = io.Fonts->AddFontFromMemoryCompressedTTF(fa_brands_400_compressed_data, fa_brands_400_compressed_size, 14, &fa_config, icons_ranges_brands);
+    ImFont* fontAwesome = io.Fonts->AddFontFromMemoryCompressedTTF(fa6_solid_compressed_data, fa6_solid_compressed_size, kBaseFontSize * flScale, &fa_config, icons_ranges);
+    ImFont* fontAwesomeBrands = io.Fonts->AddFontFromMemoryCompressedTTF(fa_brands_400_compressed_data, fa_brands_400_compressed_size, kBaseFontSize * flScale, &fa_config, icons_ranges_brands);
 
-    TahomaBigFont = io.Fonts->AddFontFromMemoryCompressedTTF(Poppins_Medium_compressed_data, Poppins_Medium_compressed_size, 20, &cfg, mergedRanges.Data);
+    TahomaBigFont = io.Fonts->AddFontFromMemoryCompressedTTF(Poppins_Medium_compressed_data, Poppins_Medium_compressed_size, kBaseBigFontSize * flScale, &cfg, mergedRanges.Data);
 
     TahomaFontFeature = TahomaFont;
 }

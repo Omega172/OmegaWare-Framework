@@ -580,6 +580,18 @@ bool RendererHooks::D3D12Setup()
 	return true;
 }
 
+void RendererHooks::D3D12RebuildFontTexture()
+{
+	// Only meaningful once InitImGui() has actually run (see RenderImGui() - it's lazy, tied
+	// to the first successful Present call); ImportFonts() having rebuilt the atlas is enough
+	// on its own otherwise, and the fresh sizes get picked up the first time Init() does run.
+	if (!g_bInitialized)
+		return;
+
+	ImGui_ImplDX12_InvalidateDeviceObjects();
+	ImGui_ImplDX12_CreateDeviceObjects();
+}
+
 void RendererHooks::D3D12Destroy()
 {
 	g_bShuttingDown = true;

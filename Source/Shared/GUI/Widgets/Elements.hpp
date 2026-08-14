@@ -2,7 +2,9 @@
 #include "pch.h"
 
 // Shared by Menu, HeaderGroup and Body so the sidebar column stays a single source of truth.
-inline constexpr float kSidebarWidth = 160.f;
+// Wider than the original 160px so translated sidebar labels (longer languages run past
+// English) have room without clipping.
+inline constexpr float kSidebarWidth = 210.f;
 
 class PageManager
 {
@@ -570,7 +572,22 @@ protected:
 	ImVec2 m_vec2MinSize = { 0.f, 0.f };
 	ImVec2 m_vec2MaxSize = { 9999.f, 9999.f };
 
+	// SetNextWindowSize(ImGuiCond_Once) below only takes effect the very first frame this
+	// window ever exists, so a later programmatic resize (see RequestResize(), used by
+	// GUI.cpp's UI_SCALE handling) needs one ImGuiCond_Always frame to actually move the
+	// window; ImGuiCond_Once's "first call" bookkeeping is untouched by that, so manual
+	// resizing by the user still works normally on every other frame.
+	bool m_bForceResize = false;
+
 public:
+	// Rescales the whole menu window, not just the elements inside it - call whenever the
+	// content's effective scale (e.g. UI_SCALE) changes.
+	void RequestResize(ImVec2 vec2NewSize)
+	{
+		m_stStyle.vec2Size = vec2NewSize;
+		m_bForceResize = true;
+	};
+
 
 	Menu(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {})
 	{
@@ -645,8 +662,9 @@ public:
 		float FooterHeight = ImGui::GetFrameHeight();
 		float HeaderHeight = ImGui::GetFrameHeight() + style.WindowPadding.y * 2;
 
-		ImGui::SetNextWindowSize(m_stStyle.vec2Size, ImGuiCond_Once);
-		ImGui::SetNextWindowPos(ImGui::GetIO().DisplaySize / 2 - m_stStyle.vec2Size / 2, ImGuiCond_Once);
+		ImGui::SetNextWindowSize(m_stStyle.vec2Size, m_bForceResize ? ImGuiCond_Always : ImGuiCond_Once);
+		ImGui::SetNextWindowPos(ImGui::GetIO().DisplaySize / 2 - m_stStyle.vec2Size / 2, m_bForceResize ? ImGuiCond_Always : ImGuiCond_Once);
+		m_bForceResize = false;
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);

@@ -45,3 +45,17 @@ void RendererHooks::Destroy()
 	return D3D11Destroy();
 #endif
 }
+
+void RendererHooks::RebuildFontTexture()
+{
+#if FRAMEWORK_RENDER_DYNAMIC
+	if (iActiveRendererType == D3D11)
+		D3D11RebuildFontTexture();
+	else if (iActiveRendererType == D3D12)
+		D3D12RebuildFontTexture();
+#elif FRAMEWORK_RENDER_D3D12
+	D3D12RebuildFontTexture();
+#elif FRAMEWORK_RENDER_D3D11
+	D3D11RebuildFontTexture();
+#endif
+}

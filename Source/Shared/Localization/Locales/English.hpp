@@ -14,6 +14,7 @@ Locale_t localeEnglish{
 		{ "SAVE_CONFIG"Hashed, "Save Config" },
 		{ "LOAD_CONFIG"Hashed, "Load Config" },
 		{ "LANGUAGE"Hashed, "Language" },
+		{ "UI_SCALE"Hashed, "UI Scale" },
 
 		{ "SIDEBAR"Hashed, "Sidebar" },
 		{ "FEATURE_SEPERATOR"Hashed, "Features" },

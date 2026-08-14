@@ -27,6 +27,10 @@ void GUI::Render()
 	{
 		static std::once_flag onceflag;
 		std::call_once(onceflag, []() {
+			// SetupStyle() has already run by now (it happens once on the WndProc thread
+			// before the render loop starts) - snapshot it as the un-scaled base for UI_SCALE.
+			BaseStyle = ImGui::GetStyle();
+
 			GuiSidebar->SetPushVarsCallback([]() {
 				ImGuiStyle& imStyle = ImGui::GetStyle();
 				ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, imStyle.ChildRounding);
@@ -81,6 +85,7 @@ void GUI::Render()
 				}
 			});
 			GuiDeveloperPage->AddElement(GuiLocalization.get());
+			GuiDeveloperPage->AddElement(GuiUIScale.get());
 
 			GuiConfigPage->SetPageId(GuiConfig->GetPageId());
 			GuiSaveConfig->SetCallback([]() {
@@ -100,6 +105,28 @@ void GUI::Render()
 		if (!GuiSidebar->HasParent()) {
 			Framework::menu->AddElement(GuiSidebar.get());
 			Framework::menu->AddElement(GuiHeaderGroup.get());
+		}
+
+		// UI_SCALE has no value-changed callback (this widget library doesn't support one),
+		// so reapply from the un-scaled BaseStyle/kBaseMenuSize whenever the slider's value
+		// moves - scaling the whole window, not just the elements inside it, and rebuilding
+		// the FreeType atlas at the new pixel size rather than stretching bitmaps (which is
+		// what io.FontGlobalScale alone does, and why that looks pixelated above 1.0x).
+		const float flUIScale = GuiUIScale->GetValue();
+		if (flUIScale != fLastAppliedUIScale)
+		{
+			ImGuiStyle style = BaseStyle;
+			style.ScaleAllSizes(flUIScale);
+			ImGui::GetStyle() = style;
+
+			ImGui::GetIO().Fonts->Clear();
+			ImportFonts(flUIScale);
+			Framework::renderer->RebuildFontTexture();
+			CurrentFont = TahomaFont; // stale after Fonts->Clear() - see Localization.cpp's SetLocale()
+
+			Framework::menu->RequestResize(GUI::kBaseMenuSize * flUIScale);
+
+			fLastAppliedUIScale = flUIScale;
 		}
 
 		for (auto& pFeature : Framework::g_vecFeatures)
