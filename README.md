@@ -61,6 +61,9 @@ The framework itself can be configured inside of `FrameworkConfig.h`
 - **`MONO_DLL`**: Mono DLL name (default: `mono-2.0-bdwgc.dll`)
 - **`DEFAULT_ASSEMBLY_NAME`**: Path to Assembly-CSharp.dll
 
+### Translations
+- Want to add a translation? Go [here](https://github.com/Omega172/OmegaWare-Framework/blob/main/Source/Shared/Localization/Locales/Locales.hpp)
+
 ---
 
 ## 🚀 How to Build

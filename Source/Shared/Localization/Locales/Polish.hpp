@@ -3,7 +3,7 @@
 
 Locale_t localePolish{
 	.sKey = "Polski",
-	.ullKeyHash = "POL"Hashed,
+	.ullKeyHash = "POL"Hashed, // https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes use one of the three letter language codes for your chosen language
 	.hMenuFont = &TahomaFont,
 	.hFeatureFont = &TahomaFontFeature,
 	.umLocalizedStrings = std::unordered_map<size_t, std::string>({
