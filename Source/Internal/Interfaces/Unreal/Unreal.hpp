@@ -1,7 +1,6 @@
 #pragma once
 #include "pch.h"
 
-
 inline bool FrameworkUnrealInit()
 {
 	SDK::UWorld* pGWorld = SDK::UWorld::GetWorld();

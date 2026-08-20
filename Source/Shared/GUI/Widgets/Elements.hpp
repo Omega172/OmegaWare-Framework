@@ -812,6 +812,13 @@ public:
 		return EElementType::Button;
 	};
 
+	ImVec2 GetNaturalSize() const override
+	{
+		const ImGuiStyle& style = ImGui::GetStyle();
+		ImVec2 s = ImGui::CalcTextSize(GetName().c_str(), NULL, true);
+		return ImVec2(s.x + style.FramePadding.x * 2.0f, s.y + style.FramePadding.y * 2.0f);
+	};
+
 	void Render() override
 	{
 		if (!m_stStyle.bVisible)
@@ -822,7 +829,11 @@ public:
 		if (m_PositionCallback)
 			m_PositionCallback();
 
-		if (ImAdd::Button(GetName().c_str(), m_stStyle.vec2Size * g_flUIScale))
+		ImVec2 vec2Size = m_stStyle.vec2Size * g_flUIScale;
+		if (m_stStyle.vec2Size.x > 0.0f)
+			vec2Size.x = ImMax(vec2Size.x, GetNaturalSize().x);
+
+		if (ImAdd::Button(GetName().c_str(), vec2Size))
 			if (m_Callback)
 				m_Callback();
 
@@ -867,6 +878,13 @@ public:
 		return EElementType::Button;
 	};
 
+	ImVec2 GetNaturalSize() const override
+	{
+		const ImGuiStyle& style = ImGui::GetStyle();
+		ImVec2 s = ImGui::CalcTextSize(GetName().c_str(), NULL, true);
+		return ImVec2(s.x + style.FramePadding.x * 2.0f, s.y + style.FramePadding.y * 2.0f);
+	};
+
 	void Render() override
 	{
 		if (!m_stStyle.bVisible)
@@ -874,7 +892,11 @@ public:
 
 		SameLine();
 
-		if (ImAdd::AccentButton(GetName().c_str(), m_stStyle.vec2Size * g_flUIScale))
+		ImVec2 vec2Size = m_stStyle.vec2Size * g_flUIScale;
+		if (m_stStyle.vec2Size.x > 0.0f)
+			vec2Size.x = ImMax(vec2Size.x, GetNaturalSize().x);
+
+		if (ImAdd::AccentButton(GetName().c_str(), vec2Size))
 			if (m_Callback)
 				m_Callback();
 
@@ -930,6 +952,13 @@ public:
 		m_WidthCallback = Callback;
 	};
 
+	ImVec2 GetNaturalSize() const override
+	{
+		const ImGuiStyle& style = ImGui::GetStyle();
+		float flPreviewWidth = ImGui::CalcTextSize(m_sPreviewlabel.c_str(), NULL, true).x;
+		return ImVec2(ImGui::GetFrameHeight() + flPreviewWidth + style.FramePadding.x * 2.0f, ImGui::GetFrameHeight());
+	};
+
 	void Render() override
 	{
 		if (!m_stStyle.bVisible)
@@ -940,7 +969,7 @@ public:
 		ImGuiComboFlags iFlags = m_stStyle.iFlags;
 		if (m_WidthCallback)
 		{
-			ImGui::SetNextItemWidth(m_WidthCallback());
+			ImGui::SetNextItemWidth(ImMax(m_WidthCallback(), GetNaturalSize().x));
 			iFlags &= ~ImGuiComboFlags_WidthFitPreview;
 		}
 
@@ -1193,6 +1222,13 @@ public:
 		return EElementType::Hotkey;
 	};
 
+	ImVec2 GetNaturalSize() const override
+	{
+		const ImGuiStyle& style = ImGui::GetStyle();
+		ImVec2 s = ImGui::CalcTextSize(ImGui::GetKeyName(m_eKey), NULL, true);
+		return ImVec2(s.x + style.FramePadding.x * 2.0f, s.y + style.FramePadding.y * 2.0f);
+	};
+
 	void Render() override
 	{
 		if (!m_stStyle.bVisible)
@@ -1243,9 +1279,13 @@ public:
 
 		std::string BtnName = (m_bSetting) ? "..." : ImGui::GetKeyName(m_eKey);
 
+		ImVec2 vec2BtnSize = m_stStyle.vec2Size * g_flUIScale;
+		if (m_stStyle.vec2Size.x > 0.0f)
+			vec2BtnSize.x = ImMax(vec2BtnSize.x, GetNaturalSize().x);
+
 		if (ImGui::GetActiveID() == id) {
 			ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetColorU32(ImGuiCol_ButtonActive));
-			ImAdd::Button("...", m_stStyle.vec2Size * g_flUIScale);
+			ImAdd::Button("...", vec2BtnSize);
 			ImGui::PopStyleColor();
 
 			ImGui::GetCurrentContext()->ActiveIdAllowOverlap = true;
@@ -1255,7 +1295,7 @@ public:
 				m_bSetting = false;
 			}
 		}
-		else if (ImAdd::Button(BtnName.c_str(), m_stStyle.vec2Size * g_flUIScale) || m_bSetting) {
+		else if (ImAdd::Button(BtnName.c_str(), vec2BtnSize) || m_bSetting) {
 			ImGui::SetActiveID(id, ImGui::GetCurrentWindow());
 			m_bSetting = true;
 		}
@@ -2149,7 +2189,11 @@ public:
 
 		SameLine();
 
-		if (ImAdd::RadioButtonIcon(GetName().c_str(), m_sIcon, GetName().c_str(), &eCurrentPage, m_iPageId, m_stStyle.vec2Size * g_flUIScale)) {
+		ImVec2 vec2Size = m_stStyle.vec2Size * g_flUIScale;
+		if (m_stStyle.vec2Size.x > 0.0f)
+			vec2Size.x = ImMax(vec2Size.x, GetNaturalSize().x);
+
+		if (ImAdd::RadioButtonIcon(GetName().c_str(), m_sIcon, GetName().c_str(), &eCurrentPage, m_iPageId, vec2Size)) {
 			eCurrentPage = m_iPageId;
 			eCurrentSubPage = 0;
 		}
