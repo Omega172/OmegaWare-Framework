@@ -8,7 +8,10 @@ inline bool FrameworkUnrealInit()
 		Utils::LogError("Waiting for GWorld to initalize");
 
 	while (!pGWorld)
-		continue;
+	{
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		pGWorld = SDK::UWorld::GetWorld();
+	}
 
 	return true;
 }

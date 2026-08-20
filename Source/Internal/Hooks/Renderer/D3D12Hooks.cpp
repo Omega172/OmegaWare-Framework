@@ -442,17 +442,27 @@ static bool GetD3D12Addresses(ID3D12Device** ppDevice, ID3D12CommandQueue** ppCo
 	IDXGISwapChain1* pTempSwapChain1 = nullptr;
 	IDXGISwapChain3* pTempSwapChain = nullptr;
 	IDXGIFactory4* pFactory = nullptr;
+	IDXGIAdapter* pWarpAdapter = nullptr;
 	bool bSuccess = false;
 
-	if (SUCCEEDED(D3D12CreateDevice(nullptr, D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&pTempDevice))))
+	// This device only exists to read vtable pointers off and gets torn down right after.
+	// Use the WARP software adapter instead of the real GPU (falls back to the default
+	// hardware adapter if WARP is unavailable) so it can't collide with the target's own
+	// D3D12 device creation on the same adapter - when loaded via a proxy DLL this can run
+	// at process attach, before the target has touched D3D12 at all, and creating/destroying
+	// a real hardware device in that window has been observed to cause an intermittent
+	// DXGI_ERROR_DEVICE_REMOVED later on.
+	if (SUCCEEDED(CreateDXGIFactory1(IID_PPV_ARGS(&pFactory))))
 	{
-		D3D12_COMMAND_QUEUE_DESC queueDesc = {};
-		queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
-		queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+		pFactory->EnumWarpAdapter(IID_PPV_ARGS(&pWarpAdapter));
 
-		if (SUCCEEDED(pTempDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&pTempQueue))))
+		if (SUCCEEDED(D3D12CreateDevice(pWarpAdapter, D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&pTempDevice))))
 		{
-			if (SUCCEEDED(CreateDXGIFactory1(IID_PPV_ARGS(&pFactory))))
+			D3D12_COMMAND_QUEUE_DESC queueDesc = {};
+			queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+			queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+
+			if (SUCCEEDED(pTempDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&pTempQueue))))
 			{
 				if (SUCCEEDED(pFactory->CreateSwapChainForHwnd(pTempQueue, hWnd, &swapChainDesc, nullptr, nullptr, &pTempSwapChain1)))
 				{
@@ -474,15 +484,18 @@ static bool GetD3D12Addresses(ID3D12Device** ppDevice, ID3D12CommandQueue** ppCo
 				}
 
 				if (!bSuccess)
-					pFactory->Release();
+					pTempQueue->Release();
 			}
 
 			if (!bSuccess)
-				pTempQueue->Release();
+				pTempDevice->Release();
 		}
 
+		if (pWarpAdapter)
+			pWarpAdapter->Release();
+
 		if (!bSuccess)
-			pTempDevice->Release();
+			pFactory->Release();
 	}
 
 	DestroyWindow(hWnd);
