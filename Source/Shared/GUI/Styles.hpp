@@ -7,6 +7,8 @@ inline ImFont* TahomaFont;
 inline ImFont* TahomaBigFont;
 inline ImFont* TahomaFontFeature;
 
+inline float g_flUIScale = 1.0f;
+
 inline void SetupStyle()
 {
 	ImGuiStyle& style = ImGui::GetStyle();
@@ -41,7 +43,7 @@ inline void SetupStyle()
     style.Colors[ImGuiCol_TextDisabled] = ImAdd::HexToColorVec4(0x696969, 1.0f);
 
     style.Colors[ImGuiCol_SliderGrab] = ImAdd::HexToColorVec4(0xA85CFFF, 1.0f);
-    style.Colors[ImGuiCol_SliderGrabActive] = ImAdd::HexToColorVec4(0xA85CFFF, 1.0f);
+    style.Colors[ImGuiCol_SliderGrabActive] = ImAdd::HexToColorVec4(0xC7E5FF, 1.0f);
 
     style.Colors[ImGuiCol_ScrollbarGrab] = style.Colors[ImGuiCol_SliderGrab];
     style.Colors[ImGuiCol_ScrollbarGrabActive] = style.Colors[ImGuiCol_SliderGrabActive];
@@ -53,8 +55,8 @@ inline void SetupStyle()
     style.Colors[ImGuiCol_Separator] = style.Colors[ImGuiCol_Border];
 
     style.Colors[ImGuiCol_Button] = ImAdd::HexToColorVec4(0x1A1A1A, 1.0f);
-    style.Colors[ImGuiCol_ButtonHovered] = ImAdd::HexToColorVec4(0x1A1A1A, 0.7f);
-    style.Colors[ImGuiCol_ButtonActive] = ImAdd::HexToColorVec4(0x1A1A1A, 0.5f);
+    style.Colors[ImGuiCol_ButtonHovered] = ImAdd::HexToColorVec4(0x2E2E2E, 1.0f);
+    style.Colors[ImGuiCol_ButtonActive] = ImAdd::HexToColorVec4(0xA85CFFF, 0.6f);
 
     style.Colors[ImGuiCol_FrameBg] = style.Colors[ImGuiCol_Button];
     style.Colors[ImGuiCol_FrameBgHovered] = style.Colors[ImGuiCol_ButtonHovered];
@@ -71,10 +73,6 @@ inline void SetupStyle()
 inline constexpr float kBaseFontSize = 14.f;
 inline constexpr float kBaseBigFontSize = 20.f;
 
-// flScale re-rasterizes every font at scale * its base pixel size via FreeType, rather than
-// stretching already-rasterized bitmaps (which is what a naive io.FontGlobalScale-only
-// approach does, and why that gets blurry/pixelated above 1.0x) - see GUI.cpp's UI_SCALE
-// handling, which clears and rebuilds the atlas through this whenever the slider changes.
 inline void ImportFonts(float flScale = 1.0f)
 {
 	ImGuiIO& io = ImGui::GetIO();

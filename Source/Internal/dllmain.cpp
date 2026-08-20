@@ -52,7 +52,7 @@ DWORD WINAPI FrameworkMainThread(LPVOID lpParam)
 		Utils::LogDebug("FrameworkInit() returned false, unloading...");
 	}
 
-	Framework::config = std::make_unique<Config>(*Framework::menu); // Initalize the config class
+	Framework::config = std::make_unique<Config>(*Framework::menu);
 
 	Framework::bInitalized = true;
 	Utils::LogDebug(std::format("{}: Initialized", Framework::Title));
@@ -65,13 +65,12 @@ DWORD WINAPI FrameworkMainThread(LPVOID lpParam)
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	}
 
-	Framework::console->SetVisibility(true); // Set the console to be visible when the cheat is unloading
-	Utils::LogDebug(std::format("{}: Unloading...", Framework::Title)); // Log that the cheat is unloading
+	Framework::console->SetVisibility(true);
+	Utils::LogDebug(std::format("{}: Unloading...", Framework::Title));
 
 	Framework::wndproc.get()->Destroy();
 	Framework::renderer.get()->Destroy();
 
-	// Destroy features
 	for (auto& pFeature : Framework::g_vecFeatures)
 		pFeature->Destroy();
 
@@ -79,9 +78,8 @@ DWORD WINAPI FrameworkMainThread(LPVOID lpParam)
 
 	Framework::console->Destroy();
 
-	// Unload the module and exit the thread
 	FreeLibraryAndExitThread(Framework::hModule, EXIT_SUCCESS);
-	return true; // Return true if the initalization was successful
+	return true;
 }
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ulReasonForCall, LPVOID lpReserved)
@@ -98,7 +96,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ulReasonForCall, LPVOID lpReserved)
 #endif
 
 #ifdef _DEBUG
-	Framework::console->SetVisibility(true); // Set the console to be visible by default if the framework is in debug mode
+	Framework::console->SetVisibility(true);
 #endif
 
 	HANDLE hThread = CreateThread(NULL, 0, FrameworkMainThread, hModule, 0, NULL);

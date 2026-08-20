@@ -59,7 +59,6 @@ void Memory::EnumerateHandles(EnumerateHandlesFunc fn)
 	ULONG ulSize = 0;
 	NTSTATUS lStatus = STATUS_UNSUCCESSFUL;
 
-	// Wait until we successfully get the sysinfo
 	while (1) {
 		lStatus = NtQuerySystemInformation(SystemHandleInformation, pSystemHandleInformation, ulSize, &ulSize);
 		if (NT_SUCCESS(lStatus) || lStatus != STATUS_INFO_LENGTH_MISMATCH)

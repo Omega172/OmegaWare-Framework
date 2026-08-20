@@ -1,10 +1,10 @@
 #pragma once
 #include "pch.h"
 
-// Shared by Menu, HeaderGroup and Body so the sidebar column stays a single source of truth.
-// Wider than the original 160px so translated sidebar labels (longer languages run past
-// English) have room without clipping.
-inline constexpr float kSidebarWidth = 210.f;
+inline constexpr float kMinSidebarWidth = 210.f;
+inline float kSidebarWidth = kMinSidebarWidth;
+
+inline ImVec4 vec4ChromeBg = ImVec4(0.f, 0.f, 0.f, 1.f);
 
 class PageManager
 {
@@ -19,9 +19,8 @@ public:
 	};
 
 	static inline std::vector<PageInfo> s_RegisteredPages;
-	static inline uint8_t s_iNextPageId = 4; // Start after Developer, Style, Settings, Config
+	static inline uint8_t s_iNextPageId = 4;
 
-	// Register a new page and return its ID
 	static uint8_t RegisterPage(size_t ullLocalizedNameHash, const char* sIcon = ICON_FA_CIRCLE)
 	{
 		uint8_t iNewPageId = s_iNextPageId++;
@@ -29,7 +28,6 @@ public:
 		return iNewPageId;
 	}
 
-	// Register a new page with unlocalized name and return its ID
 	static uint8_t RegisterPage(std::string sUnlocalizedName, const char* sIcon = ICON_FA_CIRCLE)
 	{
 		uint8_t iNewPageId = s_iNextPageId++;
@@ -37,7 +35,6 @@ public:
 		return iNewPageId;
 	}
 
-	// Get all registered pages
 	static const std::vector<PageInfo>& GetPages()
 	{
 		return s_RegisteredPages;
@@ -72,13 +69,15 @@ public:
 		SeperatorText,
 		Spacing,
 		Text,
+		Table,
+		ConfigManager,
 	};
 
 	enum class ESameLine : uint8_t
 	{
-		New,      // Force element to be on a new line
-		Same,     // Force element to be on the same line
-		Dynamic,  // Potentially buggy, only use if you know what you are doing
+		New,
+		Same,
+		Dynamic,
 	};
 
 	typedef struct Style_t
@@ -90,7 +89,7 @@ public:
 		float flOffset = 0.f;
 		float flSpacing = -1.f;
 
-		ImVec2 vec2Size = { 100.f, 0.f };
+		ImVec2 vec2Size = { 0.f, 0.f };
 		ImDrawFlags iFlags = 0;
 	} Style_t;
 
@@ -103,12 +102,10 @@ public:
 	}  Header_t;
 
 protected:
-	// used to display a custom or unlocalized name for elements like buttons
 	bool m_bUnlocalizedName = false;
 	std::string m_sUnlocalizedName = "";
 	std::size_t m_ullLocalizedNameHash = 0;
 
-	// used for internal reference for removing elements or config handling
 	std::string m_sUnique = "INVALID_UNIQUE";
 
 	ElementBase* m_pParent = nullptr;
@@ -123,7 +120,6 @@ protected:
 	{
 		switch (m_stStyle.eSameLine)
 		{
-			// Force draw on the same line
 		case(ESameLine::Same):
 			if (m_SameLineSizeCallback)
 				ImGui::SameLine(m_SameLineSizeCallback().x, m_SameLineSizeCallback().y);
@@ -131,13 +127,11 @@ protected:
 				ImGui::SameLine(m_stStyle.flOffset, m_stStyle.flSpacing);
 			break;
 
-			// Ask our parent if we should draw on the same line or not
 		case(ESameLine::Dynamic):
 			if (m_pParent != nullptr)
 				m_pParent->RequestSameLine(this);
 			break;
 
-			// Draw on a new line
 		case(ESameLine::New):
 		default:
 			break;
@@ -175,7 +169,6 @@ public:
 		m_Children.push_back(static_cast<ElementBase*>(pElement));
 	};
 
-	// Insert element at a specific index
 	void InsertElementAt(void* pElement, size_t index)
 	{
 		static_cast<ElementBase*>(pElement)->m_pParent = this;
@@ -185,7 +178,6 @@ public:
 			m_Children.insert(m_Children.begin() + index, static_cast<ElementBase*>(pElement));
 	};
 
-	// Insert element before another element (by unique name)
 	void InsertElementBefore(void* pElement, const std::string& sBeforeUnique)
 	{
 		auto pElementBase = static_cast<ElementBase*>(pElement);
@@ -200,11 +192,9 @@ public:
 			}
 		}
 
-		// If not found, add to end
 		m_Children.push_back(pElementBase);
 	};
 
-	// Insert element after another element (by unique name)
 	void InsertElementAfter(void* pElement, const std::string& sAfterUnique)
 	{
 		auto pElementBase = static_cast<ElementBase*>(pElement);
@@ -219,7 +209,6 @@ public:
 			}
 		}
 
-		// If not found, add to end
 		m_Children.push_back(pElementBase);
 	};
 
@@ -252,13 +241,11 @@ public:
 		m_pParent = nullptr;
 	};
 
-	// Gets internal element name
 	inline const std::string GetUnique() const
 	{
 		return m_sUnique;
 	};
 
-	// Gets localized element name
 	inline const std::string GetName() const
 	{
 		if (m_bUnlocalizedName)
@@ -267,21 +254,18 @@ public:
 		return Localization::Get(m_ullLocalizedNameHash);
 	};
 
-	// Sets that we want an unlocalized name and replaces the internal unlocalized name string
 	inline void SetName(std::string s)
 	{
 		m_bUnlocalizedName = true;
 		m_sUnlocalizedName = s;
 	};
 
-	// Sets that we want to use a localized name and overrides the used localized name
 	inline void SetName(size_t ullHash)
 	{
 		m_bUnlocalizedName = false;
 		m_ullLocalizedNameHash = ullHash;
 	};
 
-	// Sets if we want to use the localized name or not
 	inline void SetName(bool bUseUnlocalized = false)
 	{
 		m_bUnlocalizedName = bUseUnlocalized;
@@ -341,38 +325,42 @@ public:
 		return m_stStyle;
 	};
 
-	// Register a new page with localized name
+	inline const std::vector<ElementBase*>& GetChildren() const
+	{
+		return m_Children;
+	};
+
+	inline void SetWidth(float flWidth)
+	{
+		m_stStyle.vec2Size.x = flWidth;
+	};
+
 	static uint8_t AddPage(size_t ullLocalizedNameHash, const char* sIcon = ICON_FA_CIRCLE)
 	{
 		return PageManager::RegisterPage(ullLocalizedNameHash, sIcon);
 	}
 
-	// Register a new page with unlocalized name
 	static uint8_t AddPage(std::string sUnlocalizedName, const char* sIcon = ICON_FA_CIRCLE)
 	{
 		return PageManager::RegisterPage(sUnlocalizedName, sIcon);
 	}
 
-	// Get the next available page ID (for manual page ID management)
 	static uint8_t GetNextPageId()
 	{
 		return PageManager::s_iNextPageId;
 	}
 
-	// Set the default/current page
 	static void SetDefaultPage(uint8_t iPageId)
 	{
 		eCurrentPage = iPageId;
 		eCurrentSubPage = 0;
 	}
 
-	// Get the current page ID
 	static uint8_t GetCurrentPage()
 	{
 		return eCurrentPage;
 	}
 
-	// Get the current sub-page ID
 	static uint8_t GetCurrentSubPage()
 	{
 		return eCurrentSubPage;
@@ -388,7 +376,11 @@ public:
 		return EElementType::None;
 	};
 
-	// Will determine if elements should be placed on the same line or not
+	virtual ImVec2 GetNaturalSize() const
+	{
+		return ImVec2(0.f, 0.f);
+	};
+
 	virtual void RequestSameLine(ElementBase* pChild)
 	{};
 
@@ -572,16 +564,9 @@ protected:
 	ImVec2 m_vec2MinSize = { 0.f, 0.f };
 	ImVec2 m_vec2MaxSize = { 9999.f, 9999.f };
 
-	// SetNextWindowSize(ImGuiCond_Once) below only takes effect the very first frame this
-	// window ever exists, so a later programmatic resize (see RequestResize(), used by
-	// GUI.cpp's UI_SCALE handling) needs one ImGuiCond_Always frame to actually move the
-	// window; ImGuiCond_Once's "first call" bookkeeping is untouched by that, so manual
-	// resizing by the user still works normally on every other frame.
 	bool m_bForceResize = false;
 
 public:
-	// Rescales the whole menu window, not just the elements inside it - call whenever the
-	// content's effective scale (e.g. UI_SCALE) changes.
 	void RequestResize(ImVec2 vec2NewSize)
 	{
 		m_stStyle.vec2Size = vec2NewSize;
@@ -615,7 +600,6 @@ public:
 		return EElementType::Menu;
 	};
 
-	// Will determine if elements should be placed on the same line or not
 	void RequestSameLine(ElementBase* pChild) override
 	{
 		if (!pChild)
@@ -623,7 +607,6 @@ public:
 
 		EElementType eChildType = pChild->GetType();
 
-		// Using the same line for multiple different element types should be done manually
 		if (eChildType != m_eLastSameLinedElement)
 		{
 			m_ucSameLinedElements = 1;
@@ -671,16 +654,16 @@ public:
 		ImGui::Begin(GetName().c_str(), nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground);
 		ImGui::PopStyleVar(2);
 
-		// Renders
 		{
 			ImVec2 pos = ImGui::GetWindowPos();
 			ImVec2 size = ImGui::GetWindowSize();
 			ImDrawList* drawList = ImGui::GetWindowDrawList();
 
-			drawList->AddRectFilled(pos, pos + ImVec2(kSidebarWidth, size.y), ImGui::GetColorU32(ImGuiCol_ChildBg), style.WindowRounding, ImDrawFlags_RoundCornersLeft);
-			drawList->AddRectFilled(pos + ImVec2(kSidebarWidth, 0), pos + ImVec2(size.x, HeaderHeight), ImGui::GetColorU32(ImGuiCol_ChildBg), style.WindowRounding, ImDrawFlags_RoundCornersTopRight);
+			const ImU32 chromeCol = ImGui::GetColorU32(vec4ChromeBg);
+			drawList->AddRectFilled(pos, pos + ImVec2(kSidebarWidth, size.y), chromeCol, style.WindowRounding, ImDrawFlags_RoundCornersLeft);
+			drawList->AddRectFilled(pos + ImVec2(kSidebarWidth, 0), pos + ImVec2(size.x, HeaderHeight), chromeCol, style.WindowRounding, ImDrawFlags_RoundCornersTopRight);
 			drawList->AddRectFilled(pos + ImVec2(kSidebarWidth, HeaderHeight), pos + ImVec2(size.x, size.y - FooterHeight), ImGui::GetColorU32(ImGuiCol_WindowBg), style.WindowRounding, ImDrawFlags_RoundCornersNone);
-			drawList->AddRectFilled(pos + ImVec2(kSidebarWidth, size.y - FooterHeight), pos + size, ImGui::GetColorU32(ImGuiCol_ChildBg), style.WindowRounding, ImDrawFlags_RoundCornersBottomRight);
+			drawList->AddRectFilled(pos + ImVec2(kSidebarWidth, size.y - FooterHeight), pos + size, chromeCol, style.WindowRounding, ImDrawFlags_RoundCornersBottomRight);
 
 			if (style.WindowBorderSize > 0) {
 				drawList->AddLine(pos + ImVec2(kSidebarWidth - style.WindowBorderSize, style.WindowBorderSize), pos + ImVec2(kSidebarWidth - style.WindowBorderSize, size.y - style.WindowBorderSize), ImGui::GetColorU32(ImGuiCol_Border), style.WindowBorderSize);
@@ -740,7 +723,7 @@ public:
 		if (m_Callback)
 			m_stStyle.vec2Size = m_Callback();
 
-		ImGui::BeginChild(GetName().c_str(), m_stStyle.vec2Size, m_stStyle.iFlags, m_WindowFlags);
+		ImGui::BeginChild(GetName().c_str(), m_stStyle.vec2Size, m_stStyle.iFlags | ImGuiChildFlags_AlwaysUseWindowPadding, m_WindowFlags | ImGuiWindowFlags_NoScrollbar);
 		if (m_PushVarsCallback)
 			m_PushVarsCallback();
 		RenderChildren();
@@ -806,6 +789,8 @@ class Button : public ElementBase
 protected:
 	std::function<void()> m_Callback = nullptr;
 
+	std::function<void()> m_PositionCallback = nullptr;
+
 public:
 	Button(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {})
 	{
@@ -834,7 +819,10 @@ public:
 
 		SameLine();
 
-		if (ImAdd::Button(GetName().c_str(), m_stStyle.vec2Size))
+		if (m_PositionCallback)
+			m_PositionCallback();
+
+		if (ImAdd::Button(GetName().c_str(), m_stStyle.vec2Size * g_flUIScale))
 			if (m_Callback)
 				m_Callback();
 
@@ -845,6 +833,11 @@ public:
 	void SetCallback(std::function<void()> Callback)
 	{
 		m_Callback = Callback;
+	};
+
+	void SetPositionCallback(std::function<void()> Callback)
+	{
+		m_PositionCallback = Callback;
 	};
 };
 
@@ -881,7 +874,7 @@ public:
 
 		SameLine();
 
-		if (ImAdd::AccentButton(GetName().c_str(), m_stStyle.vec2Size))
+		if (ImAdd::AccentButton(GetName().c_str(), m_stStyle.vec2Size * g_flUIScale))
 			if (m_Callback)
 				m_Callback();
 
@@ -909,6 +902,8 @@ protected:
 	std::vector<ComboOption> m_Options;
 	int m_iSelectedIndex = -1;
 
+	std::function<float()> m_WidthCallback = nullptr;
+
 public:
 	Combo(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle = {})
 	{
@@ -930,6 +925,11 @@ public:
 		return EElementType::Combo;
 	};
 
+	void SetWidthCallback(std::function<float()> Callback)
+	{
+		m_WidthCallback = Callback;
+	};
+
 	void Render() override
 	{
 		if (!m_stStyle.bVisible)
@@ -937,7 +937,14 @@ public:
 
 		SameLine();
 
-		if (ImAdd::BeginCombo(GetName().c_str(), m_sPreviewlabel.c_str(), m_stStyle.iFlags))
+		ImGuiComboFlags iFlags = m_stStyle.iFlags;
+		if (m_WidthCallback)
+		{
+			ImGui::SetNextItemWidth(m_WidthCallback());
+			iFlags &= ~ImGuiComboFlags_WidthFitPreview;
+		}
+
+		if (ImAdd::BeginCombo(GetName().c_str(), m_sPreviewlabel.c_str(), iFlags))
 		{
 			if (m_Callback)
 			{
@@ -980,8 +987,7 @@ public:
 	void AddOption(std::string sLabel, std::function<void()> Callback = nullptr)
 	{
 		m_Options.push_back({ sLabel, Callback });
-		
-		// Set preview label to first option if not set
+
 		if (m_iSelectedIndex == -1 && !m_Options.empty())
 		{
 			m_iSelectedIndex = 0;
@@ -1001,6 +1007,60 @@ public:
 			m_iSelectedIndex = iIndex;
 			m_sPreviewlabel = m_Options[iIndex].sLabel;
 		}
+	};
+
+	void SetSelectedByLabel(const std::string& sLabel)
+	{
+		for (size_t i = 0; i < m_Options.size(); ++i)
+		{
+			if (m_Options[i].sLabel != sLabel)
+				continue;
+
+			m_iSelectedIndex = static_cast<int>(i);
+			m_sPreviewlabel = m_Options[i].sLabel;
+			return;
+		}
+	};
+
+	void ClearOptions()
+	{
+		m_Options.clear();
+		m_iSelectedIndex = -1;
+		m_sPreviewlabel.clear();
+	};
+};
+
+class PersistentCombo : public Combo
+{
+public:
+	using Combo::Combo;
+
+	void ConfigSave(nlohmann::json& jsonParent) const override
+	{
+		nlohmann::json& jsonEntry = jsonParent[m_sUnique.c_str()] = nlohmann::json();
+
+		jsonEntry["Value"] = GetSelectedIndex();
+
+		if (!HasChildren())
+			return;
+
+		jsonEntry["Children"] = nlohmann::json();
+
+		ConfigSaveChildren(jsonEntry["Children"]);
+	};
+
+	void ConfigLoad(nlohmann::json& jsonParent) override
+	{
+		if (!jsonParent.contains(m_sUnique.c_str()))
+			return;
+
+		nlohmann::json& jsonEntry = jsonParent[m_sUnique.c_str()];
+
+		if (jsonEntry.contains("Value"))
+			SetSelectedIndex(jsonEntry["Value"].get<int>());
+
+		if (jsonEntry.contains("Children"))
+			ConfigLoadChildren(jsonEntry["Children"]);
 	};
 };
 
@@ -1185,7 +1245,7 @@ public:
 
 		if (ImGui::GetActiveID() == id) {
 			ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetColorU32(ImGuiCol_ButtonActive));
-			ImAdd::Button("...", m_stStyle.vec2Size);
+			ImAdd::Button("...", m_stStyle.vec2Size * g_flUIScale);
 			ImGui::PopStyleColor();
 
 			ImGui::GetCurrentContext()->ActiveIdAllowOverlap = true;
@@ -1195,7 +1255,7 @@ public:
 				m_bSetting = false;
 			}
 		}
-		else if (ImAdd::Button(BtnName.c_str(), m_stStyle.vec2Size) || m_bSetting) {
+		else if (ImAdd::Button(BtnName.c_str(), m_stStyle.vec2Size * g_flUIScale) || m_bSetting) {
 			ImGui::SetActiveID(id, ImGui::GetCurrentWindow());
 			m_bSetting = true;
 		}
@@ -1247,6 +1307,12 @@ public:
 	void Update()
 	{
 		if (m_bSetting && m_eMode != EHotkeyMode::AlwaysOn)
+		{
+			m_bActive = false;
+			return;
+		}
+
+		if (m_eMode != EHotkeyMode::AlwaysOn && m_eKey == ImGuiKey_None)
 		{
 			m_bActive = false;
 			return;
@@ -1325,7 +1391,7 @@ public:
 
 		SameLine();
 
-		ImAdd::SliderFloat(GetName().c_str(), &m_Value, m_Min, m_Max, m_stStyle.vec2Size.x, m_sFormat);
+		ImAdd::SliderFloat(GetName().c_str(), &m_Value, m_Min, m_Max, m_stStyle.vec2Size.x * g_flUIScale, m_sFormat);
 
 		RenderChildren();
 	};
@@ -1372,7 +1438,7 @@ public:
 
 		SameLine();
 
-		ImAdd::SliderInt(GetName().c_str(), &m_Value, m_Min, m_Max, m_stStyle.vec2Size.x, m_sFormat);
+		ImAdd::SliderInt(GetName().c_str(), &m_Value, m_Min, m_Max, m_stStyle.vec2Size.x * g_flUIScale, m_sFormat);
 
 		RenderChildren();
 	};
@@ -1417,7 +1483,7 @@ public:
 
 		SameLine();
 
-		ImAdd::InputText(GetName().c_str(), m_sPreview.c_str(), m_Value.data(), m_Value.capacity(), m_stStyle.vec2Size.x, m_stStyle.iFlags, m_Callback, m_pUserData);
+		ImAdd::InputText(GetName().c_str(), m_sPreview.c_str(), m_Value.data(), m_Value.capacity(), m_stStyle.vec2Size.x * g_flUIScale, m_stStyle.iFlags, m_Callback, m_pUserData);
 
 		RenderChildren();
 	};
@@ -1471,6 +1537,474 @@ public:
 		SameLine();
 
 		ImAdd::ColorEdit4(GetName().c_str(), reinterpret_cast<float*>(&m_Value));
+
+		RenderChildren();
+	};
+};
+
+class Table : public ElementBase
+{
+protected:
+	struct TableColumn_t
+	{
+		std::string sLabel;
+		float flWeight = 1.0f;
+		float flWidth = 0.0f;
+		bool bWidthInitialized = false;
+	};
+
+	int m_iColumns = 0;
+	std::vector<TableColumn_t> m_Columns;
+	std::vector<std::vector<std::string>> m_Rows;
+
+	std::function<void(int iRow, int iCol)> m_CellClickCallback = nullptr;
+	std::function<void(int iRow, int iCol)> m_CellContextMenuCallback = nullptr;
+	int m_iSelectedRow = -1;
+
+	bool m_bSaveToConfig = false;
+
+	static constexpr float kMinColumnWidth = 24.0f;
+	static constexpr float kResizeHandleWidth = 6.0f;
+
+public:
+	Table(std::string sUnique, int iColumns, Style_t stStyle = {})
+	{
+		m_sUnique = sUnique;
+		m_iColumns = iColumns;
+		m_stStyle = stStyle;
+	};
+
+	constexpr EElementType GetType() const override
+	{
+		return EElementType::Table;
+	};
+
+	void AddColumn(size_t ullLocalizedNameHash, float flWeight = 1.0f)
+	{
+		m_Columns.push_back({ Localization::Get(ullLocalizedNameHash), flWeight, 0.0f, false });
+	};
+
+	void AddColumn(std::string sUnlocalizedLabel, float flWeight = 1.0f)
+	{
+		m_Columns.push_back({ sUnlocalizedLabel, flWeight, 0.0f, false });
+	};
+
+	void AddRow(std::vector<std::string> vecCells)
+	{
+		m_Rows.push_back(std::move(vecCells));
+	};
+
+	void ClearRows()
+	{
+		m_Rows.clear();
+	};
+
+	void SetCell(int iRow, int iCol, std::string sValue)
+	{
+		if (iRow < 0 || iRow >= static_cast<int>(m_Rows.size()))
+			return;
+
+		if (iCol < 0 || iCol >= static_cast<int>(m_Rows[iRow].size()))
+			return;
+
+		m_Rows[iRow][iCol] = std::move(sValue);
+	};
+
+	std::string GetCell(int iRow, int iCol) const
+	{
+		if (iRow < 0 || iRow >= static_cast<int>(m_Rows.size()))
+			return "";
+
+		if (iCol < 0 || iCol >= static_cast<int>(m_Rows[iRow].size()))
+			return "";
+
+		return m_Rows[iRow][iCol];
+	};
+
+	void SetCellClickCallback(std::function<void(int iRow, int iCol)> Callback)
+	{
+		m_CellClickCallback = Callback;
+	};
+
+	void SetCellContextMenuCallback(std::function<void(int iRow, int iCol)> Callback)
+	{
+		m_CellContextMenuCallback = Callback;
+	};
+
+	void SetSelectedRow(int iRow)
+	{
+		m_iSelectedRow = iRow;
+	};
+
+	int GetSelectedRow() const
+	{
+		return m_iSelectedRow;
+	};
+
+	void SetSaveToConfig(bool bSave)
+	{
+		m_bSaveToConfig = bSave;
+	};
+
+	void ConfigSave(nlohmann::json& jsonParent) const override
+	{
+		if (!m_bSaveToConfig)
+			return;
+
+		nlohmann::json& jsonEntry = jsonParent[m_sUnique.c_str()] = nlohmann::json();
+		jsonEntry["Rows"] = m_Rows;
+		jsonEntry["SelectedRow"] = m_iSelectedRow;
+	};
+
+	void ConfigLoad(nlohmann::json& jsonParent) override
+	{
+		if (!m_bSaveToConfig || !jsonParent.contains(m_sUnique.c_str()))
+			return;
+
+		const nlohmann::json& jsonEntry = jsonParent[m_sUnique.c_str()];
+
+		if (jsonEntry.contains("Rows"))
+			m_Rows = jsonEntry["Rows"].get<std::vector<std::vector<std::string>>>();
+
+		if (jsonEntry.contains("SelectedRow"))
+			m_iSelectedRow = jsonEntry["SelectedRow"].get<int>();
+	};
+
+	void Render() override
+	{
+		if (!m_stStyle.bVisible || m_Columns.empty())
+			return;
+
+		SameLine();
+
+		ImGuiWindow* window = ImGui::GetCurrentWindow();
+		if (window->SkipItems)
+			return;
+
+		ImGuiContext& g = *GImGui;
+		const ImGuiStyle& style = g.Style;
+
+		const float flRowHeight = ImGui::GetFrameHeight();
+		const int iRowCount = static_cast<int>(m_Rows.size());
+		const float flContentHeight = flRowHeight + iRowCount * flRowHeight;
+
+		const ImVec2 pos = window->DC.CursorPos;
+		const float flWidth = (m_stStyle.vec2Size.x > 0.0f) ? m_stStyle.vec2Size.x * g_flUIScale : ImGui::GetContentRegionAvail().x;
+		const float flHeight = (m_stStyle.vec2Size.y > 0.0f) ? m_stStyle.vec2Size.y * g_flUIScale : flContentHeight + style.WindowPadding.y * 2.0f;
+		const ImVec2 size(flWidth, flHeight);
+
+		const ImRect bb(pos, pos + size);
+		const ImGuiID tableId = window->GetID(m_sUnique.c_str());
+		ImGui::ItemSize(size);
+		if (!ImGui::ItemAdd(bb, tableId))
+			return;
+
+		ImDrawList* drawList = window->DrawList;
+
+		bool bNeedsInit = false;
+		float flTotalWeight = 0.0f;
+		for (const TableColumn_t& column : m_Columns)
+		{
+			if (!column.bWidthInitialized)
+				bNeedsInit = true;
+			flTotalWeight += column.flWeight;
+		}
+
+		const float flInnerWidth = size.x - style.WindowPadding.x * 2.0f;
+		if (bNeedsInit && flTotalWeight > 0.0f)
+		{
+			for (TableColumn_t& column : m_Columns)
+			{
+				column.flWidth = flInnerWidth * (column.flWeight / flTotalWeight);
+				column.bWidthInitialized = true;
+			}
+		}
+
+		drawList->AddRectFilled(bb.Min, bb.Max, ImGui::GetColorU32(ImGuiCol_ChildBg), style.ChildRounding);
+		drawList->AddRect(bb.Min, bb.Max, ImGui::GetColorU32(ImGuiCol_Border), style.ChildRounding);
+
+		ImGui::PushClipRect(bb.Min, bb.Max, true);
+
+		ImVec2 cursor = bb.Min + style.WindowPadding;
+
+		{
+			float flColX = cursor.x;
+			for (int iCol = 0; iCol < static_cast<int>(m_Columns.size()); ++iCol)
+			{
+				TableColumn_t& column = m_Columns[iCol];
+				const ImRect headerRect(ImVec2(flColX, cursor.y), ImVec2(flColX + column.flWidth, cursor.y + flRowHeight));
+
+				ImGui::RenderTextClipped(ImVec2(headerRect.Min.x + style.FramePadding.x, headerRect.Min.y), headerRect.Max, column.sLabel.c_str(), NULL, NULL, ImVec2(0.0f, 0.5f), &headerRect);
+
+				flColX += column.flWidth;
+
+				if (iCol < static_cast<int>(m_Columns.size()) - 1)
+				{
+					ImGui::PushID(iCol);
+					const ImGuiID handleId = window->GetID("##ColResize");
+					const ImRect handleRect(ImVec2(flColX - kResizeHandleWidth * 0.5f, cursor.y), ImVec2(flColX + kResizeHandleWidth * 0.5f, cursor.y + flContentHeight));
+
+					ImGui::ItemAdd(handleRect, handleId);
+					bool bHandleHovered, bHandleHeld;
+					ImGui::ButtonBehavior(handleRect, handleId, &bHandleHovered, &bHandleHeld);
+
+					if (bHandleHovered || bHandleHeld)
+						ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
+
+					if (bHandleHeld && g.IO.MouseDelta.x != 0.0f)
+					{
+						TableColumn_t& next = m_Columns[iCol + 1];
+						const float flNewThis = column.flWidth + g.IO.MouseDelta.x;
+						const float flNewNext = next.flWidth - g.IO.MouseDelta.x;
+
+						if (flNewThis >= kMinColumnWidth && flNewNext >= kMinColumnWidth)
+						{
+							column.flWidth = flNewThis;
+							next.flWidth = flNewNext;
+						}
+					}
+
+					if (bHandleHovered || bHandleHeld)
+						drawList->AddRectFilled(handleRect.Min, handleRect.Max, ImGui::GetColorU32(ImGuiCol_SliderGrab));
+
+					ImGui::PopID();
+				}
+			}
+
+			cursor.y += flRowHeight;
+			drawList->AddLine(ImVec2(bb.Min.x, cursor.y), ImVec2(bb.Max.x, cursor.y), ImGui::GetColorU32(ImGuiCol_Border));
+		}
+
+		const ImVec4 vec4Accent = style.Colors[ImGuiCol_SliderGrab];
+		const ImVec4 vec4TextOnAccent = ImAdd::ShadeColor(vec4Accent, 0.3f);
+		const ImVec4 vec4RowAlt = ImAdd::ShadeColor(style.Colors[ImGuiCol_ChildBg], 0.9f);
+		const ImVec4 vec4RowHovered = ImAdd::ShadeColor(style.Colors[ImGuiCol_ChildBg], 0.85f);
+
+		for (int iRow = 0; iRow < iRowCount; ++iRow)
+		{
+			const std::vector<std::string>& row = m_Rows[iRow];
+			const bool bRowSelected = (iRow == m_iSelectedRow);
+			const ImRect rowRect(ImVec2(bb.Min.x, cursor.y), ImVec2(bb.Max.x, cursor.y + flRowHeight));
+			const bool bRowHovered = rowRect.Contains(g.IO.MousePos);
+
+			if (bRowSelected)
+				drawList->AddRectFilled(rowRect.Min, rowRect.Max, ImGui::GetColorU32(vec4Accent));
+			else if (bRowHovered)
+				drawList->AddRectFilled(rowRect.Min, rowRect.Max, ImGui::GetColorU32(vec4RowHovered));
+			else if (iRow % 2 == 1)
+				drawList->AddRectFilled(rowRect.Min, rowRect.Max, ImGui::GetColorU32(vec4RowAlt));
+
+			if (bRowSelected)
+				ImGui::PushStyleColor(ImGuiCol_Text, vec4TextOnAccent);
+
+			float flColX = cursor.x;
+			for (int iCol = 0; iCol < static_cast<int>(m_Columns.size()) && iCol < static_cast<int>(row.size()); ++iCol)
+			{
+				const TableColumn_t& column = m_Columns[iCol];
+				const ImRect cellRect(ImVec2(flColX, cursor.y), ImVec2(flColX + column.flWidth, cursor.y + flRowHeight));
+
+				ImGui::PushID(iRow);
+				ImGui::PushID(iCol);
+				const ImGuiID cellId = window->GetID("##Cell");
+				ImGui::ItemAdd(cellRect, cellId);
+
+				bool bCellHovered, bCellHeld;
+				if (ImGui::ButtonBehavior(cellRect, cellId, &bCellHovered, &bCellHeld) && m_CellClickCallback)
+					m_CellClickCallback(iRow, iCol);
+
+				if (m_CellContextMenuCallback && ImGui::BeginPopupContextItem())
+				{
+					m_CellContextMenuCallback(iRow, iCol);
+					ImGui::EndPopup();
+				}
+
+				ImGui::RenderTextClipped(ImVec2(cellRect.Min.x + style.FramePadding.x, cellRect.Min.y), cellRect.Max, row[iCol].c_str(), NULL, NULL, ImVec2(0.0f, 0.5f), &cellRect);
+
+				ImGui::PopID();
+				ImGui::PopID();
+
+				flColX += column.flWidth;
+			}
+
+			if (bRowSelected)
+				ImGui::PopStyleColor();
+
+			cursor.y += flRowHeight;
+		}
+
+		ImGui::PopClipRect();
+
+		RenderChildren();
+	};
+};
+
+class ConfigManager : public ElementBase
+{
+public:
+	struct Callbacks
+	{
+		std::function<std::string()> GetCurrentName;
+		std::function<std::string()> GetDefaultName;
+		std::function<std::vector<std::string>()> ListConfigs;
+
+		std::function<void(const std::string&)> Load;
+		std::function<void()> Save;
+		std::function<void()> Reload;
+		std::function<void(const std::string&)> CreateNew;
+		std::function<void(const std::string&, const std::string&)> Rename;
+		std::function<void(const std::string&)> Delete;
+		std::function<void(const std::string&)> SetDefault;
+		std::function<void()> EnsureDefaultValid;
+		std::function<void()> OpenFolder;
+	};
+
+protected:
+	Callbacks m_Callbacks;
+	char m_szNameBuffer[128] = {};
+
+public:
+	ConfigManager(std::string sUnique, Style_t stStyle = {})
+	{
+		m_sUnique = sUnique;
+		m_stStyle = stStyle;
+	};
+
+	constexpr EElementType GetType() const override
+	{
+		return EElementType::ConfigManager;
+	};
+
+	void SetCallbacks(Callbacks stCallbacks)
+	{
+		m_Callbacks = stCallbacks;
+	};
+
+	void Render() override
+	{
+		if (!m_stStyle.bVisible || !m_Callbacks.ListConfigs)
+			return;
+
+		SameLine();
+
+		const ImGuiStyle& style = ImGui::GetStyle();
+		const std::string sCurrent = m_Callbacks.GetCurrentName ? m_Callbacks.GetCurrentName() : "";
+		const std::string sDefault = m_Callbacks.GetDefaultName ? m_Callbacks.GetDefaultName() : "";
+		const std::vector<std::string> vecConfigs = m_Callbacks.ListConfigs();
+
+		const ImVec4 vec4Accent = style.Colors[ImGuiCol_SliderGrab];
+		const ImVec4 vec4TextOnAccent = ImAdd::ShadeColor(vec4Accent, 0.3f);
+
+		const float flRowStartY = ImGui::GetCursorPosY();
+		const float flAvailHeight = ImGui::GetContentRegionAvail().y;
+
+		ImGui::BeginChild("##ConfigListBox", ImVec2(180.0f * g_flUIScale, 0.f), ImGuiChildFlags_Border);
+		{
+			for (const std::string& sName : vecConfigs)
+			{
+				ImGui::PushID(sName.c_str());
+
+				const bool bIsCurrent = (sName == sCurrent);
+				const bool bIsDefault = (sName == sDefault);
+				const std::string sLabel = bIsDefault ? (sName + " " + Localization::Get("CONFIG_DEFAULT_SUFFIX"Hashed)) : sName;
+
+				if (bIsCurrent)
+				{
+					ImGui::PushStyleColor(ImGuiCol_Header, vec4Accent);
+					ImGui::PushStyleColor(ImGuiCol_HeaderHovered, vec4Accent);
+					ImGui::PushStyleColor(ImGuiCol_HeaderActive, vec4Accent);
+					ImGui::PushStyleColor(ImGuiCol_Text, vec4TextOnAccent);
+				}
+
+				if (ImGui::Selectable(sLabel.c_str(), bIsCurrent) && !bIsCurrent && m_Callbacks.Load)
+					m_Callbacks.Load(sName);
+
+				if (bIsCurrent)
+					ImGui::PopStyleColor(4);
+
+				if (ImGui::BeginPopupContextItem())
+				{
+					ImGui::TextUnformatted(Localization::Get("CONFIG_RENAME"Hashed).c_str());
+
+					static char szRenameBuf[128];
+					if (ImGui::IsWindowAppearing())
+					{
+						std::fill(std::begin(szRenameBuf), std::end(szRenameBuf), '\0');
+						const size_t iCopyLen = (std::min)(sName.size(), sizeof(szRenameBuf) - 1);
+						std::copy(sName.begin(), sName.begin() + iCopyLen, szRenameBuf);
+					}
+
+					ImGui::SetNextItemWidth(160.0f * g_flUIScale);
+					if (ImGui::InputText("##Rename", szRenameBuf, sizeof(szRenameBuf), ImGuiInputTextFlags_EnterReturnsTrue))
+					{
+						std::string sNewName(szRenameBuf);
+						if (!sNewName.empty() && m_Callbacks.Rename)
+							m_Callbacks.Rename(sName, sNewName);
+
+						ImGui::CloseCurrentPopup();
+					}
+
+					ImGui::Separator();
+
+					if (m_Callbacks.SetDefault && ImGui::Selectable(Localization::Get("CONFIG_SET_DEFAULT"Hashed).c_str()))
+					{
+						m_Callbacks.SetDefault(sName);
+						ImGui::CloseCurrentPopup();
+					}
+
+					if (vecConfigs.size() > 1 && m_Callbacks.Delete && ImGui::Selectable(Localization::Get("CONFIG_DELETE"Hashed).c_str()))
+					{
+						m_Callbacks.Delete(sName);
+
+						if (m_Callbacks.EnsureDefaultValid)
+							m_Callbacks.EnsureDefaultValid();
+
+						ImGui::CloseCurrentPopup();
+					}
+
+					ImGui::EndPopup();
+				}
+
+				ImGui::PopID();
+			}
+		}
+		ImGui::EndChild();
+
+		ImGui::SameLine();
+
+		ImGui::BeginGroup();
+		{
+			const float flPlusButtonSize = ImGui::GetFrameHeight();
+			const float flNameFieldWidth = ImGui::GetContentRegionAvail().x - flPlusButtonSize - style.ItemSpacing.x;
+
+			ImGui::SetNextItemWidth(flNameFieldWidth);
+			ImGui::InputTextWithHint("##ConfigNewName", Localization::Get("CONFIG_NAME_PLACEHOLDER"Hashed).c_str(), m_szNameBuffer, sizeof(m_szNameBuffer));
+
+			ImGui::SameLine();
+			if (ImAdd::Button(ICON_FA_PLUS, ImVec2(flPlusButtonSize, flPlusButtonSize)))
+			{
+				std::string sName(m_szNameBuffer);
+				if (!sName.empty() && m_Callbacks.CreateNew)
+				{
+					m_Callbacks.CreateNew(sName);
+					std::fill(std::begin(m_szNameBuffer), std::end(m_szNameBuffer), '\0');
+				}
+			}
+
+			if (m_Callbacks.Save && ImAdd::Button(Localization::Get("CONFIG_SAVE"Hashed).c_str()))
+				m_Callbacks.Save();
+
+			ImGui::SameLine();
+			if (m_Callbacks.Reload && ImAdd::Button(Localization::Get("CONFIG_RELOAD"Hashed).c_str()))
+				m_Callbacks.Reload();
+
+			const float flOpenFolderY = flRowStartY + flAvailHeight - ImGui::GetFrameHeight();
+			if (ImGui::GetCursorPosY() < flOpenFolderY)
+				ImGui::SetCursorPosY(flOpenFolderY);
+
+			if (m_Callbacks.OpenFolder && ImAdd::Button(Localization::Get("CONFIG_OPEN_FOLDER"Hashed).c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0.f)))
+				m_Callbacks.OpenFolder();
+		}
+		ImGui::EndGroup();
 
 		RenderChildren();
 	};
@@ -1546,7 +2080,6 @@ protected:
 	uint8_t m_iPageId;
 
 public:
-	// Constructor with manual page ID (for existing pages or manual control)
 	RadioButtonIcon(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle, const char* sIcon, uint8_t iPageId)
 	{
 		m_sUnique = sUnique;
@@ -1566,7 +2099,6 @@ public:
 		m_iPageId = iPageId;
 	};
 
-	// Constructor with auto page registration (localized)
 	RadioButtonIcon(std::string sUnique, size_t ullLocalizedNameHash, Style_t stStyle, const char* sIcon, bool bAutoRegisterPage)
 	{
 		m_sUnique = sUnique;
@@ -1579,7 +2111,6 @@ public:
 			m_iPageId = 0;
 	};
 
-	// Constructor with auto page registration (unlocalized)
 	RadioButtonIcon(std::string sUnique, std::string sUnlocalizedName, Style_t stStyle, const char* sIcon, bool bAutoRegisterPage)
 	{
 		m_sUnique = sUnique;
@@ -1593,7 +2124,6 @@ public:
 			m_iPageId = 0;
 	};
 
-	// Get the page ID this button represents
 	uint8_t GetPageId() const
 	{
 		return m_iPageId;
@@ -1604,6 +2134,14 @@ public:
 		return EElementType::RadioButtonIcon;
 	};
 
+	ImVec2 GetNaturalSize() const override
+	{
+		const ImGuiStyle& style = ImGui::GetStyle();
+		ImVec2 vec2IconSize = ImGui::CalcTextSize(m_sIcon, NULL, true);
+		ImVec2 vec2LabelSize = ImGui::CalcTextSize(GetName().c_str(), NULL, true);
+		return ImVec2(vec2IconSize.x + vec2LabelSize.x + style.FramePadding.x * 3.0f, ImGui::GetFontSize() + style.FramePadding.y * 2.0f);
+	};
+
 	void Render() override
 	{
 		if (!m_stStyle.bVisible)
@@ -1611,7 +2149,7 @@ public:
 
 		SameLine();
 
-		if (ImAdd::RadioButtonIcon(GetName().c_str(), m_sIcon, GetName().c_str(), &eCurrentPage, m_iPageId, m_stStyle.vec2Size)) {
+		if (ImAdd::RadioButtonIcon(GetName().c_str(), m_sIcon, GetName().c_str(), &eCurrentPage, m_iPageId, m_stStyle.vec2Size * g_flUIScale)) {
 			eCurrentPage = m_iPageId;
 			eCurrentSubPage = 0;
 		}
@@ -1646,13 +2184,11 @@ public:
 		return EElementType::HeaderGroup;
 	};
 
-	// Add headers for a specific page
 	void AddHeaders(uint8_t iPageId, std::vector<size_t> ullLocalizedNameHashes)
 	{
 		m_Headers.push_back({ iPageId, ullLocalizedNameHashes });
 	}
 
-	// Add headers for a specific page (with single header)
 	void AddHeader(uint8_t iPageId, size_t ullLocalizedNameHash)
 	{
 		m_Headers.push_back({ iPageId, { ullLocalizedNameHash } });
@@ -1662,9 +2198,11 @@ public:
 	{
 		if (!m_stStyle.bVisible)
 			return;
-		
+
+		const ImGuiStyle& style = ImGui::GetStyle();
+
 		ImGui::SameLine(kSidebarWidth);
-		ImGui::BeginChild(m_sUnique.c_str(), ImVec2(0, ImGui::GetFrameHeight() + 10.0f * 2), ImGuiChildFlags_Border, ImGuiWindowFlags_NoBackground);
+		ImGui::BeginChild(m_sUnique.c_str(), ImVec2(0, ImGui::GetFrameHeight() + style.WindowPadding.y * 2), ImGuiChildFlags_Border, ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar);
 		{
 			for (auto Header : m_Headers)
 			{
@@ -1705,9 +2243,12 @@ public:
 		if (!m_stStyle.bVisible)
 			return;
 
+		const ImGuiStyle& style = ImGui::GetStyle();
+		const float flHeaderHeight = ImGui::GetFrameHeight() + style.WindowPadding.y * 2;
+
 		ImGui::SetCursorPosX(kSidebarWidth);
-		ImGui::SetCursorPosY(ImGui::GetFrameHeight() + 10.0f * 2);	
-		ImGui::BeginChild(m_sUnique.c_str(), ImVec2(0, ImGui::GetWindowHeight() - ImGui::GetFrameHeight() - (ImGui::GetFrameHeight() + 10.0f * 2)), ImGuiChildFlags_Border, ImGuiWindowFlags_NoBackground);
+		ImGui::SetCursorPosY(flHeaderHeight);
+		ImGui::BeginChild(m_sUnique.c_str(), ImVec2(0, ImGui::GetWindowHeight() - ImGui::GetFrameHeight() - flHeaderHeight), ImGuiChildFlags_Border, ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar);
 		{
 			RenderChildren();
 		}
@@ -1824,7 +2365,7 @@ public:
 		if (m_Callback)
 			m_stStyle.vec2Size = m_Callback();
 
-		ImGui::BeginChild(GetName().c_str(), m_stStyle.vec2Size, m_stStyle.iFlags, m_WindowFlags);
+		ImGui::BeginChild(GetName().c_str(), m_stStyle.vec2Size, m_stStyle.iFlags | ImGuiChildFlags_AlwaysUseWindowPadding, m_WindowFlags | ImGuiWindowFlags_NoScrollbar);
 		if (m_PushVarsCallback)
 			m_PushVarsCallback();
 		ImGui::TextDisabled(GetName().c_str());

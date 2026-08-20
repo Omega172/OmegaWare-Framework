@@ -11,8 +11,6 @@ static LRESULT hkWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         ImGuiIO& io = ImGui::GetIO();
         io.IniFilename = io.LogFilename = nullptr;
         io.ConfigFlags = ImGuiConfigFlags_NoMouseCursorChange;
-        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-        io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
 
         ImGui::StyleColorsDark();
 
@@ -79,9 +77,6 @@ bool WndProcHooks::Setup()
 {
     dwProcessId = GetCurrentProcessId();
 
-    // When loaded very early in process startup (e.g. via Proxy, which attaches before the
-    // host application has created its main window), EnumWindows can legitimately find nothing
-    // on the first try. Retry for a while instead of failing immediately.
     constexpr auto kRetryInterval = std::chrono::milliseconds(250);
     constexpr auto kMaxWait = std::chrono::seconds(30);
 

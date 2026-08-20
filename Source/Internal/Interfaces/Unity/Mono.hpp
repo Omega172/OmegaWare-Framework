@@ -5,15 +5,12 @@
 #include "pch.h"
 #include "UnityConfig.hpp"
 
-// This is where the magic happens, for unity games running mono anyway.
-
 #include "Mono\metadata\threads.h"
 #include "Mono\metadata\object.h"
 
 // https://github.com/mono/mono/
 // https://learn.microsoft.com/en-us/dotnet/standard/native-interop/type-marshalling
 
-// Define function pointer types for various Mono functions
 typedef MonoThread* (*t_mono_thread_attach)(MonoDomain* domain);
 typedef MonoDomain* (*t_mono_get_root_domain)();
 typedef MonoAssembly* (*t_mono_domain_assembly_open)(MonoDomain* doamin, const char* name);
@@ -61,7 +58,6 @@ private:
 		if (hMono == NULL)
 			return;
 
-		// Necessary functions to get method addresses
 		mono_domain_assembly_open = reinterpret_cast<t_mono_domain_assembly_open>(GetProcAddress(hMono, "mono_domain_assembly_open"));
 		mono_assembly_get_image = reinterpret_cast<t_mono_assembly_get_image>(GetProcAddress(hMono, "mono_assembly_get_image"));
 		mono_class_from_name = reinterpret_cast<t_mono_class_from_name>(GetProcAddress(hMono, "mono_class_from_name"));
@@ -86,7 +82,7 @@ private:
 	}
 
 public:
-	static Mono& Instance() // Singleton time!
+	static Mono& Instance()
 	{
 		static Mono _instance;
 

@@ -9,27 +9,11 @@
 namespace Memory
 {
 	/**
-	 * Get the length of a string whilst using Memory::IsReadable to prevent access violations.
-	 *
-	 * \returns The size of the string.
-	 *
-	 * \param lpAddress The address of the start of the string to be checked.
-	 *
-	 * \param dwMaxSize The maximum size of the string to be read from.
-	 *
 	 * \warning Is more expensive than std::strlen!
 	 */
 	size_t Strlen(const char* lpAddress, size_t dwMaxSize = 1024);
 
 	/**
-	 * Get the length of a wstring whilst using Memory::IsReadable to prevent access violations.
-	 *
-	 * \returns The size of the wstring.
-	 *
-	 * \param lpAddress The address of the start of the wstring to be checked.
-	 *
-	 * \param dwMaxSize The maximum size of the wstring to be read from.
-	 *
 	 * \warning Is more expensive than std::wcslen!
 	 */
 	size_t Wcslen(const wchar_t* lpAddress, size_t dwMaxSize = 1024);
@@ -40,24 +24,8 @@ namespace Memory
 		InterfaceRegistry_t* m_pNext;
 	};
 
-	/**
-	 * Enumerate interfaces in module; calling the function and passing a pointer to the interface registry.
-	 *
-	 * \param svModuleName The name of the module to look for interfaces in.
-	 *
-	 * \param fn A function that accepts an InterfaceRegistry pointer and returns a boolean indicating if it wants to stop the enumeration.
-	 */
 	void EnumerateInterfaces(std::string_view svModuleName, std::function<bool(InterfaceRegistry_t*)> fn);
 
-	/**
-	 * Find calls the Create function for the given interface found in the given module.
-	 *
-	 * \returns A pointer to the interface.
-	 *
-	 * \param svModuleName The name of the module to look for the interface in.
-	 *
-	 * \param svInterfaceName The full name of the interface to find in the module.
-	 */
 	void* CreateInterface(std::string_view svModuleName, std::string_view svInterfaceName);
 
 	struct SignatureData_t {
@@ -68,48 +36,12 @@ namespace Memory
 		std::function<uintptr_t(uintptr_t)> CorrectReturnAddressFunc;
 	};
 
-	/**
-	 * Scan a module for the given signature.
-	 *
-	 * \returns A pointer to the memory address of the start of the signature.
-	 *
-	 * \param svModuleName The name of the module to look for the signature in.
-	 *
-	 * \param aSignatures The signature to scan the module with.
-	 */
 	void* SignatureScan(const std::string_view svModuleName, const SignatureData_t::Span_t aSignature);
 
-	/**
-	 * Scan a module for the given signature.
-	 *
-	 * \returns A pointer to the memory address of the start of the signature.
-	 *
-	 * \param hModule The module to look for the signature in.
-	 *
-	 * \param aSignatures The signature to scan the module with.
-	 */
 	void* SignatureScan(const HMODULE hModule, const SignatureData_t::Span_t aSignature);
 
-	/**
-	 * Scan a module for one of the given signatures.
-	 *
-	 * \returns A pointer to the first memory address of the start of the first successful signature.
-	 *
-	 * \param svModuleName The name of the module to look for the signatures in.
-	 *
-	 * \param vecSignatures A vector of signatures to scan the module with.
-	 */
 	void* SignatureScan(const std::string_view svModuleName, const std::vector<SignatureData_t> vecSignatures);
 
-	/**
-	 * Scan a module for one of the given signatures.
-	 *
-	 * \returns A pointer to the first memory address of the start of the first successful signature.
-	 *
-	 * \param hModule The module to look for the signatures in.
-	 *
-	 * \param vecSignatures A vector of signatures to scan the module with.
-	 */
 	void* SignatureScan(const HMODULE hModule, const std::vector<SignatureData_t> vecSignatures);
 
 	struct ModuleScanResult_t {
@@ -117,35 +49,12 @@ namespace Memory
 		std::vector<void*> m_vecPointers;
 	};
 
-	/**
-	 * Scan the current process and its modules for all instances of the given signatures.
-	 *
-	 * \returns A vector of ModuleScanResult_t that give vectors of pointers to instructions and the module it belongs to.
-	 *
-	 * \vecModules The modules to scan.
-	 *
-	 * \bIncludeProcess Wether or not to scan the target process.
-	 *
-	 * \param vecSignatures A vector of SignatureData_t to scan all modules with.
-	 *
-	 * \param sizePerModuleLimit The limit of instructions to collect per module.
-	 */
 	std::vector<ModuleScanResult_t> SignatureScan(std::vector<std::string_view> vecModules, bool bIncludeProcess,
 		const std::vector<SignatureData_t> vecSignatures, size_t sizePerModuleLimit = SIZE_MAX);
 
-	/**
-	 * Scan the current process and its modules for all instances of the given signatures.
-	 *
-	 * \returns A vector of ModuleScanResult_t that give vectors of pointers to instructions and the module it belongs to.
-	 *
-	 * \param vecSignatures A vector of SignatureData_t to scan all modules with.
-	 *
-	 * \param sizePerModuleLimit The limit of instructions to collect per module.
-	 */
 	std::vector<ModuleScanResult_t> SignatureScan(const std::vector<SignatureData_t> vecSignatures, size_t sizePerModuleLimit = SIZE_MAX);
 }
 
-// This is a dirty hack btw.
 template<size_t sizeArray>
 inline Memory::SignatureData_t::Span_t ConvertSignatureArrayToVector(std::array<Memory::SignatureData_t::Span_t::value_type, sizeArray> aSignature)
 {

@@ -8,6 +8,7 @@ namespace ImAdd
 
 	// Helpers
 	ImVec4  HexToColorVec4(unsigned int hex_color, float alpha);
+	ImVec4  ShadeColor(const ImVec4& col, float factor);
 
 	// Clickables
 	bool    TextButton(const char* label, const ImVec2& size_arg = ImVec2(0, 0));

@@ -1,7 +1,6 @@
 #include "pch.h"
 #include "Colors.hpp"
 
-// I hate this.
 static std::string ConvertFunctionName(const char* szFunctionName)
 {
 	std::string sFnName{ szFunctionName };

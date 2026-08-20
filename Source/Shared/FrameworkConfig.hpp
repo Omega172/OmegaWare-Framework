@@ -9,12 +9,12 @@
 #define STR(X) STRR(X)
 
 #define FRAMEWORK_MAJOR_VERSION 3
-#define FRAMEWORK_MINOR_VERSION 0
+#define FRAMEWORK_MINOR_VERSION 1
 #define FRAMEWORK_REWORK_VERSION 0
 #define FRAMEWORK_VERSION FRAMEWORK_MAJOR_VERSION.FRAMEWORK_MINOR_VERSION.FRAMEWORK_REWORK_VERSION
 
 #define FRAMEWORK_CODENAME "OmegaWare"
-// Placeholder so the framework builds out of the box. Set this to the game you're targeting.
+// Placeholder so the framework builds out of the box. Set this to the game you're targeting. Only affects the console and menu titles.
 #define TARGET_GAME_NAME "ExampleGame"
 
 #pragma warning( push ) // disable "operator '!=': deprecated for array types" warning

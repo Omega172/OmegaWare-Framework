@@ -22,14 +22,12 @@ namespace Framework {
 	constexpr ImGuiKey keyUnloadKey2 = ImGuiKey_Delete;
 	constexpr ImGuiKey keyConsoleKey = ImGuiKey_Home;
 
-	// Constructed once the menu exists (see dllmain.cpp), since Config now takes its
-	// save/load root explicitly instead of reaching for a global menu instance.
 	inline std::unique_ptr<Config> config;
 
 	inline std::unique_ptr<WndProcHooks> wndproc = std::make_unique<WndProcHooks>();
 	inline std::unique_ptr<RendererHooks> renderer = std::make_unique<RendererHooks>();
 
-	inline std::unique_ptr<Menu> menu = std::make_unique<Menu>(Framework::Title, Framework::Title, ElementBase::Style_t({
+	inline std::unique_ptr<Menu> menu = std::make_unique<Menu>(Framework::Framework, Framework::Title, ElementBase::Style_t({
 	.vec2Size = GUI::kBaseMenuSize,
 	.iFlags = ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground }));
 
@@ -40,8 +38,5 @@ namespace Framework {
 #if ENGINE_UNITY
 	inline Mono mono = Mono::Instance();
 #endif
-
-	// Backed by the Shared feature registry, so BaseFeature's self-registration has one
-	// explicit owner instead of a bare namespace global living only in Internal.
 	inline std::vector<BaseFeature*>& g_vecFeatures = FeatureRegistry::GetFeatures();
 }

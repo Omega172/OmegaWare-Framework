@@ -6,8 +6,6 @@
 namespace Memory
 {
 	/**
-	 * Determine if the memory being pointed to is readable to prevent access violations.
-	 *
 	 * \warning Can be expensive!
 	 */
 	bool IsReadable(const void* lpAddress, size_t dwLength);
@@ -31,9 +29,6 @@ namespace Memory
 		return IsReadable(lpAddress, sizeof(*lpAddress));
 	}
 
-	/**
-	 * \returns The number of methods in the virtual method table.
-	 */
 	size_t GetVirtualMethodTableSize(void* lpAddress);
 
 	/**

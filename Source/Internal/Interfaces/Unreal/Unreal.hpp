@@ -17,13 +17,11 @@ inline bool FrameworkUnrealInit()
 class Unreal
 {
 public:
-	// Shortcut functions to get pointers to important classes used for many things
 	static SDK::UKismetMathLibrary* GetMathLibrary() { return reinterpret_cast<SDK::UKismetMathLibrary*>(SDK::UKismetMathLibrary::StaticClass()); }
 	static SDK::UKismetSystemLibrary* GetSystemLibrary() { return reinterpret_cast<SDK::UKismetSystemLibrary*>(SDK::UKismetSystemLibrary::StaticClass()); }
 	static SDK::UGameplayStatics* GetGameplayStatics() { return reinterpret_cast<SDK::UGameplayStatics*>(SDK::UGameplayStatics::StaticClass()); }
 	static SDK::UKismetStringLibrary* GetStringLibrary() { return reinterpret_cast<SDK::UKismetStringLibrary*>(SDK::UKismetStringLibrary::StaticClass()); }
 
-	// These functions are to make getting pointers to important classes and objects easier and cleaner
 	static SDK::AGameStateBase* GetGameStateBase()
 	{
 		SDK::UWorld* pGWorld = SDK::UWorld::GetWorld();

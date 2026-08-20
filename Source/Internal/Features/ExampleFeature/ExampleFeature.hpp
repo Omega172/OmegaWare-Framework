@@ -25,8 +25,7 @@ private:
 	std::unique_ptr<GroupChild> m_pMainPageGroupChild = std::make_unique<GroupChild>(
 		"EXAMPLE_MAIN_PAGE_GROUP_CHILD",
 		"EXAMPLE_MAIN_PAGE_GROUP_CHILD"Hashed,
-		ElementBase::Style_t(),
-		ImGuiChildFlags_Border);
+		ElementBase::Style_t{ .iFlags = ImGuiChildFlags_Border });
 
 	std::unique_ptr<Checkbox> m_pExampleCheckbox = std::make_unique<Checkbox>(
 		"EXAMPLE_CHECKBOX",
@@ -40,8 +39,7 @@ private:
 	std::unique_ptr<GroupChild> m_pMainPageGroupChild2 = std::make_unique<GroupChild>(
 		"EXAMPLE_MAIN_PAGE_GROUP_CHILD2",
 		"EXAMPLE_MAIN_PAGE_GROUP_CHILD2"Hashed,
-		ElementBase::Style_t(),
-		ImGuiChildFlags_Border);
+		ElementBase::Style_t{ .iFlags = ImGuiChildFlags_Border });
 	
 	std::unique_ptr<_Text> m_pExampleText = std::make_unique<_Text>(
 		"EXAMPLE_TEXT",
@@ -55,14 +53,12 @@ private:
 	std::unique_ptr<GroupChild> m_pMainPageChild = std::make_unique<GroupChild>(
 		"EXAMPLE_MAIN_PAGE_CHILD",
 		"EXAMPLE_MAIN_PAGE_CHILD"Hashed,
-		ElementBase::Style_t{ .eSameLine = ElementBase::ESameLine::Same, .vec2Size = ImVec2(0.f, 0.f) },
-		ImGuiChildFlags_Border);
+		ElementBase::Style_t{ .eSameLine = ElementBase::ESameLine::Same, .vec2Size = ImVec2(0.f, 0.f), .iFlags = ImGuiChildFlags_Border });
 
 	std::unique_ptr<Combo> m_pExampleCombo = std::make_unique<Combo>(
 		"EXAMPLE_COMBO",
 		"EXAMPLE_COMBO"Hashed);
 
-	//input text, slider int, slider float, seperator, AcentButton
 	std::unique_ptr<InputText> m_pExampleInputText = std::make_unique<InputText>(
 		"EXAMPLE_INPUTTEXT",
 		"EXAMPLE_INPUTTEXT"Hashed,
@@ -100,8 +96,7 @@ private:
 	std::unique_ptr<GroupChild> m_pSecondaryPageChild = std::make_unique<GroupChild>(
 		"EXAMPLE_SECONDARY_CHILD",
 		"EXAMPLE_SECONDARY_CHILD"Hashed,
-		ElementBase::Style_t{ .vec2Size = ImVec2(0, 0) },
-		ImGuiChildFlags_Border
+		ElementBase::Style_t{ .vec2Size = ImVec2(0, 0), .iFlags = ImGuiChildFlags_Border }
 	);
 
 	std::unique_ptr<_Text> m_pSecondaryPageText = std::make_unique<_Text>(
@@ -109,6 +104,10 @@ private:
 		"EXAMPLE_SECONDARY_TEXT"Hashed,
 		ElementBase::Style_t{}
 	);
+
+	std::unique_ptr<Table> m_pExampleTable = std::make_unique<Table>(
+		"EXAMPLE_TABLE",
+		2);
 
 public:
 	bool SetupMenu();

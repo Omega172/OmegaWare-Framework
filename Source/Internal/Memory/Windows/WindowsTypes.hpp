@@ -1,6 +1,6 @@
 #pragma once
 
-#pragma warning(disable : 4005) // Disable the warning for macro redefinition
+#pragma warning(disable : 4005)
 
 #include <psapi.h>
 #include <Shlwapi.h>

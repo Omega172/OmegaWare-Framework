@@ -35,7 +35,6 @@ private:
 
 	Localization();
 
-	// Internal representation of static functions
 	std::string _Get(const size_t ullKeyHash) const;
 
 	void _LoadLocale(Locale_t& stLocale);
@@ -48,7 +47,6 @@ private:
 	void _AddToLocale(std::string sLocaleKey, std::initializer_list<std::pair<size_t, std::string>> ilLocalizedStrings);
 
 
-	// Public functions just get the single localization instance and calls the internal version of the function
 public:
 	static std::string Get(const std::string sKey);
 	static std::string Get(const size_t ullKeyHash);

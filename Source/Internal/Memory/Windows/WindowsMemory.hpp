@@ -5,14 +5,11 @@
 
 namespace Memory
 {
-	// Check if a module is loaded
 	HMODULE GetModule(std::string_view sModuleName);
 
-	// Gets loaded module info
 	LPMODULEINFO GetModuleInfo(std::string_view sModuleName);
 	LPMODULEINFO GetModuleInfo(HMODULE hModule);
 
-	// Type used for EnumerateHandles function
 	using EnumerateHandlesFunc = std::function<bool(PSYSTEM_HANDLE_TABLE_ENTRY_INFO)>;
 	// Enumerates open handles with fn that returns true if it wants to stop the enumeration
 	void EnumerateHandles(EnumerateHandlesFunc fn);
@@ -22,13 +19,11 @@ namespace Memory
 
 	void ReleaseHandles();
 
-	// Type used for EnumerateModules function
 	using EnumerateModulesFunc = std::function<bool(std::string_view)>;
-	// Enum used for EnumerateModules function, filters the strings provided to the callback fn
 	namespace EnumerateModulesFlags {
-		constexpr DWORD DiscardSystemModules = 1 << 0; // No Windows Modules
-		constexpr DWORD ModuleNameOnly = 1 << 1; // Instead of full path
-		constexpr DWORD LowercaseName = 1 << 2; // Passes a fully lowercase name
+		constexpr DWORD DiscardSystemModules = 1 << 0;
+		constexpr DWORD ModuleNameOnly = 1 << 1;
+		constexpr DWORD LowercaseName = 1 << 2;
 	}
 
 	// Enumerates process moduleswith fn that returns true if it wants to stop the enumeration

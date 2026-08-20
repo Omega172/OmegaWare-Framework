@@ -1,4 +1,5 @@
 #include "pch.h"
+#include <mutex>
 
 
 #if FRAMEWORK_RENDER_D3D11 || FRAMEWORK_RENDER_DYNAMIC
@@ -8,6 +9,9 @@ static ID3D11DeviceContext* g_pDeviceContext = NULL;
 static ID3D11RenderTargetView* g_pRenderTargetView = NULL;
 static IDXGISwapChain* g_pSwapChain = NULL;
 static bool g_bShuttingDown = false;
+static bool g_bInitialized = false;
+
+static std::recursive_mutex g_hookMutex;
 
 static DXGI_FORMAT GetCorrectDXGIFormat(DXGI_FORMAT currentFormat) {
 	switch (currentFormat) {
@@ -102,11 +106,35 @@ static void RenderImGui(IDXGISwapChain* pSwapChain) {
 	if (!ImGui::GetCurrentContext())
 		return;
 
-	// If shutting down, skip rendering entirely - see the g_bShuttingDown + Sleep(100) in
-	// D3D11Destroy(): without this, the render thread can still be in here using the ImGui
-	// backend data at the exact moment the unload thread frees it via ImGui_ImplDX11_Shutdown().
 	if (g_bShuttingDown)
 		return;
+
+#if FRAMEWORK_RENDER_DYNAMIC
+	if (Framework::renderer->DetectedRenderer == RendererHooks::NONE)
+	{
+		RendererHooks::ERendererType eExpected = RendererHooks::NONE;
+		RendererHooks::ERendererType eDetected = RendererHooks::DetectFromSwapChain(pSwapChain);
+
+		if (Framework::renderer->DetectedRenderer.compare_exchange_strong(eExpected, eDetected))
+		{
+			Utils::LogDebug(eDetected == RendererHooks::D3D11 ? "Detected D3D11 swap chain (via first real Present)." : "Detected D3D12 swap chain (via first real Present).");
+			Framework::renderer->OnRendererDetected(eDetected);
+		}
+	}
+
+	if (Framework::renderer->DetectedRenderer != RendererHooks::D3D11)
+		return;
+#endif
+	if (g_bInitialized && GUI::bPendingFontRebuild) {
+		ImGui::GetIO().Fonts->Clear();
+		ImportFonts(GUI::flPendingUIScale);
+
+		ImGui_ImplDX11_InvalidateDeviceObjects();
+		ImGui_ImplDX11_CreateDeviceObjects();
+
+		CurrentFont = TahomaFont;
+		GUI::bPendingFontRebuild = false;
+	}
 
 	if (!ImGui::GetIO().BackendRendererUserData) {
 
@@ -117,6 +145,7 @@ static void RenderImGui(IDXGISwapChain* pSwapChain) {
 
 		g_pDevice->GetImmediateContext(&g_pDeviceContext);
 		ImGui_ImplDX11_Init(g_pDevice, g_pDeviceContext);
+		g_bInitialized = true;
 	}
 
 	if (!g_pRenderTargetView) {
@@ -140,6 +169,8 @@ static void RenderImGui(IDXGISwapChain* pSwapChain) {
 
 static Hooking::Hook<HRESULT(WINAPI*)(IDXGISwapChain*, UINT, UINT)> oPresent;
 static HRESULT WINAPI hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags) {
+	std::lock_guard<std::recursive_mutex> lock(g_hookMutex);
+
 	RenderImGui(pSwapChain);
 
 	return oPresent(pSwapChain, SyncInterval, Flags);
@@ -147,6 +178,8 @@ static HRESULT WINAPI hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, U
 
 static Hooking::Hook<HRESULT(WINAPI*)(IDXGISwapChain*, UINT, UINT, const DXGI_PRESENT_PARAMETERS*)> oPresent1;
 static HRESULT WINAPI hkPresent1(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT PresentFlags, const DXGI_PRESENT_PARAMETERS* pPresentParameters) {
+	std::lock_guard<std::recursive_mutex> lock(g_hookMutex);
+
 	RenderImGui(pSwapChain);
 
 	return oPresent1(pSwapChain, SyncInterval, PresentFlags, pPresentParameters);
@@ -154,6 +187,8 @@ static HRESULT WINAPI hkPresent1(IDXGISwapChain* pSwapChain, UINT SyncInterval, 
 
 static Hooking::Hook<HRESULT(WINAPI*)(IDXGISwapChain*, UINT, UINT, UINT, DXGI_FORMAT, UINT)> oResizeBuffers;
 static HRESULT WINAPI hkResizeBuffers(IDXGISwapChain* pSwapChain, UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT NewFormat, UINT SwapChainFlags) {
+	std::lock_guard<std::recursive_mutex> lock(g_hookMutex);
+
 	CleanupRenderTarget();
 
 	return oResizeBuffers(pSwapChain, BufferCount, Width, Height, NewFormat, SwapChainFlags);
@@ -161,6 +196,8 @@ static HRESULT WINAPI hkResizeBuffers(IDXGISwapChain* pSwapChain, UINT BufferCou
 
 static Hooking::Hook<HRESULT(WINAPI*)(IDXGISwapChain*, UINT, UINT, UINT, DXGI_FORMAT, UINT, const UINT*, IUnknown* const*)> oResizeBuffers1;
 static HRESULT WINAPI hkResizeBuffers1(IDXGISwapChain* pSwapChain, UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT NewFormat, UINT SwapChainFlags, const UINT* pCreationNodeMask, IUnknown* const* ppPresentQueue) {
+	std::lock_guard<std::recursive_mutex> lock(g_hookMutex);
+
 	CleanupRenderTarget();
 
 	return oResizeBuffers1(pSwapChain, BufferCount, Width, Height, NewFormat, SwapChainFlags, pCreationNodeMask, ppPresentQueue);
@@ -168,6 +205,8 @@ static HRESULT WINAPI hkResizeBuffers1(IDXGISwapChain* pSwapChain, UINT BufferCo
 
 static Hooking::Hook<HRESULT(WINAPI*)(IDXGIFactory*, IUnknown*, DXGI_SWAP_CHAIN_DESC*, IDXGISwapChain**)> oCreateSwapChain;
 static HRESULT WINAPI hkCreateSwapChain(IDXGIFactory* pFactory, IUnknown* pDevice, DXGI_SWAP_CHAIN_DESC* pDesc, IDXGISwapChain** ppSwapChain) {
+	std::lock_guard<std::recursive_mutex> lock(g_hookMutex);
+
 	CleanupRenderTarget();
 
 	return oCreateSwapChain(pFactory, pDevice, pDesc, ppSwapChain);
@@ -175,6 +214,8 @@ static HRESULT WINAPI hkCreateSwapChain(IDXGIFactory* pFactory, IUnknown* pDevic
 
 static Hooking::Hook<HRESULT(WINAPI*)(IDXGIFactory*, IUnknown*, HWND, const DXGI_SWAP_CHAIN_DESC1*, const DXGI_SWAP_CHAIN_FULLSCREEN_DESC*, IDXGIOutput*, IDXGISwapChain1**)> oCreateSwapChainForHwnd;
 static HRESULT WINAPI hkCreateSwapChainForHwnd(IDXGIFactory* pFactory, IUnknown* pDevice, HWND hWnd, const DXGI_SWAP_CHAIN_DESC1* pDesc, const DXGI_SWAP_CHAIN_FULLSCREEN_DESC* pFullscreenDesc, IDXGIOutput* pRestrictToOutput, IDXGISwapChain1** ppSwapChain) {
+	std::lock_guard<std::recursive_mutex> lock(g_hookMutex);
+
 	CleanupRenderTarget();
 
 	return oCreateSwapChainForHwnd(pFactory, pDevice, hWnd, pDesc, pFullscreenDesc, pRestrictToOutput, ppSwapChain);
@@ -182,6 +223,8 @@ static HRESULT WINAPI hkCreateSwapChainForHwnd(IDXGIFactory* pFactory, IUnknown*
 
 static Hooking::Hook<HRESULT(WINAPI*)(IDXGIFactory*, IUnknown*, IUnknown*, const DXGI_SWAP_CHAIN_DESC1*, IDXGIOutput*, IDXGISwapChain1**)> oCreateSwapChainForCoreWindow;
 static HRESULT WINAPI hkCreateSwapChainForCoreWindow(IDXGIFactory* pFactory, IUnknown* pDevice, IUnknown* pWindow, const DXGI_SWAP_CHAIN_DESC1* pDesc, IDXGIOutput* pRestrictToOutput, IDXGISwapChain1** ppSwapChain) {
+	std::lock_guard<std::recursive_mutex> lock(g_hookMutex);
+
 	CleanupRenderTarget();
 
 	return oCreateSwapChainForCoreWindow(pFactory, pDevice, pWindow, pDesc, pRestrictToOutput, ppSwapChain);
@@ -189,14 +232,13 @@ static HRESULT WINAPI hkCreateSwapChainForCoreWindow(IDXGIFactory* pFactory, IUn
 
 static Hooking::Hook<HRESULT(WINAPI*)(IDXGIFactory*, IUnknown*, const DXGI_SWAP_CHAIN_DESC1*, IDXGIOutput*, IDXGISwapChain1**)> oCreateSwapChainForComposition;
 static HRESULT WINAPI hkCreateSwapChainForComposition(IDXGIFactory* pFactory, IUnknown* pDevice, const DXGI_SWAP_CHAIN_DESC1* pDesc, IDXGIOutput* pRestrictToOutput, IDXGISwapChain1** ppSwapChain) {
+	std::lock_guard<std::recursive_mutex> lock(g_hookMutex);
+
 	CleanupRenderTarget();
 
 	return oCreateSwapChainForComposition(pFactory, pDevice, pDesc, pRestrictToOutput, ppSwapChain);
 }
 
-// Resolves the vtable slots we need to hook while the temporary COM objects are alive, and
-// releases them immediately after. This keeps hook installation itself free of any COM
-// lifetime concerns, so a failed install can never leak pIDXGIFactory/pDXGIAdapter/pDXGIDevice.
 struct D3D11HookTargets
 {
 	void* pCreateSwapChain = nullptr;
@@ -251,7 +293,9 @@ static bool ResolveD3D11HookTargets(D3D11HookTargets& out)
 
 bool RendererHooks::D3D11Setup()
 {
-	if (!CreateDevice(Framework::wndproc.get()->hwndWindow)) {
+	const bool bDeviceOk = CreateDevice(Framework::wndproc.get()->hwndWindow);
+
+	if (!bDeviceOk) {
 		Utils::LogError("CreateDevice failure!");
 		return false;
 	}
@@ -304,8 +348,6 @@ bool RendererHooks::D3D11Setup()
 		return false;
 	}
 
-	// Every hook above installed successfully; keep them. If any Install() had failed, the
-	// batch going out of scope without Commit() would have already removed the rest.
 	batch.Commit();
 
 	CleanupRenderTarget();
@@ -313,46 +355,41 @@ bool RendererHooks::D3D11Setup()
 	return true;
 }
 
-void RendererHooks::D3D11RebuildFontTexture()
-{
-	// Only meaningful once ImGui_ImplDX11_Init() has actually run (see RenderImGui() - it's
-	// lazy, tied to the first successful Present call), otherwise there's no GPU-side font
-	// texture yet to invalidate; ImportFonts() having rebuilt the atlas is enough on its own
-	// and the fresh sizes get picked up the first time Init() does run.
-	if (!ImGui::GetCurrentContext() || !ImGui::GetIO().BackendRendererUserData)
-		return;
-
-	ImGui_ImplDX11_InvalidateDeviceObjects();
-	ImGui_ImplDX11_CreateDeviceObjects();
-}
-
 void RendererHooks::D3D11Destroy()
 {
 	g_bShuttingDown = true;
-	Sleep(100); // Give an in-flight Present call a chance to see the shutdown flag and return
 
-	oPresent.Remove();
-	oPresent1.Remove();
-	oResizeBuffers.Remove();
-	oResizeBuffers1.Remove();
-	oCreateSwapChain.Remove();
-	oCreateSwapChainForHwnd.Remove();
-	oCreateSwapChainForCoreWindow.Remove();
-	oCreateSwapChainForComposition.Remove();
+	{
+		std::lock_guard<std::recursive_mutex> lock(g_hookMutex);
 
-	if (ImGui::GetCurrentContext()) {
-		ImGuiIO& io = ImGui::GetIO();
+		oPresent.Remove();
+		oPresent1.Remove();
+		oResizeBuffers.Remove();
+		oResizeBuffers1.Remove();
+		oCreateSwapChain.Remove();
+		oCreateSwapChainForHwnd.Remove();
+		oCreateSwapChainForCoreWindow.Remove();
+		oCreateSwapChainForComposition.Remove();
+	}
 
-		if (io.BackendRendererUserData)
-			ImGui_ImplDX11_Shutdown();
+	if (g_bInitialized && ImGui::GetCurrentContext()) {
+		ImGui_ImplDX11_Shutdown();
 
-		if (io.BackendPlatformUserData)
+		if (ImGui::GetIO().BackendPlatformUserData)
 			ImGui_ImplWin32_Shutdown();
 
 		ImGui::DestroyContext();
 	}
 
 	CleanupDevice();
+	g_bInitialized = false;
 }
+
+#if FRAMEWORK_RENDER_DYNAMIC
+void RendererHooks::D3D11ReleaseUnusedResources()
+{
+	CleanupDevice();
+}
+#endif
 
 #endif

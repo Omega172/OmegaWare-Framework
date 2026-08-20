@@ -1,22 +1,3 @@
-// Export forwarding for the Proxy target when built as version.dll (see proxy_dll_name and the
-// PROXY define in xmake.lua - Proxy compiles the same sources as Internal, so this file only
-// adds what Internal doesn't already have: the forwarded exports themselves). Rather than
-// linker-level export forwarding to a renamed copy of the system DLL - which needs that copy to
-// exist somewhere and breaks if it goes missing or the OS updates the real one - this loads the
-// genuine version.dll from the real System32 path at runtime and resolves each export via
-// GetProcAddress, then forwards calls through typed function pointers.
-//
-// ProxyInitRealVersionDll() is called from Internal/dllmain.cpp's DllMain (under #ifdef PROXY)
-// before anything else runs, since the forwarded exports need to work immediately.
-//
-// Signatures below are the standard documented winver.h prototypes, reproduced locally rather
-// than pulled in via #include <winver.h> - that header declares these as dllimport, which
-// conflicts with also defining them as this DLL's own exports here.
-// GetFileVersionInfoByHandle is undocumented by Microsoft; its signature here matches the one
-// published on Microsoft Learn (BOOL GetFileVersionInfoByHandle(DWORD, HANDLE, LPVOID*, PDWORD)),
-// which also notes it has no import library and must be resolved via GetProcAddress - exactly
-// what we're doing for every export here anyway.
-
 #define NOMINMAX
 #include <Windows.h>
 #include <string>

@@ -72,6 +72,27 @@ ImVec4 ImAdd::HexToColorVec4(unsigned int hex_color, float alpha) {
     return color;
 }
 
+ImVec4 ImAdd::ShadeColor(const ImVec4& col, float factor)
+{
+    const float luminance = col.x * 0.299f + col.y * 0.587f + col.z * 0.114f;
+
+    if (luminance > 0.5f)
+    {
+        return ImVec4(
+            ImClamp(col.x * factor, 0.0f, 1.0f),
+            ImClamp(col.y * factor, 0.0f, 1.0f),
+            ImClamp(col.z * factor, 0.0f, 1.0f),
+            col.w);
+    }
+
+    const float amount = 1.0f - factor;
+    return ImVec4(
+        ImClamp(col.x + (1.0f - col.x) * amount, 0.0f, 1.0f),
+        ImClamp(col.y + (1.0f - col.y) * amount, 0.0f, 1.0f),
+        ImClamp(col.z + (1.0f - col.z) * amount, 0.0f, 1.0f),
+        col.w);
+}
+
 bool ImAdd::TextButton(const char* label, const ImVec2& size_arg)
 {
     ImGuiWindow* window = GetCurrentWindow();
@@ -199,7 +220,10 @@ bool ImAdd::AccentButton(const char* label, const ImVec2& size_arg)
         it_anim = anim.find(id);
     }
 
-    it_anim->second.FrameBg = ImLerp(it_anim->second.FrameBg, GetStyleColorVec4((held && hovered) ? ImGuiCol_SliderGrab : ImGuiCol_SliderGrabActive), 1.0f / fAnimationSpeed * ImGui::GetIO().DeltaTime);
+    ImVec4 accentBase = GetStyleColorVec4(ImGuiCol_SliderGrab);
+    ImVec4 accentHovered = ShadeColor(accentBase, 0.85f);
+    ImVec4 accentPressed = ShadeColor(accentBase, 0.6f);
+    it_anim->second.FrameBg = ImLerp(it_anim->second.FrameBg, (held && hovered) ? accentPressed : hovered ? accentHovered : accentBase, 1.0f / fAnimationSpeed * ImGui::GetIO().DeltaTime);
     ImU32 frameCol = GetColorU32(it_anim->second.FrameBg);
 
     ImVec4 borderColDefault = GetStyleColorVec4(ImGuiCol_SliderGrab);
@@ -274,7 +298,7 @@ bool ImAdd::RadioButton(const char* label, uint8_t* v, uint8_t current_id, const
         it_anim = anim.find(id);
     }
 
-    ImVec4 frameColDefault = GetStyleColorVec4(ImGuiCol_FrameBg);
+    ImVec4 frameColDefault = GetStyleColorVec4(ImGuiCol_Header);
     ImVec4 frameColNull = frameColDefault; frameColNull.w = 0;
     it_anim->second.FrameBg = ImLerp(it_anim->second.FrameBg, active ? frameColDefault : frameColNull, 1.0f / fAnimationSpeed * ImGui::GetIO().DeltaTime);
     ImU32 frameCol = GetColorU32(it_anim->second.FrameBg);
@@ -337,8 +361,7 @@ bool ImAdd::RadioButtonIcon(const char* str_id, const char* icon, const char* la
         it_anim = anim.find(id);
     }
 
-    // Colors
-    ImVec4 frameColDefault = GetStyleColorVec4(ImGuiCol_FrameBg);
+    ImVec4 frameColDefault = GetStyleColorVec4(ImGuiCol_Header);
     ImVec4 frameColNull = frameColDefault; frameColNull.w = 0;
     it_anim->second.FrameBg = ImLerp(it_anim->second.FrameBg, active ? frameColDefault : frameColNull, 1.0f / fAnimationSpeed * ImGui::GetIO().DeltaTime);
     ImU32 frameCol = GetColorU32(it_anim->second.FrameBg);
@@ -480,7 +503,7 @@ bool ImAdd::Checkbox(const char* label, bool* v)
     it_anim->second.Border = ImLerp(it_anim->second.Border, GetStyleColorVec4(*v ? ImGuiCol_SliderGrab : ImGuiCol_Border), 1.0f / fAnimationSpeed * ImGui::GetIO().DeltaTime);
     ImU32 borderCol = GetColorU32(it_anim->second.Border);
 
-    ImVec4 checkMarkDefault = GetStyleColorVec4(ImGuiCol_CheckMark);
+    ImVec4 checkMarkDefault = ShadeColor(GetStyleColorVec4(ImGuiCol_SliderGrabActive), 0.4f);
     ImVec4 checkMarkNull = checkMarkDefault; checkMarkNull.w = 0;
     it_anim->second.CheckMark = ImLerp(it_anim->second.CheckMark, *v ? checkMarkDefault : checkMarkNull, 1.0f / fAnimationSpeed * ImGui::GetIO().DeltaTime);
     ImU32 checkMarkCol = GetColorU32(it_anim->second.CheckMark);
@@ -579,13 +602,14 @@ bool ImAdd::Togglebutton(const char* label, bool* v)
         it_anim = anim.find(id);
     }
 
-    it_anim->second.FrameBg = ImLerp(it_anim->second.FrameBg, GetStyleColorVec4(*v ? (held && hovered) ? ImGuiCol_SliderGrab : ImGuiCol_SliderGrabActive : (held && hovered) ? ImGuiCol_FrameBgActive : ImGuiCol_FrameBg), 1.0f / fAnimationSpeed * ImGui::GetIO().DeltaTime);
+    it_anim->second.FrameBg = ImLerp(it_anim->second.FrameBg, GetStyleColorVec4(*v ? (held && hovered) ? ImGuiCol_SliderGrabActive : ImGuiCol_SliderGrab : (held && hovered) ? ImGuiCol_FrameBgActive : ImGuiCol_FrameBg), 1.0f / fAnimationSpeed * ImGui::GetIO().DeltaTime);
     ImU32 frameCol = GetColorU32(it_anim->second.FrameBg);
 
     it_anim->second.Border = ImLerp(it_anim->second.Border, GetStyleColorVec4(*v ? ImGuiCol_SliderGrab : ImGuiCol_Border), 1.0f / fAnimationSpeed * ImGui::GetIO().DeltaTime);
     ImU32 borderCol = GetColorU32(it_anim->second.Border);
 
-    it_anim->second.CheckMark = ImLerp(it_anim->second.CheckMark, GetStyleColorVec4(*v ? ImGuiCol_Text : ImGuiCol_TextDisabled), 1.0f / fAnimationSpeed * ImGui::GetIO().DeltaTime);
+    ImVec4 knobOnColor = ShadeColor(GetStyleColorVec4(ImGuiCol_SliderGrab), 0.4f);
+    it_anim->second.CheckMark = ImLerp(it_anim->second.CheckMark, *v ? knobOnColor : GetStyleColorVec4(ImGuiCol_TextDisabled), 1.0f / fAnimationSpeed * ImGui::GetIO().DeltaTime);
     ImU32 checkMarkCol = GetColorU32(it_anim->second.CheckMark);
 
     // Anime slide
@@ -627,14 +651,33 @@ bool ImAdd::ColorEdit4(const char* label, float col[4])
 
     BeginGroup();
 
+    const std::string popupId = std::string(label) + "##Picker";
+
     bool result = ColorButton(label, col_v4, flags, ImVec2(g.FontSize * 2, g.FontSize));
     if (result)
     {
-        OpenPopup("picker");
+        OpenPopup(popupId.c_str());
     }
-    if (BeginPopup("picker"))
+    if (BeginPopup(popupId.c_str()))
     {
         ColorPicker4(label, col, flags);
+
+        ImGui::Spacing();
+
+        ImGui::ColorEdit4("##ColorEditRGB", col, ImGuiColorEditFlags_NoPicker | ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_NoOptions | ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_DisplayRGB);
+        ImGui::ColorEdit4("##ColorEditHex", col, ImGuiColorEditFlags_NoPicker | ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_NoOptions | ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_DisplayHex);
+
+        ImGui::SameLine();
+
+        auto ToByte = [](float f) { return static_cast<int>(ImSaturate(f) * 255.0f + 0.5f); };
+        char hexBuf[16];
+        ImFormatString(hexBuf, IM_ARRAYSIZE(hexBuf), "#%02X%02X%02X%02X", ToByte(col[0]), ToByte(col[1]), ToByte(col[2]), ToByte(col[3]));
+
+        if (ImAdd::Button(ICON_FA_COPY, ImVec2(g.FontSize * 2, 0)))
+            SetClipboardText(hexBuf);
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("Copy %s", hexBuf);
+
         EndPopup();
     }
 
@@ -887,9 +930,6 @@ bool ImAdd::BeginComboPopup(ImGuiID popup_id, const ImRect& bb, ImGuiComboFlags 
     char name[16];
     ImFormatString(name, IM_ARRAYSIZE(name), "##Combo_%02d", g.BeginPopupStack.Size); // Recycle windows based on depth
 
-    // Set position given a custom constraint (peak into expected window size so we can position it)
-    // FIXME: This might be easier to express with an hypothetical SetNextWindowPosConstraints() function?
-    // FIXME: This might be moved to Begin() or at least around the same spot where Tooltips and other Popups are calling FindBestWindowPosForPopupEx()?
     if (ImGuiWindow* popup_window = FindWindowByName(name))
         if (popup_window->WasActive)
         {
@@ -932,8 +972,6 @@ bool ImAdd::Combo(const char* label, int* current_item, const char* (*getter)(vo
     if (!BeginCombo(label, preview_value, ImGuiComboFlags_None))
         return false;
 
-    // Display items
-    // FIXME-OPT: Use clipper (but we need to disable it on the appearing frame to make sure our call to SetItemDefaultFocus() is processed)
     bool value_changed = false;
     for (int i = 0; i < items_count; i++)
     {
@@ -1065,7 +1103,7 @@ bool ImAdd::SliderScalar(const char* label, ImGuiDataType data_type, void* p_dat
     it_anim->second.FrameBg = ImLerp(it_anim->second.FrameBg, GetStyleColorVec4(g.ActiveId == id ? ImGuiCol_FrameBgActive : hovered ? ImGuiCol_FrameBgHovered : ImGuiCol_FrameBg), 1.0f / fAnimationSpeed * ImGui::GetIO().DeltaTime);
     ImU32 frameCol = GetColorU32(it_anim->second.FrameBg);
 
-    it_anim->second.SliderGrab = ImLerp(it_anim->second.SliderGrab, GetStyleColorVec4(g.ActiveId == id ? ImGuiCol_SliderGrab : ImGuiCol_SliderGrabActive), 1.0f / fAnimationSpeed * ImGui::GetIO().DeltaTime);
+    it_anim->second.SliderGrab = ImLerp(it_anim->second.SliderGrab, GetStyleColorVec4(g.ActiveId == id ? ImGuiCol_SliderGrabActive : ImGuiCol_SliderGrab), 1.0f / fAnimationSpeed * ImGui::GetIO().DeltaTime);
     ImU32 sliderGrabCol = GetColorU32(it_anim->second.SliderGrab);
 
     // Draw frame

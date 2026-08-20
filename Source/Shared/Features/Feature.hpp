@@ -3,8 +3,6 @@
 
 #include <vector>
 
-// Owns the list of registered features explicitly, rather than relying on a bare global
-// living in whichever target happens to include this header first.
 class FeatureRegistry
 {
 public:
