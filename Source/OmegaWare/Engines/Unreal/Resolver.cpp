@@ -512,6 +512,16 @@ namespace OmegaWare::Unreal::Resolver
 		return reinterpret_cast<SDK::UWorld*>(uWorld);
 	}
 
+	void* ObjectArray()
+	{
+		return IsResolved() ? reinterpret_cast<void*>(State().stCurrent.uGObjects) : nullptr;
+	}
+
+	void* AppendStringFunction()
+	{
+		return IsResolved() ? reinterpret_cast<void*>(&AppendString) : nullptr;
+	}
+
 	void* ProcessEventAddress()
 	{
 		return IsResolved() ? reinterpret_cast<void*>(State().stCurrent.uProcessEvent) : nullptr;

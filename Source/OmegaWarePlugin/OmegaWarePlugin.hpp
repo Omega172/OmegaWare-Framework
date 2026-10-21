@@ -120,6 +120,11 @@ namespace OmegaWare::Plugin
 		bool (*UnrealObjectName)(const void* pObject, char* szBuffer, std::uint32_t uSize) = nullptr;
 		bool (*UnrealWorldToScreen)(const double* pWorld, float* pScreen) = nullptr;
 		bool (*UnrealCamera)(double* pLocation, double* pRotation, float* pflFov) = nullptr;
+
+		bool (*RunOnGameThread)(void* pHost, void (*pfnTask)(void* pContext), void* pContext) = nullptr;
+		void* (*UnrealObjectArray)() = nullptr;
+		void* (*UnrealAppendString)() = nullptr;
+		bool (*Selectable)(const char* szLabel, bool bSelected) = nullptr;
 	};
 
 	using FnPluginLoad = bool (*)(const stApi* pApi);

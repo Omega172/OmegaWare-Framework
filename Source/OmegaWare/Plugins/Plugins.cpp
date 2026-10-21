@@ -11,6 +11,7 @@
 
 #if OMEGAWARE_ENGINE_UNREAL
 #include "Engines/Unreal/ProcessEvent.hpp"
+#include "Engines/Unreal/Resolver.hpp"
 #include "Engines/Unreal/Unreal.hpp"
 #endif
 
@@ -40,6 +41,12 @@ namespace OmegaWare::Plugins
 		using namespace std::chrono_literals;
 
 		struct stPlugin;
+
+		struct stTaskGate
+		{
+			std::atomic<bool> bAccepting = true;
+			std::atomic<int> iPending = 0;
+		};
 
 		class clPluginFeature final : public clFeature
 		{
@@ -76,6 +83,7 @@ namespace OmegaWare::Plugins
 			std::vector<std::unique_ptr<OmegaRenderHook::clInlineHook>> aHooks;
 			std::vector<std::uint32_t> aEvents;
 			std::atomic<int> iCalls = 0;
+			std::shared_ptr<stTaskGate> pTasks = std::make_shared<stTaskGate>();
 		};
 
 		struct stObserved
@@ -299,6 +307,9 @@ namespace OmegaWare::Plugins
 		void* ApiUnrealWorld() { return Unreal::GetWorld(); }
 		void* ApiUnrealPlayerController() { return Unreal::GetPlayerController(); }
 		void* ApiUnrealLocalPawn() { return Unreal::GetLocalPawn(); }
+		void* ApiUnrealObjectArray() { return Unreal::Resolver::ObjectArray(); }
+		void* ApiUnrealAppendString() { return Unreal::Resolver::AppendStringFunction(); }
+
 		void* ApiUnrealFindObject(const char* szFullName) { return szFullName && Unreal::IsResolved() ? SDK::UObject::FindObject<SDK::UObject>(szFullName) : nullptr; }
 
 		bool ApiUnrealObjectName(const void* pObject, char* szBuffer, std::uint32_t uSize)
@@ -380,6 +391,33 @@ namespace OmegaWare::Plugins
 				if (pOwned.get() == pHook)
 					return pOwned->Disable();
 			return false;
+		}
+
+		bool ApiRunOnGameThread([[maybe_unused]] void* pHost, [[maybe_unused]] void (*pfnTask)(void* pContext), [[maybe_unused]] void* pContext)
+		{
+#if OMEGAWARE_ENGINE_UNREAL
+			if (!pfnTask)
+				return false;
+			std::shared_ptr<stTaskGate> pGate = Owner(pHost).pTasks;
+			if (!pGate->bAccepting.load(std::memory_order_acquire))
+				return false;
+			pGate->iPending.fetch_add(1, std::memory_order_acq_rel);
+			const bool bQueued = Unreal::RunOnGameThread([pGate, pfnTask, pContext] {
+				if (pGate->bAccepting.load(std::memory_order_acquire))
+					pfnTask(pContext);
+				pGate->iPending.fetch_sub(1, std::memory_order_acq_rel);
+			});
+			if (!bQueued)
+				pGate->iPending.fetch_sub(1, std::memory_order_acq_rel);
+			return bQueued;
+#else
+			return false;
+#endif
+		}
+
+		bool ApiSelectable(const char* szLabel, bool bSelected)
+		{
+			return OmegaGUI::Selectable(szLabel ? szLabel : "", bSelected);
 		}
 
 		void ApiCallEnter(void* pHost) { Owner(pHost).iCalls.fetch_add(1, std::memory_order_acq_rel); }
@@ -478,7 +516,11 @@ namespace OmegaWare::Plugins
 			r.UnrealObjectName = &ApiUnrealObjectName;
 			r.UnrealWorldToScreen = &ApiUnrealWorldToScreen;
 			r.UnrealCamera = &ApiUnrealCamera;
+			r.UnrealObjectArray = &ApiUnrealObjectArray;
+			r.UnrealAppendString = &ApiUnrealAppendString;
 #endif
+			r.RunOnGameThread = &ApiRunOnGameThread;
+			r.Selectable = &ApiSelectable;
 		}
 
 		template <typename F>
@@ -523,9 +565,12 @@ namespace OmegaWare::Plugins
 			}
 
 			const auto tpDeadline = std::chrono::steady_clock::now() + 2s;
-			while (rPlugin.iCalls.load(std::memory_order_acquire) > 0 && std::chrono::steady_clock::now() < tpDeadline)
+			while (rPlugin.pTasks->iPending.load(std::memory_order_acquire) > 0 && std::chrono::steady_clock::now() < tpDeadline)
 				std::this_thread::sleep_for(1ms);
-			const bool bDrained = rPlugin.iCalls.load(std::memory_order_acquire) == 0 && Hooks::WaitForCalls(1s);
+			rPlugin.pTasks->bAccepting.store(false, std::memory_order_release);
+			while ((rPlugin.iCalls.load(std::memory_order_acquire) > 0 || rPlugin.pTasks->iPending.load(std::memory_order_acquire) > 0) && std::chrono::steady_clock::now() < tpDeadline + 1s)
+				std::this_thread::sleep_for(1ms);
+			const bool bDrained = rPlugin.iCalls.load(std::memory_order_acquire) == 0 && rPlugin.pTasks->iPending.load(std::memory_order_acquire) == 0 && Hooks::WaitForCalls(1s);
 			if (!bDrained)
 			{
 				LogWarning("plugin {} still has calls in flight, keeping its code loaded", rPlugin.strName);

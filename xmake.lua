@@ -272,6 +272,30 @@ else
         add_files("Source/ExamplePlugin/*.cpp")
     target_end()
 
+    for _, strPluginDir in ipairs(os.dirs(path.join(os.scriptdir(), "Source", "Plugins", "*"))) do
+        local strPlugin = path.filename(strPluginDir)
+        target(strPlugin)
+            set_kind("shared")
+            set_languages("c++latest")
+            set_encodings("utf-8")
+            set_group("Plugins")
+            set_targetdir(path.join("Build", is_mode("debug") and "Debug" or "Release", "$(arch)", "Plugins"))
+            add_defines("NOMINMAX", "WIN32_LEAN_AND_MEAN", "UNICODE", "_UNICODE")
+            add_includedirs("Source/OmegaWarePlugin", strPluginDir)
+            add_files(path.join(strPluginDir, "**.cpp"))
+            if (get_config("engine") or "none") == "unreal" then
+                local strSdk = get_config("unreal_sdk") or ""
+                add_defines("OMEGAWARE_ENGINE_UNREAL=1")
+                add_includedirs(strSdk)
+                for _, strFile in ipairs({ "Basic.cpp", "CoreUObject_functions.cpp", "Engine_functions.cpp" }) do
+                    if os.isfile(path.join(strSdk, "SDK", strFile)) then
+                        add_files(path.join(strSdk, "SDK", strFile), { cxflags = { "/wd4005", "/wd4369" } })
+                    end
+                end
+            end
+        target_end()
+    end
+
     target("OmegaWareTests")
         set_kind("binary")
         set_languages("c++latest")

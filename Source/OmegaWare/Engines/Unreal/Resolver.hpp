@@ -15,6 +15,8 @@ namespace OmegaWare::Unreal::Resolver
 	[[nodiscard]] bool IsResolved();
 	[[nodiscard]] SDK::UWorld* World();
 	[[nodiscard]] void* ProcessEventAddress();
+	[[nodiscard]] void* ObjectArray();
+	[[nodiscard]] void* AppendStringFunction();
 	void LogReport();
 	bool LogScanTest();
 }
