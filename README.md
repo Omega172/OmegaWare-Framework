@@ -13,7 +13,7 @@
 
 ---
 
-OmegaWare is a game modding framework in the style of UE4SS and BepInEx. It loads into a game, draws its own menu on top of the game's renderer and gives you a feature, config, localization, memory and hooking toolkit to build mods with.
+OmegaWare is a framework for making Mods/Cheats. It loads into a game, draws its own menu on top of the game's renderer and gives you a feature, config, localization, memory and hooking toolkit to build mods/cheats with.
 
 It is meant for single-player and co-op games that allow modification. It is not built for, and must not be pointed at, competitive or anti-cheat protected games.
 
@@ -21,7 +21,7 @@ It is meant for single-player and co-op games that allow modification. It is not
 
 <div align="center">
 
-![Menu and in-game console](Images/Terminal.png)
+![Menu, console, performance window, on-screen keyboard and controller hints on Direct3D 12](Images/Terminal.png)
 
 </div>
 
@@ -32,6 +32,7 @@ It is meant for single-player and co-op games that allow modification. It is not
 - **Overlay on any common renderer**: Direct3D 9, 10, 11 and 12, OpenGL and Vulkan, detected automatically at runtime. DLSS and frame generation on Direct3D 12 are handled. Vulkan support is compiled in when the Vulkan SDK headers are found (`VULKAN_SDK`); a Vulkan game that started before OmegaWare loaded is asked once to recreate its swap chain.
 - **Two ways to load**: inject `OmegaWare.dll`, or drop a proxy DLL (`version.dll`, `winmm.dll` or `dinput8.dll`) next to the game executable so it loads without an injector.
 - **Menu**: sidebar pages per feature, menu bar, in-game console with commands, watermark, performance window, three themes, automatic UI scaling and full keyboard, mouse and controller navigation.
+- **Controller support**: Xbox controllers through XInput, plus DualShock 4 and DualSense over USB or Bluetooth. The whole menu works from the pad, text fields open an on-screen keyboard, and a strip of button hints shows while the menu is open. See [Controllers](#controllers).
 - **Input blocking**: while the menu has input, the game stops seeing keyboard, mouse, raw input, XInput, DirectInput (joysticks included, axes left centered) and GameInput. Keys and buttons the game saw pressed are released when the menu takes input, so nothing stays stuck.
 - **World drawing**: features can draw into OmegaGUI's world draw list (`OmegaGUI::GetWorldDrawList()`), which the overlay renders before the menu. On Direct3D 9, 11, 12, OpenGL and Vulkan it is depth-tested against the game's own depth, so it hides behind walls; on Direct3D 10 it draws unoccluded. On Direct3D 11, 12 and Vulkan the framework picks the depth buffer the game draws the most into, copies it at the end of the scene (before the game clears or reuses it) and scales it to the screen, so it also works when the game renders at a lower resolution (DLSS, FSR, dynamic resolution). In proxy mode the depth buffers are tracked from the moment the game creates its device; when injected later, Direct3D 12 still finds the depth buffer through the game's resource barriers (most engines, Unreal included), while Vulkan only sees depth images the game creates after injection (for example after a resolution change). The example feature's depth probe (a full-screen quad at a chosen depth, red where the game's geometry is in front) shows whether depth is available in a game.
 - **Feature system**: features register themselves and get guarded `Setup`, `Run`, `Render`, `DrawMenu` and `Destroy` calls. A crash inside one feature disables only that feature.
@@ -168,6 +169,25 @@ GenerateProxyExports.bat
 All three can be rebound under settings, keys (saved as `keys.menu`, `keys.console` and `keys.unload`). Esc clears the console and unload keys; the menu key cannot be cleared or set to a mouse button, so the menu can always be opened again.
 
 In proxy mode `End` removes the hooks and menu but the DLL stays loaded so the game keeps its exports.
+
+### Controllers
+
+Plug in an Xbox controller (anything XInput sees) or a DualShock 4 or DualSense over USB or Bluetooth and the menu works from the pad, no setup needed. `View + Menu` opens and closes the menu, so a controller-only player never needs the keyboard. While the menu is open and a controller is connected, a strip at the bottom of the screen shows the buttons below.
+
+| Button | Action |
+|---|---|
+| D-pad / left stick | Move between widgets |
+| D-pad left / right on sliders and options | Adjust the value (hold RB for 10x steps) |
+| A / Cross | Select |
+| B / Circle | Back, close a popup or cancel an edit |
+| X / Square | Context menu |
+| LB / RB | Previous / next tab |
+| LT / RT | Previous / next window (menu, console, performance) |
+| Right stick | Scroll |
+| View + left / right stick | Move / resize the focused window |
+| View + Menu | Open / close the menu |
+
+Selecting a text field with A (a console command, a profile name, a plugin setting) opens an on-screen keyboard: pick keys with the d-pad and A, X is backspace, Y is space and Menu finishes. While the menu has input the game does not see the controller (XInput, DirectInput and GameInput are all blocked), so pressing A in the menu does not also jump in the game. PlayStation rumble and light bar are not used.
 
 ### Data folder
 
