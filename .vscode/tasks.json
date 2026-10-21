@@ -104,7 +104,7 @@
 		{
 			"label": "xmake: Update Compile Commands",
 			"type": "shell",
-			"command": "update_compile_commands.bat",
+			"command": "UpdateCompileCommands.bat",
 			"group": "none",
 			"problemMatcher": [],
 			"detail": "Regenerate compile_commands.json for IntelliSense"

@@ -14,46 +14,69 @@ permissions:
 jobs:
   build:
     runs-on: windows-latest
-    timeout-minutes: 15
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
         build_configuration: [release]
-        architecture: [x64]
+        architecture: [x64, x86]
+    env:
+      BUILD_DIR: Build/Release/${{ matrix.architecture }}
+      VULKAN_SDK: ${{ github.workspace }}\Vulkan-Headers
+      PACKAGE_NAME: OmegaWare-${{ matrix.build_configuration }}-${{ matrix.architecture }}
+    defaults:
+      run:
+        working-directory: OmegaWare-Framework
 
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
+      with:
+        path: OmegaWare-Framework
+        submodules: recursive
+        token: ${{ secrets.OMEGAWARE_REPOSITORIES_TOKEN || github.token }}
+
+    - name: Checkout Vulkan Headers
+      uses: actions/checkout@v4
+      with:
+        repository: KhronosGroup/Vulkan-Headers
+        ref: vulkan-sdk-1.4.350.0
+        path: Vulkan-Headers
 
     - name: Install XMake
       uses: xmake-io/github-action-setup-xmake@v1
       with:
         xmake-version: latest
 
-    - name: Configure XMake
+    - name: Build and Test Every Proxy
       run: |
-        xmake f -m ${{ matrix.build_configuration }} -a ${{ matrix.architecture }} -y
+        foreach ($strProxy in @("version", "winmm", "dinput8")) {
+          xmake f -p windows -m ${{ matrix.build_configuration }} -a ${{ matrix.architecture }} --proxy=$strProxy -y
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          xmake build
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & "$env:BUILD_DIR/OmegaWareTests/OmegaWareTests.exe"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        }
 
-    - name: Build with XMake
+    - name: Create Release Archive
       run: |
-        xmake build
+        New-Item -ItemType Directory -Force "$env:PACKAGE_NAME/Proxy" | Out-Null
+        Copy-Item "$env:BUILD_DIR/OmegaWare/OmegaWare.dll" "$env:PACKAGE_NAME"
+        Copy-Item "$env:BUILD_DIR/OmegaWareProxy/version.dll", "$env:BUILD_DIR/OmegaWareProxy/winmm.dll", "$env:BUILD_DIR/OmegaWareProxy/dinput8.dll" "$env:PACKAGE_NAME/Proxy"
+        Compress-Archive -Path "$env:PACKAGE_NAME/*" -DestinationPath "$env:PACKAGE_NAME.zip"
 
     - name: Upload Build Artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: OmegaWare-${{ matrix.build_configuration }}-${{ matrix.architecture }}
-        path: |
-          Build/Release/Internal/Internal.dll
-          Build/Release/Proxy/version.dll
-
-    - name: Create Release Archive
-      run: |
-        Compress-Archive -Path Build/Release/Internal/Internal.dll,Build/Release/Proxy/version.dll -DestinationPath OmegaWare-${{ matrix.build_configuration }}-${{ matrix.architecture }}.zip
+        name: ${{ env.PACKAGE_NAME }}
+        path: OmegaWare-Framework/${{ env.PACKAGE_NAME }}
+        if-no-files-found: error
 
     - name: Upload Release Asset
       if: github.event_name == 'release'
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       with:
-        files: OmegaWare-${{ matrix.build_configuration }}-${{ matrix.architecture }}.zip
+        files: OmegaWare-Framework/${{ env.PACKAGE_NAME }}.zip
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

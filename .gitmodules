@@ -1,0 +1,9 @@
+[submodule "Source/Third-Party/OmegaWareProjects/OmegaWare-GUI"]
+	path = Source/Third-Party/OmegaWareProjects/OmegaWare-GUI
+	url = https://github.com/OmegaWareProjects/OmegaWare-GUI.git
+[submodule "Source/Third-Party/OmegaWareProjects/OmegaWare-RenderHook"]
+	path = Source/Third-Party/OmegaWareProjects/OmegaWare-RenderHook
+	url = https://github.com/OmegaWareProjects/OmegaWare-RenderHook.git
+[submodule "Source/Third-Party/OmegaWareProjects/OmegaWare-Localization"]
+	path = Source/Third-Party/OmegaWareProjects/OmegaWare-Localization
+	url = https://github.com/OmegaWareProjects/OmegaWare-Localization.git

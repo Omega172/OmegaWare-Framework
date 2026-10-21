@@ -1,132 +1,285 @@
+local stDefaults = {
+    strName = "OmegaWare",
+    strVersion = "4.0.0",
+    strGame = "ExampleGame",
+    strProcess = "",
+}
+
+set_config("builddir", "Build")
+
+set_project("OmegaWare")
+set_version(get_config("framework_version") or stDefaults.strVersion)
+
 add_rules("mode.debug", "mode.release")
 
 if is_mode("debug") then
     set_symbols("debug", "edit")
 end
 
-option("avx2")
-    set_default(true)
+local function LibraryDefault(strName, strLibrary)
+    for _, strPath in ipairs({ path.join(os.scriptdir(), "Source", "Third-Party", "OmegaWareProjects", strName), path.join(os.scriptdir(), "..", strName) }) do
+        if os.isfile(path.join(strPath, "Source", strLibrary, "xmake.lua")) then
+            return strPath
+        end
+    end
+    return ""
+end
+
+option("engine")
+    set_default("none")
     set_showmenu(true)
-    set_description("Enable AVX2 optimizations")
+    set_values("none", "unreal", "unity")
+    set_description("Game engine the OmegaWare target is built for (unreal needs a Dumper-7 SDK, see unreal_sdk)")
 option_end()
 
-option("unreal")
-    set_default(true)
+option("framework_name")
+    set_default(stDefaults.strName)
     set_showmenu(true)
-    set_description("Enable compilation of the Unreal target interface (header-only until an SDK dump is added; gates future SDK .cpp files)")
+    set_description("Framework name: DLL file name, data folder under Documents, crash dumps and DLL version info (lowercase in the menu, log and console)")
 option_end()
 
-option("unity")
-    set_default(true)
+option("framework_version")
+    set_default(stDefaults.strVersion)
     set_showmenu(true)
-    set_description("Enable compilation of the Unity target interface (header-only until an SDK dump is added; gates future SDK .cpp files)")
+    set_description("Framework version as major.minor.patch, shown in the menu and log and written to the DLL version info")
 option_end()
 
-option("proxy_dll_name")
-    set_default("version.dll")
+option("game")
+    set_default(stDefaults.strGame)
     set_showmenu(true)
-    set_description("Filename the Proxy target builds as, so it loads in place of a real system DLL the target game already loads (e.g. version.dll, winmm.dll, dinput8.dll)")
+    set_description("Name of the game this build targets, shown in the menu, log and DLL version info")
+option_end()
+
+option("process")
+    set_default(stDefaults.strProcess)
+    set_showmenu(true)
+    set_description("Executable the framework may start in, for example Palworld-Win64-Shipping.exe (empty starts in any process)")
+option_end()
+
+option("unreal_sdk")
+    set_default(path.join(os.scriptdir(), "Source", "Third-Party", "Dumper-7", "CppSDK"))
+    set_showmenu(true)
+    set_description("Path to a Dumper-7 CppSDK folder (the one containing SDK.hpp) for engine=unreal")
+option_end()
+
+option("proxy")
+    set_default("version")
+    set_showmenu(true)
+    set_values("version", "winmm", "dinput8")
+    set_description("System DLL the OmegaWareProxy target replaces (exports come from Source/OmegaWareProxy/Exports, regenerate with GenerateProxyExports)")
+option_end()
+
+option("gui")
+    set_default(LibraryDefault("OmegaWare-GUI", "OmegaGUI"))
+    set_showmenu(true)
+    set_description("Path to OmegaWare-GUI for the OmegaWare target (empty to disable)")
+option_end()
+
+option("renderhook")
+    set_default(LibraryDefault("OmegaWare-RenderHook", "OmegaRenderHook"))
+    set_showmenu(true)
+    set_description("Path to OmegaWare-RenderHook for the OmegaWare target (empty to disable)")
+option_end()
+
+option("localization")
+    set_default(LibraryDefault("OmegaWare-Localization", "OmegaLocalization"))
+    set_showmenu(true)
+    set_description("Path to OmegaWare-Localization for the OmegaWare target (empty to disable)")
 option_end()
 
 set_runtimes(is_mode("debug") and "MTd" or "MT")
 
--- ImGui is vendored as source under Source/Shared/Vendor/ImGui and Source/Internal/Vendor/ImGui
--- (core + FreeType font builder in Shared, win32/D3D11/D3D12 backends in Internal) rather than
--- pulled from vcpkg. vcpkg's imgui port needs non-default features (win32/dx11/dx12/freetype
--- bindings), and xmake's vcpkg integration has a bug verifying feature-qualified package
--- installs in manifest mode (confirmed against xmake v3.0.8 and v3.0.9): it reports the package
--- as not found even immediately after vcpkg itself reports a fully successful install. Vendoring
--- is also just normal practice for ImGui - most consumers build it as part of their own project
--- rather than as a prebuilt package.
-add_requires("vcpkg::freetype", {configs = {debug = is_mode("debug")}})
 add_requires("vcpkg::nlohmann-json", {configs = {debug = is_mode("debug")}})
-add_requires("vcpkg::polyhook2", {configs = {debug = is_mode("debug")}})
 
-local frameworkPackages = {"vcpkg::freetype", "vcpkg::nlohmann-json", "vcpkg::polyhook2"}
+local aOmegaLibraries = {
+    { strOption = "gui", strFile = path.join("Source", "OmegaGUI", "xmake.lua") },
+    { strOption = "renderhook", strFile = path.join("Source", "OmegaRenderHook", "xmake.lua") },
+    { strOption = "localization", strFile = path.join("Source", "OmegaLocalization", "xmake.lua") },
+}
 
--- Common building block for Internal/Proxy. Depended on, never depends back: no D3D headers,
--- no process-attach state, no game-process-specific memory access.
-target("Shared")
-    if has_config("avx2") then
-        add_vectorexts("avx2")
+local bOmegaLibraries = true
+for _, stLibrary in ipairs(aOmegaLibraries) do
+    local strRoot = get_config(stLibrary.strOption)
+    if not strRoot or strRoot == "" or not os.isfile(path.join(strRoot, stLibrary.strFile)) then
+        bOmegaLibraries = false
+    end
+end
+
+if not bOmegaLibraries then
+    target("OmegaWare")
+        set_kind("phony")
+        on_config(function (target)
+            raise("OmegaWare needs OmegaWare-GUI, OmegaWare-RenderHook and OmegaWare-Localization: run git submodule update --init, or pass their paths in --gui, --renderhook and --localization")
+        end)
+    target_end()
+else
+    for _, stLibrary in ipairs(aOmegaLibraries) do
+        includes(path.join(get_config(stLibrary.strOption), stLibrary.strFile))
     end
 
-    set_languages("c++latest")
-    set_kind("static")
-    set_targetdir(is_mode("debug") and "Build/Debug" or "Build/Release")
-    set_pcxxheader("Source/Shared/PCH/pch.h")
+    local function ConfigureOmegaWare()
+        set_kind("shared")
+        set_languages("c++latest")
+        set_encodings("utf-8")
+        add_defines("NOMINMAX", "WIN32_LEAN_AND_MEAN", "UNICODE", "_UNICODE")
 
-    add_includedirs("Source/Shared", "Source/Shared/PCH", { public = true })
-    add_includedirs(
-        "Source/Shared/Vendor/ImGui",
-        "Source/Shared/Vendor/ImGui/misc/cpp",
-        "Source/Shared/Vendor/ImGui/misc/freetype",
-        { public = true })
-    add_defines("IMGUI_ENABLE_FREETYPE", { public = true })
+        add_deps("OmegaGUI", "OmegaRenderHook", "OmegaLocalization")
+        add_packages("vcpkg::nlohmann-json")
+        add_includedirs("Source/OmegaWare", "Source/OmegaWarePlugin")
+        add_defines("OMEGAWARE_PLUGIN_HOST=1")
+        add_files("Source/OmegaWare/**.cpp|Engines/Unity/**.cpp|Engines/Unreal/**.cpp")
 
-    add_files("Source/Shared/**.cpp")
+        local strConfigDir = path.join(os.scriptdir(), "Build", "Config", "$(arch)", "$(mode)")
+        set_configdir(strConfigDir)
+        local strName = get_config("framework_name") or stDefaults.strName
+        set_configvar("OMEGAWARE_NAME", strName)
+        set_configvar("OMEGAWARE_TITLE", strName:lower())
+        set_configvar("OMEGAWARE_GAME", get_config("game") or stDefaults.strGame)
+        set_configvar("OMEGAWARE_PROCESS", get_config("process") or stDefaults.strProcess)
+        add_configfiles("Source/OmegaWare/Core/Version.hpp.in")
+        add_includedirs(strConfigDir)
+        add_files("Source/OmegaWare/Version.rc")
 
-    add_packages(table.unpack(frameworkPackages), { public = true })
-
-target_end()
-
--- In-process target: loaded into the game/host process, owns rendering hooks and the
--- actual running framework instance (console, config, menu, features).
-target("Internal")
-    if has_config("avx2") then
-        add_vectorexts("avx2")
+        local strEngine = get_config("engine") or "none"
+        if strEngine == "unity" then
+            add_defines("OMEGAWARE_ENGINE_UNITY=1")
+            add_files("Source/OmegaWare/Engines/Unity/*.cpp")
+        elseif strEngine == "unreal" then
+            local strSdk = get_config("unreal_sdk") or ""
+            on_config(function (target)
+                local strConfiguredSdk = get_config("unreal_sdk") or ""
+                local aMissing = {}
+                for _, strFile in ipairs({ "SDK.hpp", "Assertions.inl", "NameCollisions.inl" }) do
+                    if not os.isfile(path.join(strConfiguredSdk, strFile)) then
+                        table.insert(aMissing, strFile)
+                    end
+                end
+                if #aMissing > 0 then
+                    raise("engine=unreal needs a Dumper-7 SDK in " .. strConfiguredSdk .. " (missing " .. table.concat(aMissing, ", ") .. "): copy the CppSDK folder Dumper-7 generated there or set --unreal_sdk=<path>")
+                end
+                local strOutDir = path.join(os.projectdir(), "Build", "Config", get_config("arch"), get_config("mode"))
+                local strTable = path.join(strOutDir, "SdkAudit.txt")
+                local strStamp = path.join(strOutDir, "SdkAudit.stamp")
+                local strResource = path.join(strOutDir, "SdkAudit.rc")
+                local aFiles = {}
+                for _, strSuffix in ipairs({ "_classes.hpp", "_structs.hpp", "_parameters.hpp" }) do
+                    table.join2(aFiles, os.files(path.join(strConfiguredSdk, "SDK", "*" .. strSuffix)))
+                end
+                table.sort(aFiles)
+                local iTime = 0
+                for _, strFile in ipairs(aFiles) do
+                    iTime = math.max(iTime, os.mtime(strFile))
+                end
+                local strCurrent = "v3 " .. path.absolute(strConfiguredSdk) .. " " .. #aFiles .. " " .. iTime
+                if not os.isfile(strTable) or not os.isfile(strStamp) or io.readfile(strStamp) ~= strCurrent then
+                    local aLines = {}
+                    local iMembers = 0
+                    for _, strFile in ipairs(aFiles) do
+                        local strOwner = nil
+                        local bWritten = false
+                        for strLine in io.readfile(strFile):gmatch("[^\r\n]+") do
+                            local strKind, strName = strLine:match("^// (%a+) (.-)%s*$")
+                            if strLine:find("^};") then
+                                strOwner = nil
+                            elseif strKind then
+                                bWritten = false
+                                if strKind == "Function" then
+                                    strOwner = "F " .. strName
+                                elseif strKind == "ScriptStruct" then
+                                    strOwner = "S " .. strName
+                                elseif strKind:find("Class$") then
+                                    strOwner = "C " .. strName
+                                else
+                                    strOwner = nil
+                                end
+                            elseif strOwner then
+                                local strLeft, strOffset = strLine:match("^%s+([^/]-);%s*// 0x(%x+)%(0x%x+%)")
+                                if strLeft and not strLine:find("NOT AUTO-GENERATED", 1, true) then
+                                    strLeft = strLeft:gsub("%b[]", ""):gsub(":%s*%d+%s*$", "")
+                                    local strMember = strLeft:match("([%w_]+)%s*$")
+                                    if strMember and not strMember:find("^Pad_") and not strMember:find("^BitPad_") then
+                                        if not bWritten then
+                                            table.insert(aLines, strOwner)
+                                            bWritten = true
+                                        end
+                                        table.insert(aLines, strMember .. " " .. strOffset)
+                                        iMembers = iMembers + 1
+                                    end
+                                end
+                            end
+                        end
+                    end
+                    os.mkdir(strOutDir)
+                    io.writefile(strTable, table.concat(aLines, "\n") .. "\n")
+                    io.writefile(strStamp, strCurrent)
+                    cprint("${dim}SDK audit table: %d members from %d headers", iMembers, #aFiles)
+                end
+                io.writefile(strResource, "OMEGAWARE_SDK_AUDIT RCDATA \"" .. (strTable:gsub("\\", "\\\\")) .. "\"\n")
+                target:add("files", strResource)
+            end)
+            add_defines("OMEGAWARE_ENGINE_UNREAL=1")
+            add_files("Source/OmegaWare/Engines/Unreal/*.cpp")
+            add_includedirs(strSdk)
+            for _, strFile in ipairs({ "Basic.cpp", "CoreUObject_functions.cpp", "Engine_functions.cpp" }) do
+                if os.isfile(path.join(strSdk, "SDK", strFile)) then
+                    add_files(path.join(strSdk, "SDK", strFile), { cxflags = { "/wd4005", "/wd4369" } })
+                end
+            end
+        end
     end
 
-    set_languages("c++latest")
-    set_kind("shared")
-    set_targetdir(is_mode("debug") and "Build/Debug/Internal" or "Build/Release/Internal")
-    set_pcxxheader("Source/Internal/PCH/pch.h")
+    target("OmegaWare")
+        ConfigureOmegaWare()
+        set_targetdir(path.join("Build", is_mode("debug") and "Debug" or "Release", "$(arch)", "OmegaWare"))
+        set_filename((get_config("framework_name") or stDefaults.strName) .. ".dll")
+    target_end()
 
-    add_deps("Shared")
-    add_includedirs("Source/Internal", "Source/Internal/PCH")
-    add_includedirs("Source/Internal/Vendor/ImGui/backends")
-
-    add_files("Source/Internal/**.cpp")
-
-    -- Once an Unreal/Unity SDK dump is added, its generated .cpp files get added here, gated
-    -- by the same options that already control the header-only interfaces:
-    if has_config("unreal") then add_files("Source/Internal/Interfaces/Unreal/**.cpp") end
-    if has_config("unity") then add_files("Source/Internal/Interfaces/Unity/**.cpp") end
-
-    add_packages(table.unpack(frameworkPackages))
-    add_syslinks("d3d11", "d3d12", "dxgi")
-
-target_end()
-
--- Same framework as Internal, built a second time under PROXY and renamed to a system DLL the
--- target game already loads on startup (see proxy_dll_name), so it gets loaded without a
--- separate injector. ProxyMain.cpp resolves and forwards that DLL's real exports (listed in
--- Proxy.def) from the genuine system copy at runtime via LoadLibrary/GetProcAddress - see
--- Source/Internal/dllmain.cpp's #ifdef PROXY block for where that gets initialized.
-target("Proxy")
-    if has_config("avx2") then
-        add_vectorexts("avx2")
+    local function ConfigureProxy(strProxy, strFolder)
+        ConfigureOmegaWare()
+        set_targetdir(path.join("Build", is_mode("debug") and "Debug" or "Release", "$(arch)", strFolder))
+        set_filename(strProxy .. ".dll")
+        add_defines("OMEGAWARE_PROXY=1", "OMEGAWARE_PROXY_DLL=\"" .. strProxy .. ".dll\"")
+        add_files(path.join("Source", "OmegaWareProxy", "Exports", strProxy .. ".cpp"))
     end
 
-    set_languages("c++latest")
-    set_kind("shared")
-    set_targetdir(is_mode("debug") and "Build/Debug/Proxy" or "Build/Release/Proxy")
-    set_filename(get_config("proxy_dll_name"))
-    set_pcxxheader("Source/Internal/PCH/pch.h")
+    target("OmegaWareProxy")
+        ConfigureProxy(get_config("proxy"), "OmegaWareProxy")
+    target_end()
 
-    add_deps("Shared")
-    add_includedirs("Source/Internal", "Source/Internal/PCH")
-    add_includedirs("Source/Internal/Vendor/ImGui/backends")
-    add_defines("PROXY")
+    for _, strProxy in ipairs({ "version", "winmm", "dinput8" }) do
+        target("OmegaWareProxy-" .. strProxy)
+            ConfigureProxy(strProxy, "OmegaWareProxies")
+            set_default(false)
+            set_group("Proxies")
+        target_end()
+    end
 
-    add_files("Source/Internal/**.cpp")
-    add_files("Source/Proxy/*.cpp")
-    add_files("Source/Proxy/Proxy.def")
+    target("ExamplePlugin")
+        set_kind("shared")
+        set_languages("c++latest")
+        set_encodings("utf-8")
+        set_targetdir(path.join("Build", is_mode("debug") and "Debug" or "Release", "$(arch)", "ExamplePlugin"))
+        add_defines("NOMINMAX", "WIN32_LEAN_AND_MEAN", "UNICODE", "_UNICODE")
+        add_includedirs("Source/OmegaWarePlugin")
+        add_files("Source/ExamplePlugin/*.cpp")
+    target_end()
 
-    if has_config("unreal") then add_files("Source/Internal/Interfaces/Unreal/SDK/**.cpp") end
-    if has_config("unity") then add_files("Source/Internal/Interfaces/Unity/SDK/**.cpp") end
+    target("OmegaWareTests")
+        set_kind("binary")
+        set_languages("c++latest")
+        set_encodings("utf-8")
+        set_targetdir(path.join("Build", is_mode("debug") and "Debug" or "Release", "$(arch)", "OmegaWareTests"))
+        add_defines("NOMINMAX", "WIN32_LEAN_AND_MEAN", "UNICODE", "_UNICODE")
 
-    add_packages(table.unpack(frameworkPackages))
-    add_syslinks("d3d11", "d3d12", "dxgi")
-
-target_end()
+        add_deps("OmegaRenderHook")
+        add_defines("OMEGAWARE_PROXY_DLL=\"" .. get_config("proxy") .. ".dll\"")
+        add_syslinks("version")
+        add_includedirs("Source/OmegaWare")
+        add_files("Source/OmegaWareTests/*.cpp")
+        add_files("Source/OmegaWare/Memory/*.cpp", "Source/OmegaWare/Core/Log.cpp", "Source/OmegaWare/Core/Console.cpp", "Source/OmegaWare/Core/CrashDump.cpp", "Source/OmegaWare/Engines/Unreal/NamePool.cpp")
+        if (get_config("engine") or "none") == "unity" then
+            add_defines("OMEGAWARE_ENGINE_UNITY=1")
+            add_files("Source/OmegaWare/Engines/Unity/*.cpp")
+        end
+    target_end()
+end

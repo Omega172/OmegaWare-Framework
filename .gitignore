@@ -2,3 +2,4 @@
 .vscode/compile_commands.json
 .xmake
 Build
+!Source/Third-Party/Dumper-7/.gitkeep
