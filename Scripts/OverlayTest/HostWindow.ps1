@@ -56,3 +56,14 @@ function Save-HostShot([IntPtr]$Window, [string]$Out) {
     $Graphics.Dispose()
     $Bitmap.Dispose()
 }
+
+function Get-DataRoot([string]$Arch = "x64") {
+    $Repo = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
+    $Name = "OmegaWare"
+    $Conf = Join-Path $Repo ".xmake\windows\$Arch\xmake.conf"
+    if (Test-Path $Conf) {
+        $Match = [regex]::Match((Get-Content $Conf -Raw), '(?m)^\s*framework_name\s*=\s*"([^"]*)"')
+        if ($Match.Success -and $Match.Groups[1].Value) { $Name = $Match.Groups[1].Value }
+    }
+    Join-Path ([Environment]::GetFolderPath("MyDocuments")) $Name
+}

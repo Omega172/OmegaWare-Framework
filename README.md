@@ -140,6 +140,7 @@ VS Code tasks (`Ctrl+Shift+B`) wrap the same commands. After adding or moving fi
 | `--engine` | `none`, `unreal`, `unity` | `none` | Engine interface to compile in. Only the selected engine's code is built. `unity` covers both Mono and IL2CPP and picks one at runtime. |
 | `--unreal_sdk` | path | `Source/Third-Party/Dumper-7/CppSDK` | Dumper-7 `CppSDK` folder for `--engine=unreal`. The default folder is ignored by git. |
 | `--proxy` | `version`, `winmm`, `dinput8` | `version` | System DLL the proxy target replaces. |
+| `--game_depth` | `true`, `false` | `true` | Track the game's depth buffer for occluded world drawing. Turn it off for games where hooking their DX11/DX12 command lists causes trouble (Payday 3 lost its D3D12 device with it on). |
 | `--gui`, `--renderhook`, `--localization` | path | submodules, then sibling folders | Locations of the three libraries. |
 
 The defaults for name, version, game and process are in `stDefaults` at the top of `xmake.lua`; the options above override them. xmake writes it and the `--game` value into a generated `Version.hpp`, which both the code (`OmegaWare::kVersion`, `OmegaWare::kGame`) and the DLL's version resource read, so they always match.

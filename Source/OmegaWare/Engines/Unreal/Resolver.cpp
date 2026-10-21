@@ -283,7 +283,7 @@ namespace OmegaWare::Unreal::Resolver
 					return true;
 				const std::uintptr_t uPool = uSlot - NamePool::kBlocksOffset;
 				std::array<std::uint32_t, 2> aCursor{};
-				if (!Probe(uPool + NamePool::kCurrentBlockOffset, aCursor) || aCursor[0] >= NamePool::kMaxBlocks || aCursor[1] >= NamePool::kBlockBytes)
+				if (!Probe(uPool + NamePool::kCurrentBlockOffset, aCursor) || aCursor[0] >= NamePool::kMaxBlocks || aCursor[1] >= NamePool::kMaxBlockBytes)
 					return true;
 				std::uintptr_t uLast = 0;
 				std::uintptr_t uNext = 0;
@@ -411,7 +411,7 @@ namespace OmegaWare::Unreal::Resolver
 		void LogFound(const stState& rState, const stFound& rFound)
 		{
 			LogInfo("unreal: GObjects at +0x{:X} ({}, SDK has +0x{:X})", Rva(rState, rFound.uGObjects), SourceName(rFound.eGObjects), static_cast<std::uint32_t>(SDK::Offsets::GObjects));
-			LogInfo("unreal: name pool at +0x{:X} ({}, SDK has +0x{:X}, length shift {})", Rva(rState, rFound.uNamePool), SourceName(rFound.eNames), static_cast<std::uint32_t>(SDK::Offsets::GNames), rFound.stNames.iLengthShift);
+			LogInfo("unreal: name pool at +0x{:X} ({}, SDK has +0x{:X}, length shift {}, {})", Rva(rState, rFound.uNamePool), SourceName(rFound.eNames), static_cast<std::uint32_t>(SDK::Offsets::GNames), rFound.stNames.iLengthShift, rFound.stNames.CasePreserving() ? "case-preserving entries" : "plain entries");
 			LogInfo("unreal: ProcessEvent at +0x{:X} (vtable slot {}, SDK has +0x{:X}{})", Rva(rState, rFound.uProcessEvent), static_cast<int>(SDK::Offsets::ProcessEventIdx), static_cast<std::uint32_t>(SDK::Offsets::ProcessEvent),
 				Rva(rState, rFound.uProcessEvent) == static_cast<std::uintptr_t>(SDK::Offsets::ProcessEvent) ? ", matches" : ", differs");
 			if (rFound.uWorldSlot)

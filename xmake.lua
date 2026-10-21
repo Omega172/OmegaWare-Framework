@@ -3,6 +3,7 @@ local stDefaults = {
     strVersion = "4.0.0",
     strGame = "ExampleGame",
     strProcess = "",
+    bGameDepth = true,
 }
 
 set_config("builddir", "Build")
@@ -60,6 +61,12 @@ option("unreal_sdk")
     set_default(path.join(os.scriptdir(), "Source", "Third-Party", "Dumper-7", "CppSDK"))
     set_showmenu(true)
     set_description("Path to a Dumper-7 CppSDK folder (the one containing SDK.hpp) for engine=unreal")
+option_end()
+
+option("game_depth")
+    set_default(stDefaults.bGameDepth)
+    set_showmenu(true)
+    set_description("Track the game's depth buffer so world drawing is hidden behind geometry (off avoids hooking the game's DX11/DX12 command lists)")
 option_end()
 
 option("proxy")
@@ -127,6 +134,7 @@ else
         add_packages("vcpkg::nlohmann-json")
         add_includedirs("Source/OmegaWare", "Source/OmegaWarePlugin")
         add_defines("OMEGAWARE_PLUGIN_HOST=1")
+        add_defines("OMEGAWARE_GAME_DEPTH=" .. (has_config("game_depth") and "1" or "0"))
         add_files("Source/OmegaWare/**.cpp|Engines/Unity/**.cpp|Engines/Unreal/**.cpp")
 
         local strConfigDir = path.join(os.scriptdir(), "Build", "Config", "$(arch)", "$(mode)")

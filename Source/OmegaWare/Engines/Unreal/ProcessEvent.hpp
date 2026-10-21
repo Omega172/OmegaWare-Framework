@@ -4,6 +4,7 @@
 
 #include "Engines/Unreal/Unreal.hpp"
 
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
@@ -38,6 +39,10 @@ namespace OmegaWare::Unreal
 	bool RemoveProcessEvent(HookHandle uHandle);
 	void RetryPendingProcessEvents();
 	void ShutdownProcessEvent();
+
+	[[nodiscard]] bool IsGameThread();
+	bool RunOnGameThread(std::function<void()> fnTask);
+	bool RunOnGameThreadAndWait(std::function<void()> fnTask, std::chrono::milliseconds msTimeout);
 	[[nodiscard]] std::vector<stProcessEventHookInfo> ProcessEventHooks();
 
 	template <typename Params>

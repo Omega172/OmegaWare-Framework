@@ -170,6 +170,13 @@ namespace
 		return (uOffset + 1) & ~std::size_t(1);
 	}
 
+	std::size_t AddCasePreservingEntry(std::vector<std::uint8_t>& rBlock, std::size_t uOffset, std::uint32_t uComparisonId, std::u16string_view strText, bool bWide)
+	{
+		std::memcpy(rBlock.data() + uOffset, &uComparisonId, sizeof(uComparisonId));
+		const std::size_t uEnd = AddNameEntry(rBlock, uOffset + sizeof(uComparisonId), strText, bWide, 6);
+		return (uEnd + 3) & ~std::size_t(3);
+	}
+
 	void TestNamePool()
 	{
 		namespace NamePool = OmegaWare::Unreal::NamePool;
@@ -210,6 +217,30 @@ namespace
 		AddNameEntry(aWrong, AddNameEntry(aWrong, 0, u"Nope", false, 6), u"ByteProperty", false, 6);
 		Check("rejects a block that does not start with None", !NamePool::DetectLayout(aWrong.data()));
 		Check("compares names case-sensitively", !NamePool::Equals(L"object", 6, "Object") && NamePool::Equals(L"Object", 6, "Object"));
+
+		std::vector<std::uint8_t> aCased(NamePool::kMaxBlockBytes);
+		std::size_t uCased = AddCasePreservingEntry(aCased, 0, 0, u"None", false);
+		const std::size_t uCasedByteProperty = uCased;
+		uCased = AddCasePreservingEntry(aCased, uCased, 1, u"ByteProperty", false);
+		const std::size_t uCasedWide = uCased;
+		uCased = AddCasePreservingEntry(aCased, uCased, 2, u"Пес", true);
+		const std::size_t uCasedLast = uCased;
+		AddCasePreservingEntry(aCased, uCased, 3, u"PlayerController", false);
+		const std::size_t uCasedHigh = 0x30000;
+		AddCasePreservingEntry(aCased, uCasedHigh, 4, u"Pawn", false);
+		const std::uint8_t* aCasedBlocks[1] = { aCased.data() };
+		const auto optCased = NamePool::DetectLayout(aCased.data());
+		Check("detects case-preserving name entries", optCased.has_value() && optCased->CasePreserving() && optCased->uStride == NamePool::kCasePreservingStride);
+		const NamePool::stLayout stCased = optCased.value_or(NamePool::stLayout{});
+		uLength = NamePool::Decode(aCasedBlocks, 1, static_cast<std::uint32_t>(uCasedByteProperty / 4), stCased, aName, std::size(aName));
+		Check("decodes a case-preserving ANSI name", NamePool::Equals(aName, uLength, "ByteProperty"));
+		uLength = NamePool::Decode(aCasedBlocks, 1, static_cast<std::uint32_t>(uCasedWide / 4), stCased, aName, std::size(aName));
+		Check("decodes a case-preserving wide name", uLength == 3 && aName[0] == 0x041F && aName[2] == 0x0441);
+		uLength = NamePool::Decode(aCasedBlocks, 1, static_cast<std::uint32_t>(uCasedLast / 4), stCased, aName, std::size(aName));
+		Check("decodes a case-preserving name after a wide entry", NamePool::Equals(aName, uLength, "PlayerController"));
+		uLength = NamePool::Decode(aCasedBlocks, 1, static_cast<std::uint32_t>(uCasedHigh / 4), stCased, aName, std::size(aName));
+		Check("decodes a case-preserving name past the plain block size", NamePool::Equals(aName, uLength, "Pawn"));
+		Check("plain layout is not mistaken for case-preserving", optLayout.has_value() && !optLayout->CasePreserving() && optLayout->uStride == NamePool::kStride);
 	}
 
 	void TestSafety()

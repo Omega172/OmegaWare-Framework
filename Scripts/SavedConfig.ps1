@@ -1,5 +1,5 @@
-param([string]$Arch = "x64", [string[]]$Skip = @())
-$Skip = $Skip -split ","
+param([string]$Arch = "x64", [string[]]$Skip = @(), [Parameter(ValueFromRemainingArguments = $true)][string[]]$Rest = @())
+$Skip = @($Skip) + @($Rest) -split ","
 $Repo = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $Config = Get-Item (Join-Path $Repo ".xmake\windows\$Arch\xmake.conf") -ErrorAction SilentlyContinue
 if (-not $Config) { return }

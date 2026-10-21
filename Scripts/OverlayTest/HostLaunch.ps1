@@ -8,6 +8,7 @@ param(
     [string]$GuiRoot = ""
 )
 $ErrorActionPreference = "Stop"
+. (Join-Path $PSScriptRoot "HostWindow.ps1")
 $Repo = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 if (-not $GuiRoot) { $GuiRoot = Join-Path $Repo "Source\Third-Party\OmegaWareProjects\OmegaWare-GUI" }
 $Demo = Join-Path $GuiRoot "Build\$Mode\$Arch\OmegaGUI-Demo.exe"
@@ -28,7 +29,7 @@ New-Item -ItemType Directory -Force $Dir | Out-Null
 Copy-Item $Demo $Dir
 Copy-Item $ProxyDll $Dir
 
-$Profiles = Join-Path ([Environment]::GetFolderPath("MyDocuments")) "OmegaWare\OmegaGUI-Demo\Configs\Profiles"
+$Profiles = Join-Path (Get-DataRoot $Arch) "OmegaGUI-Demo\Configs\Profiles"
 New-Item -ItemType Directory -Force $Profiles | Out-Null
 $Enabled = if ($Probe) { "true" } else { "false" }
 $Depth = $ProbeDepth.ToString([System.Globalization.CultureInfo]::InvariantCulture)

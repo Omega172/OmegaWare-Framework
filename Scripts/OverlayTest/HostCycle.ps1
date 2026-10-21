@@ -12,7 +12,7 @@ param(
 $Api = @{ dx9 = "Direct3D 9"; dx10 = "Direct3D 10"; dx11 = "Direct3D 11"; dx12 = "Direct3D 12"; opengl = "OpenGL"; vulkan = "Vulkan" }[$Backend]
 $Launch = & (Join-Path $PSScriptRoot "HostLaunch.ps1") -Backend $Backend -Arch $Arch -Mode $Mode -Proxy $Proxy -Probe:$Probe -ProbeDepth $ProbeDepth
 $ProcessId = $Launch.ProcessId
-$LogDir = Join-Path ([Environment]::GetFolderPath("MyDocuments")) "OmegaWare\OmegaGUI-Demo\Logs"
+$LogDir = Join-Path (Get-DataRoot $Arch) "OmegaGUI-Demo\Logs"
 $Log = $null
 for ($i = 0; $i -lt 40 -and -not $Log; $i++) {
     Start-Sleep -Milliseconds 250

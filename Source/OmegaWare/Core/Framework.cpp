@@ -21,6 +21,10 @@
 #include <chrono>
 #include <thread>
 
+#ifndef OMEGAWARE_GAME_DEPTH
+#define OMEGAWARE_GAME_DEPTH 1
+#endif
+
 namespace OmegaWare
 {
 	namespace
@@ -126,6 +130,7 @@ namespace OmegaWare
 
 			OmegaRenderHook::stPipelineConfig stConfig;
 			stConfig.pListener = &g_clOverlay;
+			stConfig.bGameDepth = OMEGAWARE_GAME_DEPTH != 0;
 			if (auto expInstalled = OmegaRenderHook::Pipeline::Install(stConfig); !expInstalled)
 			{
 				LogError("pipeline install failed: {}", expInstalled.error());

@@ -11,13 +11,19 @@
 #include "OmegaRenderHook/Hook/HookScope.hpp"
 #include "OmegaRenderHook/Hook/InlineHook.hpp"
 
+#include <Windows.h>
+#include <TlHelp32.h>
+
 #include <algorithm>
 #include <atomic>
 #include <chrono>
+#include <functional>
 #include <memory>
 #include <mutex>
 #include <shared_mutex>
 #include <unordered_map>
+#include <vector>
+#include <thread>
 
 namespace OmegaWare::Unreal
 {
@@ -48,6 +54,91 @@ namespace OmegaWare::Unreal
 		OmegaRenderHook::clInlineHook g_clProcessEvent;
 		bool g_bInstalled = false;
 		auto g_tpNextRetry = std::chrono::steady_clock::time_point{};
+
+		struct stTask
+		{
+			std::function<void()> fnTask;
+			std::shared_ptr<std::atomic<bool>> pDone;
+		};
+
+		std::mutex g_mtxTasks;
+		std::vector<stTask> g_aTasks;
+		std::atomic<bool> g_bTasksPending = false;
+		std::atomic<bool> g_bAcceptTasks = true;
+		std::atomic<DWORD> g_uGameThread = 0;
+		std::atomic<bool> g_bLoggedGameThread = false;
+		thread_local bool t_bRunningTasks = false;
+
+		[[nodiscard]] DWORD FindMainThread()
+		{
+			const HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
+			if (hSnapshot == INVALID_HANDLE_VALUE)
+				return 0;
+			const DWORD uProcess = GetCurrentProcessId();
+			DWORD uOldest = 0;
+			ULARGE_INTEGER uOldestTime{ .QuadPart = ~0ull };
+			THREADENTRY32 stEntry{ .dwSize = sizeof(THREADENTRY32) };
+			for (BOOL bMore = Thread32First(hSnapshot, &stEntry); bMore; bMore = Thread32Next(hSnapshot, &stEntry))
+			{
+				if (stEntry.th32OwnerProcessID != uProcess)
+					continue;
+				const HANDLE hThread = OpenThread(THREAD_QUERY_LIMITED_INFORMATION, FALSE, stEntry.th32ThreadID);
+				if (!hThread)
+					continue;
+				FILETIME stCreated{}, stExited{}, stKernel{}, stUser{};
+				if (GetThreadTimes(hThread, &stCreated, &stExited, &stKernel, &stUser))
+				{
+					const ULARGE_INTEGER uCreated{ .LowPart = stCreated.dwLowDateTime, .HighPart = stCreated.dwHighDateTime };
+					if (uCreated.QuadPart < uOldestTime.QuadPart)
+					{
+						uOldestTime = uCreated;
+						uOldest = stEntry.th32ThreadID;
+					}
+				}
+				CloseHandle(hThread);
+			}
+			CloseHandle(hSnapshot);
+			return uOldest;
+		}
+
+		[[nodiscard]] DWORD GameThreadId()
+		{
+			DWORD uThread = g_uGameThread.load(std::memory_order_acquire);
+			if (!uThread)
+			{
+				uThread = FindMainThread();
+				g_uGameThread.store(uThread, std::memory_order_release);
+				LogInfo("unreal: game thread is the process main thread ({})", uThread);
+			}
+			return uThread;
+		}
+
+		void RunTasks()
+		{
+			std::vector<stTask> aTasks;
+			{
+				std::scoped_lock lckTasks(g_mtxTasks);
+				aTasks.swap(g_aTasks);
+				g_bTasksPending.store(false, std::memory_order_release);
+			}
+			t_bRunningTasks = true;
+			for (stTask& rTask : aTasks)
+			{
+				Hooks::clCallGuard clGuard;
+				OmegaRenderHook::stFault stFault;
+				auto fnInvoke = [&] { rTask.fnTask(); };
+				if (!OmegaRenderHook::InvokeGuarded(fnInvoke, stFault))
+				{
+					if (stFault.bCppException)
+						LogError("game thread task threw a C++ exception");
+					else
+						LogError("game thread task faulted (code 0x{:08X} at {})", stFault.uCode, stFault.pAddress);
+				}
+				if (rTask.pDone)
+					rTask.pDone->store(true, std::memory_order_release);
+			}
+			t_bRunningTasks = false;
+		}
 
 		[[nodiscard]] std::string FullFunctionName(std::string_view strFunction)
 		{
@@ -83,6 +174,12 @@ namespace OmegaWare::Unreal
 		void DetourProcessEvent(const SDK::UObject* pObject, SDK::UFunction* pFunction, void* pParams)
 		{
 			clEngineScope clScope;
+			if (g_bTasksPending.load(std::memory_order_acquire) && !t_bRunningTasks && GetCurrentThreadId() == g_uGameThread.load(std::memory_order_relaxed))
+			{
+				if (!g_bLoggedGameThread.exchange(true))
+					LogInfo("unreal: game thread tasks running on thread {}", GetCurrentThreadId());
+				RunTasks();
+			}
 			if (!pFunction || g_uResolved.load(std::memory_order_acquire) == 0)
 				return CallOriginal(pObject, pFunction, pParams);
 
@@ -200,8 +297,59 @@ namespace OmegaWare::Unreal
 		}
 	}
 
+	bool IsGameThread()
+	{
+		return GetCurrentThreadId() == GameThreadId();
+	}
+
+	bool RunOnGameThread(std::function<void()> fnTask)
+	{
+		if (!fnTask || !g_bAcceptTasks.load(std::memory_order_acquire) || !EnsureInstalled() || !GameThreadId())
+			return false;
+		std::scoped_lock lckTasks(g_mtxTasks);
+		g_aTasks.push_back({ std::move(fnTask), nullptr });
+		g_bTasksPending.store(true, std::memory_order_release);
+		return true;
+	}
+
+	bool RunOnGameThreadAndWait(std::function<void()> fnTask, std::chrono::milliseconds msTimeout)
+	{
+		if (!fnTask)
+			return false;
+		if (IsGameThread())
+		{
+			fnTask();
+			return true;
+		}
+		if (!g_bAcceptTasks.load(std::memory_order_acquire) || !EnsureInstalled() || !GameThreadId())
+			return false;
+		auto pDone = std::make_shared<std::atomic<bool>>(false);
+		{
+			std::scoped_lock lckTasks(g_mtxTasks);
+			g_aTasks.push_back({ std::move(fnTask), pDone });
+			g_bTasksPending.store(true, std::memory_order_release);
+		}
+		const auto tpDeadline = std::chrono::steady_clock::now() + msTimeout;
+		while (!pDone->load(std::memory_order_acquire))
+		{
+			if (std::chrono::steady_clock::now() >= tpDeadline)
+			{
+				LogWarning("game thread task did not run within {} ms", msTimeout.count());
+				return false;
+			}
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		}
+		return true;
+	}
+
 	void ShutdownProcessEvent()
 	{
+		g_bAcceptTasks.store(false, std::memory_order_release);
+		{
+			std::scoped_lock lckTasks(g_mtxTasks);
+			g_aTasks.clear();
+			g_bTasksPending.store(false, std::memory_order_release);
+		}
 		{
 			std::unique_lock lckEntries(g_mtxEntries);
 			g_mapResolved.clear();

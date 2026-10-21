@@ -16,6 +16,10 @@
 #include <mutex>
 #include <thread>
 
+#ifndef OMEGAWARE_GAME_DEPTH
+#define OMEGAWARE_GAME_DEPTH 1
+#endif
+
 namespace OmegaWare::ReadyWatch
 {
 	namespace
@@ -469,7 +473,8 @@ namespace OmegaWare::ReadyWatch
 		{
 			std::scoped_lock lckHooks(rState.mtxHooks);
 			bool bAllDone = true;
-			OmegaRenderHook::Pipeline::PrepareEarly(false);
+			if (OMEGAWARE_GAME_DEPTH)
+				OmegaRenderHook::Pipeline::PrepareEarly(false);
 			for (stExport& rExport : rState.aExports)
 			{
 				if (rExport.bDone)
