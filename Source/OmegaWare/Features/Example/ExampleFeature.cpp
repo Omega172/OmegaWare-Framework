@@ -73,7 +73,7 @@ namespace OmegaWare
 				OmegaGUI::NextColumn();
 				if (OmegaGUI::BeginSection("example.section_crosshair"_l))
 				{
-					Widgets::Keybind("example.crosshair"_l, "example.crosshair", *m_pCrosshair);
+					Widgets::Keybind("example.crosshair"_l, *m_pCrosshair);
 					OmegaGUI::SliderFloat("example.crosshair_size"_l, m_pCrosshairSize, 2.f, 40.f, "{:.0f}");
 					OmegaGUI::EndSection();
 				}

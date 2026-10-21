@@ -6,5 +6,5 @@
 
 namespace OmegaWare::Widgets
 {
-	bool Keybind(std::string_view strLabel, std::string_view strID, Config::stKeybind& rKeybind);
+	bool Keybind(std::string_view strLabel, Config::stKeybind& rKeybind);
 }

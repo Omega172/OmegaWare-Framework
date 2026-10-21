@@ -1,7 +1,6 @@
 #pragma once
 
-#include "OmegaGUI/Core/Color.hpp"
-#include "OmegaGUI/Input/Input.hpp"
+#include "OmegaGUI/OmegaGUI.hpp"
 
 #include <cstdint>
 #include <filesystem>
@@ -12,19 +11,8 @@
 
 namespace OmegaWare::Config
 {
-	enum class EKeybindMode : std::uint8_t
-	{
-		AlwaysOn,
-		Hold,
-		Toggle,
-	};
-
-	struct stKeybind
-	{
-		OmegaGUI::KeyCode uKey = 0;
-		EKeybindMode eMode = EKeybindMode::Toggle;
-		bool bActive = false;
-	};
+	using EKeybindMode = OmegaGUI::EHotkeyMode;
+	using stKeybind = OmegaGUI::stHotkey;
 
 	using Value_t = std::variant<bool, int, float, std::string, OmegaGUI::color, stKeybind>;
 

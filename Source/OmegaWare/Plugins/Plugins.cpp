@@ -221,7 +221,7 @@ namespace OmegaWare::Plugins
 		{
 			if (!pKeybind || !szLabel)
 				return false;
-			return Widgets::Keybind(szLabel, szLabel, *static_cast<Config::stKeybind*>(pKeybind));
+			return Widgets::Keybind(szLabel, *static_cast<Config::stKeybind*>(pKeybind));
 		}
 
 		bool ApiInputText(const char* szLabel, char* szBuffer, std::uint32_t uSize)

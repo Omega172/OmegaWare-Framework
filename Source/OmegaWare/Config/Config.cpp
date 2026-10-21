@@ -1,6 +1,7 @@
 #include "Config/Config.hpp"
 
 #include "OmegaGUI/OmegaGUI.hpp"
+#include "OmegaLocalization/OmegaLocalization.hpp"
 
 #include <nlohmann/json.hpp>
 
@@ -72,7 +73,7 @@ namespace OmegaWare::Config
 				if constexpr (std::is_same_v<T, OmegaGUI::color>)
 					return rInner.uPacked;
 				else if constexpr (std::is_same_v<T, stKeybind>)
-					return { { "key", rInner.uKey }, { "mode", ModeName(rInner.eMode) } };
+					return { { "key", rInner.uKey }, { "mode", ModeName(rInner.eMode) }, { "notify", rInner.bNotify } };
 				else
 					return rInner;
 			}, rValue);
@@ -118,6 +119,7 @@ namespace OmegaWare::Config
 						return false;
 					rInner.uKey = rJson["key"].get<OmegaGUI::KeyCode>();
 					rInner.eMode = rJson.contains("mode") && rJson["mode"].is_string() ? ModeFromName(rJson["mode"].get<std::string>()) : EKeybindMode::Toggle;
+					rInner.bNotify = rJson.contains("notify") && rJson["notify"].is_boolean() && rJson["notify"].get<bool>();
 					rInner.bActive = rInner.eMode == EKeybindMode::AlwaysOn;
 				}
 				return true;
@@ -219,26 +221,13 @@ namespace OmegaWare::Config
 	void UpdateKeybinds()
 	{
 		std::scoped_lock lckConfig(g_mtxConfig);
-		const bool bKeysAllowed = !OmegaGUI::WantsKeyboard();
-		const OmegaGUI::clInput& rInput = OmegaGUI::GetInput();
 		for (auto& [strKey, pEntry] : g_mapValues)
 		{
 			stKeybind* pKeybind = std::get_if<stKeybind>(&pEntry->valCurrent);
-			if (!pKeybind)
+			if (!pKeybind || !OmegaGUI::UpdateHotkey(*pKeybind) || !pKeybind->bNotify)
 				continue;
-			switch (pKeybind->eMode)
-			{
-			case EKeybindMode::AlwaysOn:
-				pKeybind->bActive = true;
-				break;
-			case EKeybindMode::Hold:
-				pKeybind->bActive = bKeysAllowed && pKeybind->uKey != 0 && rInput.IsKeyDown(pKeybind->uKey);
-				break;
-			case EKeybindMode::Toggle:
-				if (bKeysAllowed && pKeybind->uKey != 0 && rInput.IsKeyPressed(pKeybind->uKey))
-					pKeybind->bActive = !pKeybind->bActive;
-				break;
-			}
+			const std::string strText = OmegaLocalization::Format(pKeybind->bActive ? "keybind.toast_on" : "keybind.toast_off", OmegaLocalization::Get(strKey));
+			OmegaGUI::PushToast(pKeybind->bActive ? OmegaGUI::EToastKind::Success : OmegaGUI::EToastKind::Info, strText, 1.5f);
 		}
 	}
 
