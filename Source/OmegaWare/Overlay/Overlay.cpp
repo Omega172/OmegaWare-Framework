@@ -6,6 +6,7 @@
 #include "Features/Feature.hpp"
 #include "Locales/Locales.hpp"
 #include "Menu/Menu.hpp"
+#include "Plugins/Plugins.hpp"
 
 #include "OmegaGUI/OmegaGUI.hpp"
 #include "OmegaLocalization/GUI.hpp"
@@ -189,6 +190,7 @@ namespace OmegaWare
 	void clOverlay::AttachGui(OmegaGUI::clRenderBackend* pBackend, HWND hWindow, UINT uHeight)
 	{
 		m_pActiveBackend = pBackend;
+		Plugins::SetImageBackend(pBackend);
 		m_bDisplayKnown = false;
 		if (m_bGuiInitialized)
 		{
@@ -222,6 +224,7 @@ namespace OmegaWare
 	{
 		m_bAttached = false;
 		OmegaRenderHook::InputBlock::SetBlocking({});
+		Plugins::SetImageBackend(nullptr);
 		if (m_bGuiInitialized)
 			OmegaGUI::SetBackend(nullptr);
 		if (m_pActiveBackend == &m_clBackendDX12)
@@ -255,6 +258,7 @@ namespace OmegaWare
 		const bool bBlockAll = OmegaGUI::IsVisible() && OmegaGUI::GetConfig().bBlockInputWhenVisible;
 		OmegaRenderHook::InputBlock::SetBlocking({ bBlockAll || OmegaGUI::WantsKeyboard(), bBlockAll || OmegaGUI::WantsMouse(), OmegaGUI::WantsGamepad() });
 		Config::UpdateKeybinds();
+		Plugins::FlushImages();
 		const Menu::stHotkeys stKeys = Menu::Hotkeys();
 		if (stKeys.iMenu > 0)
 			OmegaGUI::GetConfig().uToggleKey = static_cast<OmegaGUI::KeyCode>(stKeys.iMenu);

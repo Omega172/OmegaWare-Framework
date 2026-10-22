@@ -6,6 +6,11 @@
 #include <string>
 #include <vector>
 
+namespace OmegaGUI
+{
+	class clRenderBackend;
+}
+
 namespace OmegaWare::Plugins
 {
 	using FnLockGui = std::function<std::unique_lock<std::recursive_mutex>()>;
@@ -24,4 +29,6 @@ namespace OmegaWare::Plugins
 	void Shutdown();
 	[[nodiscard]] std::vector<stPluginInfo> List();
 	[[nodiscard]] std::filesystem::path Directory();
+	void SetImageBackend(OmegaGUI::clRenderBackend* pBackend);
+	void FlushImages();
 }

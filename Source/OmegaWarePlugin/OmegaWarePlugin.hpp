@@ -32,6 +32,31 @@ namespace OmegaWare::Plugin
 		WriteDepth,
 	};
 
+	enum class EWindowFlags : std::uint32_t
+	{
+		None = 0,
+		NoTitleBar = 1u << 0,
+		NoResize = 1u << 1,
+		NoMove = 1u << 2,
+		NoScrollbar = 1u << 3,
+		NoScrollWithMouse = 1u << 4,
+		NoCollapse = 1u << 5,
+		NoMaximize = 1u << 6,
+		NoBackground = 1u << 7,
+		NoBringToFront = 1u << 8,
+		AlwaysAutoResize = 1u << 9,
+		NoSavedSettings = 1u << 10,
+		NoNav = 1u << 11,
+		NoInputs = 1u << 12,
+		AlwaysVisible = 1u << 15,
+		NoSnap = 1u << 16,
+	};
+
+	[[nodiscard]] constexpr EWindowFlags operator|(EWindowFlags eLeft, EWindowFlags eRight)
+	{
+		return static_cast<EWindowFlags>(static_cast<std::uint32_t>(eLeft) | static_cast<std::uint32_t>(eRight));
+	}
+
 	struct stFeatureDesc
 	{
 		const char* szName = nullptr;
@@ -125,6 +150,29 @@ namespace OmegaWare::Plugin
 		void* (*UnrealObjectArray)() = nullptr;
 		void* (*UnrealAppendString)() = nullptr;
 		bool (*Selectable)(const char* szLabel, bool bSelected) = nullptr;
+
+		void* (*ImageCreate)(void* pHost, const std::uint8_t* pPixelsRGBA, int iWidth, int iHeight) = nullptr;
+		void (*ImageDestroy)(void* pHost, void* pImage) = nullptr;
+		void (*Image)(void* pImage, float flWidth, float flHeight, std::uint32_t uTint) = nullptr;
+		void (*DrawImage)(void* pImage, float flX1, float flY1, float flX2, float flY2, std::uint32_t uTint) = nullptr;
+		void (*ProgressBar)(float flFraction, const char* szOverlay, std::uint32_t uColor) = nullptr;
+		void (*TextColored)(std::uint32_t uColor, const char* szText) = nullptr;
+		void (*BeginGroup)() = nullptr;
+		void (*EndGroup)() = nullptr;
+
+		bool (*BeginWindow)(const char* szName, bool* pOpen, EWindowFlags eFlags) = nullptr;
+		void (*EndWindow)() = nullptr;
+		void (*SetNextWindowPos)(float flX, float flY, bool bAlways) = nullptr;
+		void (*SetNextWindowSize)(float flWidth, float flHeight, bool bAlways) = nullptr;
+
+		void (*SetNextWindowSizeConstraints)(float flMinWidth, float flMinHeight, float flMaxWidth, float flMaxHeight) = nullptr;
+		void (*SetNextWindowBgAlpha)(float flAlpha) = nullptr;
+		void (*GetWindowSize)(float* pflWidth, float* pflHeight) = nullptr;
+		void (*GetContentRegionAvail)(float* pflWidth, float* pflHeight) = nullptr;
+		void (*CalcTextSize)(const char* szText, float* pflWidth, float* pflHeight) = nullptr;
+		void (*GetItemSpacing)(float* pflX, float* pflY) = nullptr;
+		float (*GetFrameHeight)() = nullptr;
+		void (*Dummy)(float flWidth, float flHeight) = nullptr;
 	};
 
 	using FnPluginLoad = bool (*)(const stApi* pApi);

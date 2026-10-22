@@ -28,10 +28,12 @@
 #include <chrono>
 #include <cstring>
 #include <cwctype>
+#include <initializer_list>
 #include <map>
 #include <memory>
 #include <set>
 #include <thread>
+#include <utility>
 
 namespace OmegaWare::Plugins
 {
@@ -92,6 +94,15 @@ namespace OmegaWare::Plugins
 			std::uintmax_t uSize = 0;
 		};
 
+		struct stImage
+		{
+			const stPlugin* pOwner = nullptr;
+			std::vector<std::uint8_t> aPixels;
+			int iWidth = 0;
+			int iHeight = 0;
+			OmegaGUI::TextureHandle hTexture = 0;
+		};
+
 		struct stState
 		{
 			bool bInitialized = false;
@@ -108,6 +119,11 @@ namespace OmegaWare::Plugins
 			std::string strGame;
 			std::mutex mtxSnapshot;
 			std::vector<stPluginInfo> aSnapshot;
+			OmegaGUI::clRenderBackend* pImageBackend = nullptr;
+			std::vector<std::unique_ptr<stImage>> aImages;
+			std::vector<OmegaGUI::TextureHandle> aDeadTextures;
+			float flNextBgAlpha = 1.f;
+			std::vector<float> aWindowAlphas;
 		};
 
 		stState& State()
@@ -420,6 +436,183 @@ namespace OmegaWare::Plugins
 			return OmegaGUI::Selectable(szLabel ? szLabel : "", bSelected);
 		}
 
+		[[nodiscard]] stImage* FindImage(stState& rState, const void* pImage)
+		{
+			for (const auto& pOwned : rState.aImages)
+				if (pOwned.get() == pImage)
+					return pOwned.get();
+			return nullptr;
+		}
+
+		[[nodiscard]] OmegaGUI::TextureHandle ImageTexture(stState& rState, stImage& rImage)
+		{
+			if (!rImage.hTexture && rState.pImageBackend)
+				rImage.hTexture = rState.pImageBackend->CreateTexture(rImage.aPixels.data(), rImage.iWidth, rImage.iHeight);
+			return rImage.hTexture;
+		}
+
+		void ReleaseImages(stState& rState, const stPlugin* pOwner)
+		{
+			std::erase_if(rState.aImages, [&](const std::unique_ptr<stImage>& pImage) {
+				if (pImage->pOwner != pOwner)
+					return false;
+				if (pImage->hTexture)
+					rState.aDeadTextures.push_back(pImage->hTexture);
+				return true;
+			});
+		}
+
+		void* ApiImageCreate(void* pHost, const std::uint8_t* pPixelsRGBA, int iWidth, int iHeight)
+		{
+			if (!pPixelsRGBA || iWidth <= 0 || iHeight <= 0 || iWidth > 8192 || iHeight > 8192)
+				return nullptr;
+			stState& rState = State();
+			auto pImage = std::make_unique<stImage>();
+			pImage->pOwner = &Owner(pHost);
+			pImage->iWidth = iWidth;
+			pImage->iHeight = iHeight;
+			pImage->aPixels.assign(pPixelsRGBA, pPixelsRGBA + static_cast<std::size_t>(iWidth) * static_cast<std::size_t>(iHeight) * 4);
+			void* pHandle = pImage.get();
+			auto lckGui = rState.fnLockGui();
+			rState.aImages.push_back(std::move(pImage));
+			return pHandle;
+		}
+
+		void ApiImageDestroy(void* pHost, void* pImage)
+		{
+			stState& rState = State();
+			auto lckGui = rState.fnLockGui();
+			std::erase_if(rState.aImages, [&](const std::unique_ptr<stImage>& pOwned) {
+				if (pOwned.get() != pImage || pOwned->pOwner != &Owner(pHost))
+					return false;
+				if (pOwned->hTexture)
+					rState.aDeadTextures.push_back(pOwned->hTexture);
+				return true;
+			});
+		}
+
+		void ApiImage(void* pImage, float flWidth, float flHeight, std::uint32_t uTint)
+		{
+			stState& rState = State();
+			stImage* pFound = FindImage(rState, pImage);
+			const OmegaGUI::TextureHandle hTexture = pFound ? ImageTexture(rState, *pFound) : 0;
+			if (hTexture)
+				OmegaGUI::Image(hTexture, { flWidth, flHeight }, { 0.f, 0.f }, { 1.f, 1.f }, OmegaGUI::color(uTint));
+			else
+				OmegaGUI::Dummy({ flWidth, flHeight });
+		}
+
+		void ApiDrawImage(void* pImage, float flX1, float flY1, float flX2, float flY2, std::uint32_t uTint)
+		{
+			stState& rState = State();
+			stImage* pFound = FindImage(rState, pImage);
+			if (const OmegaGUI::TextureHandle hTexture = pFound ? ImageTexture(rState, *pFound) : 0)
+				OmegaGUI::GetBackgroundDrawList().AddImage(hTexture, { flX1, flY1 }, { flX2, flY2 }, { 0.f, 0.f }, { 1.f, 1.f }, OmegaGUI::color(uTint));
+		}
+
+		void ApiProgressBar(float flFraction, const char* szOverlay, std::uint32_t uColor)
+		{
+			OmegaGUI::stStyle& rStyle = OmegaGUI::GetStyle();
+			const OmegaGUI::color colAccent = rStyle.Get(OmegaGUI::EColor::Accent);
+			if (uColor >> 24)
+				rStyle.Set(OmegaGUI::EColor::Accent, OmegaGUI::color(uColor));
+			OmegaGUI::ProgressBar(flFraction, {}, szOverlay ? szOverlay : "");
+			rStyle.Set(OmegaGUI::EColor::Accent, colAccent);
+		}
+
+		void ApiTextColored(std::uint32_t uColor, const char* szText) { OmegaGUI::TextColored(OmegaGUI::color(uColor), szText ? szText : ""); }
+		void ApiBeginGroup() { OmegaGUI::BeginGroup(); }
+		void ApiEndGroup() { OmegaGUI::EndGroup(); }
+
+		template <typename F>
+		void WithWindowAlpha(float flAlpha, std::initializer_list<OmegaGUI::EColor> aColors, F&& fnCall)
+		{
+			if (flAlpha >= 1.f)
+			{
+				fnCall();
+				return;
+			}
+			OmegaGUI::stStyle& rStyle = OmegaGUI::GetStyle();
+			std::vector<std::pair<OmegaGUI::EColor, OmegaGUI::color>> aSaved;
+			for (const OmegaGUI::EColor eColor : aColors)
+			{
+				aSaved.emplace_back(eColor, rStyle.Get(eColor));
+				rStyle.Set(eColor, rStyle.Get(eColor).MultiplyAlpha(flAlpha));
+			}
+			fnCall();
+			for (const auto& [eColor, col] : aSaved)
+				rStyle.Set(eColor, col);
+		}
+
+		bool ApiBeginWindow(const char* szName, bool* pOpen, Plugin::EWindowFlags eFlags)
+		{
+			constexpr std::uint32_t uAllowed = (static_cast<std::uint32_t>(Plugin::EWindowFlags::NoInputs) * 2u - 1u) | static_cast<std::uint32_t>(Plugin::EWindowFlags::AlwaysVisible | Plugin::EWindowFlags::NoSnap);
+			stState& rState = State();
+			const float flAlpha = std::exchange(rState.flNextBgAlpha, 1.f);
+			rState.aWindowAlphas.push_back(flAlpha);
+			bool bVisible = false;
+			WithWindowAlpha(flAlpha, { OmegaGUI::EColor::Surface, OmegaGUI::EColor::Surface2, OmegaGUI::EColor::Shadow, OmegaGUI::EColor::DotGrid, OmegaGUI::EColor::Border }, [&] {
+				bVisible = OmegaGUI::Begin(szName ? szName : "plugin", pOpen, static_cast<OmegaGUI::EWindowFlags>(static_cast<std::uint32_t>(eFlags) & uAllowed));
+			});
+			return bVisible;
+		}
+
+		void ApiEndWindow()
+		{
+			stState& rState = State();
+			float flAlpha = 1.f;
+			if (!rState.aWindowAlphas.empty())
+			{
+				flAlpha = rState.aWindowAlphas.back();
+				rState.aWindowAlphas.pop_back();
+			}
+			WithWindowAlpha(flAlpha, { OmegaGUI::EColor::Border, OmegaGUI::EColor::BorderHover }, [] { OmegaGUI::End(); });
+		}
+
+		void ApiSetNextWindowSizeConstraints(float flMinWidth, float flMinHeight, float flMaxWidth, float flMaxHeight) { OmegaGUI::SetNextWindowSizeConstraints({ flMinWidth, flMinHeight }, { flMaxWidth, flMaxHeight }); }
+		void ApiSetNextWindowBgAlpha(float flAlpha) { State().flNextBgAlpha = std::clamp(flAlpha, 0.f, 1.f); }
+
+		void ApiGetWindowSize(float* pflWidth, float* pflHeight)
+		{
+			const OmegaGUI::vec2 vecSize = OmegaGUI::GetWindowSize();
+			if (pflWidth)
+				*pflWidth = vecSize.x;
+			if (pflHeight)
+				*pflHeight = vecSize.y;
+		}
+
+		void ApiGetContentRegionAvail(float* pflWidth, float* pflHeight)
+		{
+			const OmegaGUI::vec2 vecAvail = OmegaGUI::GetContentRegionAvail();
+			if (pflWidth)
+				*pflWidth = vecAvail.x;
+			if (pflHeight)
+				*pflHeight = vecAvail.y;
+		}
+
+		void ApiCalcTextSize(const char* szText, float* pflWidth, float* pflHeight)
+		{
+			const OmegaGUI::vec2 vecSize = OmegaGUI::CalcTextSize(szText ? szText : "");
+			if (pflWidth)
+				*pflWidth = vecSize.x;
+			if (pflHeight)
+				*pflHeight = vecSize.y;
+		}
+
+		void ApiGetItemSpacing(float* pflX, float* pflY)
+		{
+			const OmegaGUI::vec2 vecSpacing = OmegaGUI::GetStyle().vecItemSpacing;
+			if (pflX)
+				*pflX = vecSpacing.x;
+			if (pflY)
+				*pflY = vecSpacing.y;
+		}
+
+		float ApiGetFrameHeight() { return OmegaGUI::GetFrameHeight(); }
+		void ApiDummy(float flWidth, float flHeight) { OmegaGUI::Dummy({ flWidth, flHeight }); }
+		void ApiSetNextWindowPos(float flX, float flY, bool bAlways) { OmegaGUI::SetNextWindowPos({ flX, flY }, bAlways ? OmegaGUI::ECondition::Always : OmegaGUI::ECondition::FirstUse); }
+		void ApiSetNextWindowSize(float flWidth, float flHeight, bool bAlways) { OmegaGUI::SetNextWindowSize({ flWidth, flHeight }, bAlways ? OmegaGUI::ECondition::Always : OmegaGUI::ECondition::FirstUse); }
+
 		void ApiCallEnter(void* pHost) { Owner(pHost).iCalls.fetch_add(1, std::memory_order_acq_rel); }
 		void ApiCallLeave(void* pHost) { Owner(pHost).iCalls.fetch_sub(1, std::memory_order_acq_rel); }
 
@@ -521,6 +714,26 @@ namespace OmegaWare::Plugins
 #endif
 			r.RunOnGameThread = &ApiRunOnGameThread;
 			r.Selectable = &ApiSelectable;
+			r.ImageCreate = &ApiImageCreate;
+			r.ImageDestroy = &ApiImageDestroy;
+			r.Image = &ApiImage;
+			r.DrawImage = &ApiDrawImage;
+			r.ProgressBar = &ApiProgressBar;
+			r.TextColored = &ApiTextColored;
+			r.BeginGroup = &ApiBeginGroup;
+			r.EndGroup = &ApiEndGroup;
+			r.BeginWindow = &ApiBeginWindow;
+			r.EndWindow = &ApiEndWindow;
+			r.SetNextWindowPos = &ApiSetNextWindowPos;
+			r.SetNextWindowSize = &ApiSetNextWindowSize;
+			r.SetNextWindowSizeConstraints = &ApiSetNextWindowSizeConstraints;
+			r.SetNextWindowBgAlpha = &ApiSetNextWindowBgAlpha;
+			r.GetWindowSize = &ApiGetWindowSize;
+			r.GetContentRegionAvail = &ApiGetContentRegionAvail;
+			r.CalcTextSize = &ApiCalcTextSize;
+			r.GetItemSpacing = &ApiGetItemSpacing;
+			r.GetFrameHeight = &ApiGetFrameHeight;
+			r.Dummy = &ApiDummy;
 		}
 
 		template <typename F>
@@ -562,6 +775,7 @@ namespace OmegaWare::Plugins
 				if (bCallUnload && rPlugin.pfnUnload)
 					static_cast<void>(Guarded(rPlugin, "unload", [&] { rPlugin.pfnUnload(); }));
 				rPlugin.aFeatures.clear();
+				ReleaseImages(rState, &rPlugin);
 			}
 
 			const auto tpDeadline = std::chrono::steady_clock::now() + 2s;
@@ -791,5 +1005,30 @@ namespace OmegaWare::Plugins
 	std::filesystem::path Directory()
 	{
 		return State().pathDirectory;
+	}
+
+	void SetImageBackend(OmegaGUI::clRenderBackend* pBackend)
+	{
+		stState& rState = State();
+		if (rState.pImageBackend)
+		{
+			for (const auto& pImage : rState.aImages)
+				if (pImage->hTexture)
+					rState.aDeadTextures.push_back(pImage->hTexture);
+			FlushImages();
+		}
+		for (const auto& pImage : rState.aImages)
+			pImage->hTexture = 0;
+		rState.aDeadTextures.clear();
+		rState.pImageBackend = pBackend;
+	}
+
+	void FlushImages()
+	{
+		stState& rState = State();
+		if (rState.pImageBackend)
+			for (const OmegaGUI::TextureHandle hTexture : rState.aDeadTextures)
+				rState.pImageBackend->DestroyTexture(hTexture);
+		rState.aDeadTextures.clear();
 	}
 }
