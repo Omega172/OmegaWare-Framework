@@ -42,7 +42,14 @@ namespace OmegaWare::CrashDump
 				return;
 			MINIDUMP_EXCEPTION_INFORMATION stException{ GetCurrentThreadId(), pPointers, FALSE };
 			const auto eType = static_cast<MINIDUMP_TYPE>(MiniDumpWithIndirectlyReferencedMemory | MiniDumpScanMemory | MiniDumpWithThreadInfo);
-			const BOOL bWritten = g_pfnWriteDump(GetCurrentProcess(), GetCurrentProcessId(), hFile, eType, &stException, nullptr, nullptr);
+			BOOL bWritten = g_pfnWriteDump(GetCurrentProcess(), GetCurrentProcessId(), hFile, eType, &stException, nullptr, nullptr);
+			if (!bWritten)
+			{
+				LogWarning("full crash dump failed (error {}), retrying with a minimal one", GetLastError());
+				SetFilePointer(hFile, 0, nullptr, FILE_BEGIN);
+				SetEndOfFile(hFile);
+				bWritten = g_pfnWriteDump(GetCurrentProcess(), GetCurrentProcessId(), hFile, static_cast<MINIDUMP_TYPE>(MiniDumpNormal | MiniDumpWithThreadInfo), &stException, nullptr, nullptr);
+			}
 			CloseHandle(hFile);
 			if (bWritten)
 			{

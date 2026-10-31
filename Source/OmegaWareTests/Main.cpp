@@ -1328,7 +1328,7 @@ namespace
 
 		stThunkBuffer stUnaligned;
 		stUnaligned.PutString(strName);
-		stUnaligned.PutSite(0x20, 0x504);
+		stUnaligned.PutSite(0x20, 0x500 + sizeof(void*) / 2);
 		Check("rejects an unaligned vtable offset", !stUnaligned.Find());
 
 		stThunkBuffer stNoTest;
