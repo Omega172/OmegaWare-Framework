@@ -242,8 +242,40 @@ namespace OmegaWare::Terminal
 
 #endif
 
-			g_clConsole.RegisterCommand("plugins", "plugins [list|reload|folder]", [](clConsole& rConsole, Arguments aArguments) {
+			g_clConsole.RegisterCommand("plugins", "plugins [list|reload|folder|slots|unload <name>|load <name>]", [](clConsole& rConsole, Arguments aArguments) {
 				const std::string_view strAction = aArguments.size() > 1 ? aArguments[1] : "list";
+				if (strAction == "unload" || strAction == "load")
+				{
+					const bool bUnload = strAction == "unload";
+					if (aArguments.size() < 3)
+						return rConsole.Print(OmegaGUI::ELogLevel::Warning, "usage: plugins {} <name>", strAction);
+					const std::string_view strName = aArguments[2];
+					const Plugins::ECommandResult eResult = bUnload ? Plugins::RequestUnload(strName) : Plugins::RequestLoad(strName);
+					if (eResult == Plugins::ECommandResult::NotFound)
+					{
+						if (bUnload)
+							return rConsole.Print(OmegaGUI::ELogLevel::Error, "no loaded plugin named {}", strName);
+						return rConsole.Print(OmegaGUI::ELogLevel::Error, "no dll named {} in the plugins folder", strName);
+					}
+					if (eResult == Plugins::ECommandResult::NoChange)
+					{
+						if (bUnload)
+							return rConsole.Print(OmegaGUI::ELogLevel::Warning, "{0} is already unloaded, use plugins load {0} to bring it back", strName);
+						return rConsole.Print(OmegaGUI::ELogLevel::Warning, "{} is already loaded", strName);
+					}
+					if (bUnload)
+						return rConsole.Print(OmegaGUI::ELogLevel::Success, "unloading {}", strName);
+					return rConsole.Print(OmegaGUI::ELogLevel::Success, "loading {}", strName);
+				}
+				if (strAction == "slots")
+				{
+					const auto aSlots = Plugins::Slots();
+					if (aSlots.empty())
+						return rConsole.Print(OmegaGUI::ELogLevel::Muted, "no extension slots have been drawn yet, open the menu first");
+					for (const Plugins::stSlotInfo& rSlot : aSlots)
+						rConsole.Print(rSlot.uExtensions ? OmegaGUI::ELogLevel::Success : OmegaGUI::ELogLevel::Muted, "{} - {} extension(s)", rSlot.strSlot, rSlot.uExtensions);
+					return;
+				}
 				if (strAction == "reload")
 				{
 					Plugins::RequestReload();
@@ -255,7 +287,10 @@ namespace OmegaWare::Terminal
 				if (aPlugins.empty())
 					return rConsole.Print(OmegaGUI::ELogLevel::Muted, "no plugins loaded, drop dlls into {}", Plugins::Directory().string());
 				for (const Plugins::stPluginInfo& rPlugin : aPlugins)
-					rConsole.Print(OmegaGUI::ELogLevel::Success, "{} - {} feature(s), {} hook(s)", rPlugin.strName, rPlugin.uFeatures, rPlugin.uHooks);
+					if (rPlugin.bLoaded)
+						rConsole.Print(OmegaGUI::ELogLevel::Success, "{} - {} feature(s), {} hook(s)", rPlugin.strName, rPlugin.uFeatures, rPlugin.uHooks);
+					else
+						rConsole.Print(OmegaGUI::ELogLevel::Muted, "{} - unloaded", rPlugin.strName);
 			});
 
 			g_clConsole.RegisterCommand("toast", "toast <text> - show a notification", [](clConsole&, Arguments aArguments) {
@@ -274,6 +309,16 @@ namespace OmegaWare::Terminal
 			if (aArguments.size() >= 2 && (aArguments[1] == "save" || aArguments[1] == "load" || aArguments[1] == "default"))
 				return Config::List();
 			return std::vector<std::string>{};
+		});
+		g_clConsole.SetCompletion("plugins", [](std::span<const std::string_view> aArguments) {
+			if (aArguments.size() == 1)
+				return std::vector<std::string>{ "list", "reload", "folder", "slots", "unload", "load" };
+			std::vector<std::string> aNames;
+			if (aArguments.size() >= 2 && (aArguments[1] == "unload" || aArguments[1] == "load"))
+				for (const Plugins::stPluginInfo& rPlugin : Plugins::List())
+					if (rPlugin.bLoaded == (aArguments[1] == "unload"))
+						aNames.push_back(rPlugin.strName);
+			return aNames;
 		});
 		g_clConsole.SetCompletion("lang", [](std::span<const std::string_view> aArguments) {
 			std::vector<std::string> aCodes;

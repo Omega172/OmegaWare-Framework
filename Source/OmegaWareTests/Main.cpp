@@ -5,6 +5,7 @@
 #include "Engines/Unity/Mono.hpp"
 #endif
 #include "Engines/Unreal/NamePool.hpp"
+#include "Engines/Unreal/ValidateThunk.hpp"
 #include "Hooks/HookBatch.hpp"
 #include "Memory/Memory.hpp"
 #include "OmegaRenderHook/Core/Guarded.hpp"
@@ -1252,6 +1253,104 @@ extern "C" __declspec(dllexport) void* CreateInterface(const char* szName, int* 
 	return nullptr;
 }
 
+namespace
+{
+	struct stThunkBuffer
+	{
+		std::vector<std::uint8_t> aCode = std::vector<std::uint8_t>(0x200, 0xCC);
+		std::size_t uString = 0x180;
+
+		void Put(std::size_t uPos, std::initializer_list<std::uint8_t> aBytes)
+		{
+			std::copy(aBytes.begin(), aBytes.end(), aCode.begin() + uPos);
+		}
+
+		void PutLea(std::size_t uPos)
+		{
+			Put(uPos, { 0x48, 0x8D, 0x0D });
+			const std::int32_t iDisp = static_cast<std::int32_t>(uString) - static_cast<std::int32_t>(uPos + 7);
+			std::memcpy(aCode.data() + uPos + 3, &iDisp, sizeof(iDisp));
+		}
+
+		void PutString(std::wstring_view strText)
+		{
+			std::memcpy(aCode.data() + uString, strText.data(), strText.size() * sizeof(wchar_t));
+			std::memset(aCode.data() + uString + strText.size() * sizeof(wchar_t), 0, sizeof(wchar_t));
+		}
+
+		void PutSite(std::size_t uPos, std::uint32_t uSlot)
+		{
+			Put(uPos, { 0xFF, 0x90 });
+			std::memcpy(aCode.data() + uPos + 2, &uSlot, sizeof(uSlot));
+			Put(uPos + 6, { 0x84, 0xC0, 0x75, 0x0E });
+			PutLea(uPos + 10);
+		}
+
+		[[nodiscard]] std::optional<std::size_t> Find(std::size_t uSize = 0x100) const
+		{
+			return OmegaWare::Unreal::FindValidateCall(aCode.data(), uSize, L"Server_CompleteInteraction_Validate");
+		}
+	};
+
+	void TestValidateThunk()
+	{
+		std::puts("rpc validate thunk");
+		constexpr std::wstring_view strName = L"Server_CompleteInteraction_Validate";
+
+		stThunkBuffer stShipped;
+		stShipped.PutString(strName);
+		stShipped.PutSite(0x20, 0x500);
+		Check("finds the validate slot in the shipped thunk layout", stShipped.Find() == 0x500);
+		Check("rejects a buffer too small to hold the call", !stShipped.Find(8));
+		Check("rejects a null thunk", !OmegaWare::Unreal::FindValidateCall(nullptr, 0x100, strName));
+
+		stThunkBuffer stShort;
+		stShort.PutString(strName);
+		stShort.Put(0x20, { 0xFF, 0x50, 0x40, 0x84, 0xC0, 0x0F, 0x85, 0, 0, 0, 0 });
+		stShort.PutLea(0x2B);
+		Check("finds a disp8 call with a rel32 branch", stShort.Find() == 0x40);
+
+		stThunkBuffer stInverted;
+		stInverted.PutString(strName);
+		stInverted.Put(0x20, { 0xFF, 0x90, 0x08, 0x06, 0, 0, 0x84, 0xC0, 0x74, 0x40 });
+		stInverted.PutLea(0x6A);
+		Check("follows a je to an out-of-line failure path", stInverted.Find() == 0x608);
+
+		stThunkBuffer stOther;
+		stOther.PutString(L"Server_StartSlide_Validate");
+		stOther.PutSite(0x20, 0x500);
+		Check("rejects a failure string for another RPC", !stOther.Find());
+
+		stThunkBuffer stPrefix;
+		stPrefix.PutString(L"Server_CompleteInteraction_ValidateX");
+		stPrefix.PutSite(0x20, 0x500);
+		Check("rejects a failure string that only shares a prefix", !stPrefix.Find());
+
+		stThunkBuffer stUnaligned;
+		stUnaligned.PutString(strName);
+		stUnaligned.PutSite(0x20, 0x504);
+		Check("rejects an unaligned vtable offset", !stUnaligned.Find());
+
+		stThunkBuffer stNoTest;
+		stNoTest.PutString(strName);
+		stNoTest.PutSite(0x20, 0x500);
+		stNoTest.Put(0x26, { 0x85, 0xC0 });
+		Check("rejects a call whose result is not tested as a bool", !stNoTest.Find());
+
+		stThunkBuffer stConflict;
+		stConflict.PutString(strName);
+		stConflict.PutSite(0x20, 0x500);
+		stConflict.PutSite(0x60, 0x510);
+		Check("rejects two sites that disagree on the slot", !stConflict.Find());
+
+		stThunkBuffer stRepeat;
+		stRepeat.PutString(strName);
+		stRepeat.PutSite(0x20, 0x500);
+		stRepeat.PutSite(0x60, 0x500);
+		Check("accepts repeated sites that agree on the slot", stRepeat.Find() == 0x500);
+	}
+}
+
 int main()
 {
 	std::puts("omegaware framework tests");
@@ -1259,6 +1358,7 @@ int main()
 	TestScanning();
 	TestSafety();
 	TestNamePool();
+	TestValidateThunk();
 	TestHooks();
 	TestInterfaces();
 	TestInputBlock();

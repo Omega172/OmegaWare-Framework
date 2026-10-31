@@ -1,5 +1,6 @@
 #include "Menu/Menu.hpp"
 #include "Menu/Terminal.hpp"
+#include "Plugins/Plugins.hpp"
 #include "Config/Config.hpp"
 #include "Core/Console.hpp"
 #include "Core/Framework.hpp"
@@ -16,6 +17,9 @@
 #include <cmath>
 #include <deque>
 #include <format>
+#include <span>
+#include <utility>
+#include <vector>
 
 namespace OmegaWare::Menu
 {
@@ -143,6 +147,7 @@ namespace OmegaWare::Menu
 		{
 			static int& s_rScale = Config::Add("menu.ui_scale", 0);
 			PageHeader("settings", "menu.page_settings"_t);
+			Plugins::DrawExtensions("menu.settings.top");
 
 			OmegaGUI::BeginColumns(2);
 			if (OmegaGUI::BeginSection("menu.interface"_l))
@@ -181,6 +186,7 @@ namespace OmegaWare::Menu
 				OmegaGUI::EndSection();
 			}
 			OmegaGUI::EndColumns();
+			Plugins::DrawExtensions("menu.settings.bottom");
 		}
 
 		void DrawConfig()
@@ -191,6 +197,7 @@ namespace OmegaWare::Menu
 			PageHeader("config", "menu.page_config"_t);
 			OmegaGUI::TextMuted(OmegaLocalization::Format("config.current", strCurrent));
 			OmegaGUI::Spacing();
+			Plugins::DrawExtensions("menu.config.top");
 
 			const std::vector<std::string> aProfiles = Config::List();
 			if (std::ranges::find(aProfiles, s_strSelected) == aProfiles.end())
@@ -270,6 +277,7 @@ namespace OmegaWare::Menu
 					OmegaGUI::CloseCurrentPopup();
 				OmegaGUI::EndPopup();
 			}
+			Plugins::DrawExtensions("menu.config.bottom");
 		}
 
 		template <typename F>
@@ -281,6 +289,50 @@ namespace OmegaWare::Menu
 				fnDraw();
 			OmegaGUI::EndChild();
 			OmegaGUI::EndTabItem();
+		}
+
+		constexpr std::array<std::string_view, 4> kFeatureGroups = { "aimbot", "visuals", "player", "misc" };
+
+		void DrawFeatureGroup(std::string_view strGroup, std::span<clFeature* const> aFeatures)
+		{
+			bool bHeader = false;
+			for (clFeature* pFeature : aFeatures)
+			{
+				if (pFeature->GetGroup() != strGroup)
+					continue;
+				if (!std::exchange(bHeader, true))
+					OmegaGUI::TabBarSection(OmegaLocalization::Get(std::format("group.{}", strGroup)));
+				const std::span<const stFeaturePage> aPages = pFeature->GetPages();
+				if (aPages.empty())
+				{
+					Page(std::format("{}###feature.{}", Features::DisplayName(*pFeature), pFeature->GetName()), [pFeature] { Features::DrawPage(*pFeature); });
+					continue;
+				}
+				for (const stFeaturePage& rPage : aPages)
+					Page(std::format("{}###feature.{}.{}", OmegaLocalization::Get(rPage.strLabel), pFeature->GetName(), rPage.strKey), [pFeature, rPage] { Features::DrawPage(*pFeature, rPage.strKey); });
+			}
+		}
+
+		void DrawFeatures()
+		{
+			const std::span<clFeature* const> aFeatures = Features::All();
+			if (aFeatures.empty())
+			{
+				OmegaGUI::TabBarSection("menu.section_features"_t);
+				Page("menu.no_features"_l, [] { OmegaGUI::TextDisabled("feature.none"_t); });
+				return;
+			}
+			for (const std::string_view strGroup : kFeatureGroups)
+				DrawFeatureGroup(strGroup, aFeatures);
+			std::vector<std::string_view> aExtra;
+			for (clFeature* pFeature : aFeatures)
+			{
+				const std::string_view strGroup = pFeature->GetGroup();
+				if (std::ranges::find(kFeatureGroups, strGroup) == kFeatureGroups.end() && std::ranges::find(aExtra, strGroup) == aExtra.end())
+					aExtra.push_back(strGroup);
+			}
+			for (const std::string_view strGroup : aExtra)
+				DrawFeatureGroup(strGroup, aFeatures);
 		}
 
 		void DrawMenuBar()
@@ -300,6 +352,7 @@ namespace OmegaWare::Menu
 					OpenDataFolder();
 				if (OmegaGUI::MenuItem("menu.unload"_l, HotkeyName(Hotkeys().iUnload)))
 					RequestUnload();
+				Plugins::DrawExtensions("menu.bar.file");
 				OmegaGUI::EndMenu();
 			}
 			if (OmegaGUI::BeginMenu("menu.view"_l))
@@ -307,6 +360,7 @@ namespace OmegaWare::Menu
 				OmegaGUI::MenuItem("menu.console"_l, HotkeyName(Hotkeys().iConsole), View().pConsole);
 				OmegaGUI::MenuItem("menu.performance"_l, {}, View().pPerformance);
 				OmegaGUI::MenuItem("menu.watermark"_l, {}, View().pWatermark);
+				Plugins::DrawExtensions("menu.bar.view");
 				OmegaGUI::EndMenu();
 			}
 			if (OmegaGUI::BeginMenu("menu.help"_l))
@@ -316,8 +370,10 @@ namespace OmegaWare::Menu
 				OmegaGUI::MenuItem("menu.key_menu"_l, HotkeyName(Hotkeys().iMenu), nullptr, false);
 				OmegaGUI::MenuItem("menu.key_console"_l, HotkeyName(Hotkeys().iConsole), nullptr, false);
 				OmegaGUI::MenuItem("menu.key_unload"_l, HotkeyName(Hotkeys().iUnload), nullptr, false);
+				Plugins::DrawExtensions("menu.bar.help");
 				OmegaGUI::EndMenu();
 			}
+			Plugins::DrawExtensions("menu.bar");
 			OmegaGUI::EndMenuBar();
 		}
 
@@ -422,12 +478,7 @@ namespace OmegaWare::Menu
 			DrawMenuBar();
 			if (OmegaGUI::BeginTabBar("##pages", OmegaGUI::ETabBarFlags::Vertical))
 			{
-				OmegaGUI::TabBarSection("menu.section_features"_t);
-				const auto aFeatures = Features::All();
-				if (aFeatures.empty())
-					Page("menu.no_features"_l, [] { OmegaGUI::TextDisabled("feature.none"_t); });
-				for (clFeature* pFeature : aFeatures)
-					Page(std::format("{}###feature.{}", Features::DisplayName(*pFeature), pFeature->GetName()), [pFeature] { Features::DrawPage(*pFeature); });
+				DrawFeatures();
 
 				OmegaGUI::TabBarSection("menu.section_framework"_t);
 				Page("menu.page_settings"_l, DrawSettings);

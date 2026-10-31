@@ -1,8 +1,10 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <utility>
 
 namespace OmegaWare::Plugin
@@ -70,6 +72,14 @@ namespace OmegaWare::Plugin
 
 	using FnProcessEventBefore = void (*)(void* pContext, void* pObject, void* pFunction, void* pParams, bool* pbSkipOriginal);
 	using FnProcessEventAfter = void (*)(void* pContext, void* pObject, void* pFunction, void* pParams);
+
+	struct stExtensionDesc
+	{
+		const char* szSlot = nullptr;
+		void* pContext = nullptr;
+		void (*pfnDraw)(void* pContext, void* pArgument) = nullptr;
+		std::int32_t iOrder = 0;
+	};
 
 	struct stApi
 	{
@@ -173,6 +183,28 @@ namespace OmegaWare::Plugin
 		void (*GetItemSpacing)(float* pflX, float* pflY) = nullptr;
 		float (*GetFrameHeight)() = nullptr;
 		void (*Dummy)(float flWidth, float flHeight) = nullptr;
+
+		std::size_t (*UnrealFieldOffset)(void* pClass, const char* szMember, std::size_t uSdkOffset) = nullptr;
+
+		bool (*RegisterExtension)(void* pHost, const stExtensionDesc* pDesc) = nullptr;
+		void (*DrawExtensions)(const char* szSlot, void* pArgument) = nullptr;
+		std::uint32_t (*ExtensionCount)(const char* szSlot) = nullptr;
+		std::uint32_t (*FeatureCount)() = nullptr;
+		bool (*FeatureInfo)(std::uint32_t uIndex, char* szName, std::uint32_t uSize, bool* pbActive) = nullptr;
+
+		bool (*SmallButton)(const char* szLabel) = nullptr;
+		void (*PushID)(const char* szID) = nullptr;
+		void (*PopID)() = nullptr;
+		void (*BeginDisabled)(bool bDisabled) = nullptr;
+		void (*EndDisabled)() = nullptr;
+		void (*Indent)() = nullptr;
+		void (*Unindent)() = nullptr;
+		void (*Spacing)() = nullptr;
+		void (*TextWrapped)(const char* szText) = nullptr;
+		void (*Tooltip)(const char* szText) = nullptr;
+		bool (*BeginMenu)(const char* szLabel, bool bEnabled) = nullptr;
+		void (*EndMenu)() = nullptr;
+		bool (*MenuItem)(const char* szLabel, const char* szShortcut, bool* pSelected, bool bEnabled) = nullptr;
 	};
 
 	using FnPluginLoad = bool (*)(const stApi* pApi);
@@ -199,6 +231,12 @@ namespace OmegaWare::Plugin
 		Api().Log(Api().pHost, eLevel, std::string(strMessage).c_str());
 	}
 
+	[[nodiscard]] inline std::size_t FieldOffset(void* pClass, const char* szMember, std::size_t uSdkOffset)
+	{
+		const stApi& rApi = Api();
+		return rApi.UnrealFieldOffset ? rApi.UnrealFieldOffset(pClass, szMember, uSdkOffset) : uSdkOffset;
+	}
+
 	class clCallGuard
 	{
 	public:
@@ -220,6 +258,18 @@ namespace OmegaWare::Plugin
 		virtual void Render() {}
 		virtual void DrawMenu() {}
 	};
+
+	inline bool Extend(const char* szSlot, void* pContext, void (*pfnDraw)(void* pContext, void* pArgument), std::int32_t iOrder = 0)
+	{
+		if (!Api().RegisterExtension)
+			return false;
+		stExtensionDesc stDesc;
+		stDesc.szSlot = szSlot;
+		stDesc.pContext = pContext;
+		stDesc.pfnDraw = pfnDraw;
+		stDesc.iOrder = iOrder;
+		return Api().RegisterExtension(Api().pHost, &stDesc);
+	}
 
 	inline bool RegisterFeature(clFeature& rFeature)
 	{
@@ -288,4 +338,11 @@ namespace OmegaWare::Plugin
 		fnUnload(); \
 		::OmegaWare::Plugin::g_pApi = nullptr; \
 	}
+
+#define OWP_FIELD(pObject, Member) \
+	(*reinterpret_cast<decltype(std::remove_cvref_t<decltype(*(pObject))>::Member)*>(reinterpret_cast<std::uint8_t*>(const_cast<std::remove_cv_t<std::remove_pointer_t<decltype(pObject)>>*>(pObject)) + [] { \
+		using OwpFieldOwner = std::remove_cvref_t<decltype(*(pObject))>; \
+		static const std::size_t s_uOffset = ::OmegaWare::Plugin::FieldOffset(OwpFieldOwner::StaticClass(), #Member, offsetof(OwpFieldOwner, Member)); \
+		return s_uOffset; \
+	}()))
 #endif

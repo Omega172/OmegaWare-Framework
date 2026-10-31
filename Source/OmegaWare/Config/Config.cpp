@@ -22,6 +22,7 @@ namespace OmegaWare::Config
 		{
 			Value_t valCurrent;
 			Value_t valDefault;
+			const bool* pParent = nullptr;
 		};
 
 		std::recursive_mutex g_mtxConfig;
@@ -218,13 +219,30 @@ namespace OmegaWare::Config
 		return rValue;
 	}
 
+	void SetParent(std::string_view strKey, std::string_view strParentKey)
+	{
+		std::scoped_lock lckConfig(g_mtxConfig);
+		const auto itEntry = g_mapValues.find(strKey);
+		const auto itParent = g_mapValues.find(strParentKey);
+		if (itEntry == g_mapValues.end() || itParent == g_mapValues.end())
+			return;
+		itEntry->second->pParent = std::get_if<bool>(&itParent->second->valCurrent);
+	}
+
 	void UpdateKeybinds()
 	{
 		std::scoped_lock lckConfig(g_mtxConfig);
 		for (auto& [strKey, pEntry] : g_mapValues)
 		{
 			stKeybind* pKeybind = std::get_if<stKeybind>(&pEntry->valCurrent);
-			if (!pKeybind || !OmegaGUI::UpdateHotkey(*pKeybind) || !pKeybind->bNotify)
+			if (!pKeybind)
+				continue;
+			if (pEntry->pParent && !*pEntry->pParent)
+			{
+				pKeybind->bActive = pKeybind->eMode == EKeybindMode::AlwaysOn;
+				continue;
+			}
+			if (!OmegaGUI::UpdateHotkey(*pKeybind) || !pKeybind->bNotify)
 				continue;
 			const std::string strText = OmegaLocalization::Format(pKeybind->bActive ? "keybind.toast_on" : "keybind.toast_off", OmegaLocalization::Get(strKey));
 			OmegaGUI::PushToast(pKeybind->bActive ? OmegaGUI::EToastKind::Success : OmegaGUI::EToastKind::Info, strText, 1.5f);

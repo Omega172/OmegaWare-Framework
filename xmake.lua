@@ -308,7 +308,7 @@ else
         add_syslinks("version")
         add_includedirs("Source/OmegaWare")
         add_files("Source/OmegaWareTests/*.cpp")
-        add_files("Source/OmegaWare/Memory/*.cpp", "Source/OmegaWare/Core/Log.cpp", "Source/OmegaWare/Core/Console.cpp", "Source/OmegaWare/Core/CrashDump.cpp", "Source/OmegaWare/Engines/Unreal/NamePool.cpp")
+        add_files("Source/OmegaWare/Memory/*.cpp", "Source/OmegaWare/Core/Log.cpp", "Source/OmegaWare/Core/Console.cpp", "Source/OmegaWare/Core/CrashDump.cpp", "Source/OmegaWare/Engines/Unreal/NamePool.cpp", "Source/OmegaWare/Engines/Unreal/ValidateThunk.cpp")
         if (get_config("engine") or "none") == "unity" then
             add_defines("OMEGAWARE_ENGINE_UNITY=1")
             add_files("Source/OmegaWare/Engines/Unity/*.cpp")

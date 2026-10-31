@@ -1,5 +1,6 @@
 #include "Features/Feature.hpp"
 #include "Core/Log.hpp"
+#include "Plugins/Plugins.hpp"
 
 #include "OmegaGUI/OmegaGUI.hpp"
 #include "OmegaLocalization/OmegaLocalization.hpp"
@@ -112,14 +113,23 @@ namespace OmegaWare
 			return rFeature.GetDisplayName();
 		}
 
-		void DrawPage(clFeature& rFeature)
+		void DrawPage(clFeature& rFeature, std::string_view strPage)
 		{
-			const std::string strName = DisplayName(rFeature);
-			OmegaGUI::Breadcrumbs(std::array<std::string_view, 2>{ "features", rFeature.GetName() });
+			std::string strName = DisplayName(rFeature);
+			for (const stFeaturePage& rPage : rFeature.GetPages())
+				if (rPage.strKey == strPage)
+					strName = std::string(OmegaLocalization::Get(rPage.strLabel));
+			const std::string strGroup(OmegaLocalization::Get(std::format("group.{}", rFeature.GetGroup())));
+			OmegaGUI::Breadcrumbs(std::array<std::string_view, 2>{ strGroup, strName });
 			OmegaGUI::Title(strName);
 			OmegaGUI::Spacing();
 			if (rFeature.IsActive())
-				stFeatureAccess::Invoke(rFeature, "DrawMenu", [&] { rFeature.DrawMenu(); });
+			{
+				const std::string strSlot = strPage.empty() ? std::format("feature.{}", rFeature.GetName()) : std::format("feature.{}.{}", rFeature.GetName(), strPage);
+				Plugins::DrawExtensions(strSlot + ".top");
+				stFeatureAccess::Invoke(rFeature, "DrawMenu", [&] { rFeature.DrawMenuPage(strPage); });
+				Plugins::DrawExtensions(strSlot + ".bottom");
+			}
 			else
 				OmegaGUI::Alert(OmegaGUI::EToastKind::Error, OmegaLocalization::Get(rFeature.IsFaulted() ? "feature.faulted" : "feature.disabled"));
 		}

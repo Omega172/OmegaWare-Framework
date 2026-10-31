@@ -25,6 +25,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cctype>
 #include <chrono>
 #include <cstring>
 #include <cwctype>
@@ -103,6 +104,26 @@ namespace OmegaWare::Plugins
 			OmegaGUI::TextureHandle hTexture = 0;
 		};
 
+		struct stExtension
+		{
+			stPlugin* pOwner = nullptr;
+			std::string strSlot;
+			Plugin::stExtensionDesc stDesc;
+			bool bFaulted = false;
+		};
+
+		enum class ECommandKind
+		{
+			Unload,
+			Load,
+		};
+
+		struct stPluginCommand
+		{
+			ECommandKind eKind = ECommandKind::Unload;
+			std::string strName;
+		};
+
 		struct stState
 		{
 			bool bInitialized = false;
@@ -124,12 +145,39 @@ namespace OmegaWare::Plugins
 			std::vector<OmegaGUI::TextureHandle> aDeadTextures;
 			float flNextBgAlpha = 1.f;
 			std::vector<float> aWindowAlphas;
+			std::vector<stExtension> aExtensions;
+			std::mutex mtxSlots;
+			std::set<std::string, std::less<>> setSlots;
+			std::mutex mtxCommands;
+			std::vector<stPluginCommand> aCommands;
+			std::map<std::string, std::string> mapDisabled;
 		};
 
 		stState& State()
 		{
 			static stState s_stState;
 			return s_stState;
+		}
+
+		[[nodiscard]] std::string NameKey(std::string_view strName)
+		{
+			std::string strKey(strName);
+			for (char& rChar : strKey)
+				rChar = static_cast<char>(std::tolower(static_cast<unsigned char>(rChar)));
+			return strKey;
+		}
+
+		[[nodiscard]] fs::path FindPluginFile(const stState& rState, std::string_view strName)
+		{
+			const std::string strKey = NameKey(strName);
+			std::error_code errCode;
+			for (const fs::directory_entry& rEntry : fs::directory_iterator(rState.pathDirectory, errCode))
+			{
+				std::error_code errEntry;
+				if (rEntry.is_regular_file(errEntry) && NameKey(rEntry.path().extension().string()) == ".dll" && NameKey(rEntry.path().stem().string()) == strKey)
+					return rEntry.path();
+			}
+			return {};
 		}
 
 		[[nodiscard]] stPlugin& Owner(void* pHost)
@@ -153,6 +201,52 @@ namespace OmegaWare::Plugins
 			rPlugin.aFeatures.push_back(std::move(pFeature));
 			return true;
 		}
+
+		bool ApiRegisterExtension(void* pHost, const Plugin::stExtensionDesc* pDesc)
+		{
+			if (!pDesc || !pDesc->szSlot || !*pDesc->szSlot || !pDesc->pfnDraw)
+				return false;
+			stState& rState = State();
+			rState.aExtensions.push_back({ &Owner(pHost), pDesc->szSlot, *pDesc });
+			rState.aExtensions.back().stDesc.szSlot = nullptr;
+			std::stable_sort(rState.aExtensions.begin(), rState.aExtensions.end(), [](const stExtension& rLeft, const stExtension& rRight) { return rLeft.stDesc.iOrder < rRight.stDesc.iOrder; });
+			return true;
+		}
+
+		void ApiDrawExtensions(const char* szSlot, void* pArgument) { DrawExtensions(szSlot ? szSlot : "", pArgument); }
+		std::uint32_t ApiExtensionCount(const char* szSlot) { return static_cast<std::uint32_t>(ExtensionCount(szSlot ? szSlot : "")); }
+		std::uint32_t ApiFeatureCount() { return static_cast<std::uint32_t>(Features::All().size()); }
+
+		bool ApiFeatureInfo(std::uint32_t uIndex, char* szName, std::uint32_t uSize, bool* pbActive)
+		{
+			const std::span<clFeature* const> aFeatures = Features::All();
+			if (uIndex >= aFeatures.size())
+				return false;
+			if (szName && uSize)
+			{
+				const std::string_view strName = aFeatures[uIndex]->GetName();
+				const std::size_t uCopy = (std::min<std::size_t>)(strName.size(), uSize - 1);
+				std::memcpy(szName, strName.data(), uCopy);
+				szName[uCopy] = '\0';
+			}
+			if (pbActive)
+				*pbActive = aFeatures[uIndex]->IsActive();
+			return true;
+		}
+
+		bool ApiSmallButton(const char* szLabel) { return OmegaGUI::SmallButton(szLabel); }
+		bool ApiBeginMenu(const char* szLabel, bool bEnabled) { return OmegaGUI::BeginMenu(szLabel ? szLabel : "", bEnabled); }
+		void ApiEndMenu() { OmegaGUI::EndMenu(); }
+		bool ApiMenuItem(const char* szLabel, const char* szShortcut, bool* pSelected, bool bEnabled) { return OmegaGUI::MenuItem(szLabel ? szLabel : "", szShortcut ? szShortcut : "", pSelected, bEnabled); }
+		void ApiPushID(const char* szID) { OmegaGUI::PushID(std::string_view(szID ? szID : "")); }
+		void ApiPopID() { OmegaGUI::PopID(); }
+		void ApiBeginDisabled(bool bDisabled) { OmegaGUI::BeginDisabled(bDisabled); }
+		void ApiEndDisabled() { OmegaGUI::EndDisabled(); }
+		void ApiIndent() { OmegaGUI::Indent(); }
+		void ApiUnindent() { OmegaGUI::Unindent(); }
+		void ApiSpacing() { OmegaGUI::Spacing(); }
+		void ApiTextWrapped(const char* szText) { OmegaGUI::TextWrapped(szText ? szText : ""); }
+		void ApiTooltip(const char* szText) { OmegaGUI::ItemTooltip(szText ? szText : ""); }
 
 		bool* ApiConfigBool(const char* szKey, bool bDefault) { return &Config::Add(szKey, bDefault); }
 		int* ApiConfigInt(const char* szKey, int iDefault) { return &Config::Add(szKey, iDefault); }
@@ -327,6 +421,13 @@ namespace OmegaWare::Plugins
 		void* ApiUnrealAppendString() { return Unreal::Resolver::AppendStringFunction(); }
 
 		void* ApiUnrealFindObject(const char* szFullName) { return szFullName && Unreal::IsResolved() ? SDK::UObject::FindObject<SDK::UObject>(szFullName) : nullptr; }
+
+		std::size_t ApiUnrealFieldOffset(void* pClass, const char* szMember, std::size_t uSdkOffset)
+		{
+			if (!pClass || !szMember || !Unreal::IsResolved())
+				return uSdkOffset;
+			return Unreal::ResolveFieldOffset(static_cast<SDK::UClass*>(pClass), szMember, uSdkOffset);
+		}
 
 		bool ApiUnrealObjectName(const void* pObject, char* szBuffer, std::uint32_t uSize)
 		{
@@ -711,6 +812,7 @@ namespace OmegaWare::Plugins
 			r.UnrealCamera = &ApiUnrealCamera;
 			r.UnrealObjectArray = &ApiUnrealObjectArray;
 			r.UnrealAppendString = &ApiUnrealAppendString;
+			r.UnrealFieldOffset = &ApiUnrealFieldOffset;
 #endif
 			r.RunOnGameThread = &ApiRunOnGameThread;
 			r.Selectable = &ApiSelectable;
@@ -734,6 +836,24 @@ namespace OmegaWare::Plugins
 			r.GetItemSpacing = &ApiGetItemSpacing;
 			r.GetFrameHeight = &ApiGetFrameHeight;
 			r.Dummy = &ApiDummy;
+			r.RegisterExtension = &ApiRegisterExtension;
+			r.DrawExtensions = &ApiDrawExtensions;
+			r.ExtensionCount = &ApiExtensionCount;
+			r.FeatureCount = &ApiFeatureCount;
+			r.FeatureInfo = &ApiFeatureInfo;
+			r.SmallButton = &ApiSmallButton;
+			r.PushID = &ApiPushID;
+			r.PopID = &ApiPopID;
+			r.BeginDisabled = &ApiBeginDisabled;
+			r.EndDisabled = &ApiEndDisabled;
+			r.Indent = &ApiIndent;
+			r.Unindent = &ApiUnindent;
+			r.Spacing = &ApiSpacing;
+			r.TextWrapped = &ApiTextWrapped;
+			r.Tooltip = &ApiTooltip;
+			r.BeginMenu = &ApiBeginMenu;
+			r.EndMenu = &ApiEndMenu;
+			r.MenuItem = &ApiMenuItem;
 		}
 
 		template <typename F>
@@ -769,6 +889,7 @@ namespace OmegaWare::Plugins
 				for (const std::uint32_t uHandle : rPlugin.aEvents)
 					Unreal::RemoveProcessEvent(uHandle);
 #endif
+				std::erase_if(rState.aExtensions, [&](const stExtension& rEntry) { return rEntry.pOwner == &rPlugin; });
 				rPlugin.aEvents.clear();
 				for (const auto& pHook : rPlugin.aHooks)
 					pHook->Disable();
@@ -871,6 +992,8 @@ namespace OmegaWare::Plugins
 			std::vector<stPluginInfo> aSnapshot;
 			for (const auto& [pathFile, pPlugin] : rState.mapPlugins)
 				aSnapshot.push_back({ pPlugin->strName, pPlugin->aFeatures.size(), pPlugin->aHooks.size(), true });
+			for (const auto& [strKey, strName] : rState.mapDisabled)
+				aSnapshot.push_back({ strName, 0, 0, false });
 			std::scoped_lock lckSnapshot(rState.mtxSnapshot);
 			rState.aSnapshot = std::move(aSnapshot);
 		}
@@ -879,6 +1002,7 @@ namespace OmegaWare::Plugins
 		{
 			std::error_code errCode;
 			std::set<fs::path> setSeen;
+			std::set<std::string> setDisabledSeen;
 			for (const fs::directory_entry& rEntry : fs::directory_iterator(rState.pathDirectory, errCode))
 			{
 				std::error_code errEntry;
@@ -891,6 +1015,12 @@ namespace OmegaWare::Plugins
 					continue;
 				const fs::path& rPath = rEntry.path();
 				setSeen.insert(rPath);
+				if (const std::string strKey = NameKey(rPath.stem().string()); rState.mapDisabled.contains(strKey))
+				{
+					setDisabledSeen.insert(strKey);
+					rState.mapPending.erase(rPath);
+					continue;
+				}
 				const stObserved stFile{ rEntry.last_write_time(errEntry), rEntry.file_size(errEntry) };
 
 				const auto itLoaded = rState.mapPlugins.find(rPath);
@@ -933,6 +1063,46 @@ namespace OmegaWare::Plugins
 				Unload(rState, std::move(itPlugin->second), true);
 				itPlugin = rState.mapPlugins.erase(itPlugin);
 			}
+			std::erase_if(rState.mapDisabled, [&](const auto& rEntry) { return !setDisabledSeen.contains(rEntry.first); });
+			RefreshSnapshot(rState);
+		}
+
+		void RunCommand(stState& rState, const stPluginCommand& rCommand)
+		{
+			const std::string strKey = NameKey(rCommand.strName);
+			if (rCommand.eKind == ECommandKind::Unload)
+			{
+				for (auto itPlugin = rState.mapPlugins.begin(); itPlugin != rState.mapPlugins.end(); ++itPlugin)
+				{
+					if (NameKey(itPlugin->second->strName) != strKey)
+						continue;
+					rState.mapDisabled[strKey] = itPlugin->second->strName;
+					LogInfo("plugin {} unloading on request", itPlugin->second->strName);
+					Unload(rState, std::move(itPlugin->second), true);
+					rState.mapPlugins.erase(itPlugin);
+					RefreshSnapshot(rState);
+					return;
+				}
+				return;
+			}
+
+			rState.mapDisabled.erase(strKey);
+			const fs::path pathFile = FindPluginFile(rState, rCommand.strName);
+			if (pathFile.empty() || rState.mapPlugins.contains(pathFile))
+			{
+				RefreshSnapshot(rState);
+				return;
+			}
+			std::error_code errCode;
+			const stObserved stFile{ fs::last_write_time(pathFile, errCode), fs::file_size(pathFile, errCode) };
+			rState.mapPending.erase(pathFile);
+			if (auto pPlugin = Load(rState, pathFile, stFile))
+			{
+				rState.mapFailed.erase(pathFile);
+				rState.mapPlugins.emplace(pathFile, std::move(pPlugin));
+			}
+			else
+				rState.mapFailed[pathFile] = stFile.tpWrite;
 			RefreshSnapshot(rState);
 		}
 	}
@@ -972,6 +1142,13 @@ namespace OmegaWare::Plugins
 			Scan(rState, true);
 			return;
 		}
+		std::vector<stPluginCommand> aCommands;
+		{
+			std::scoped_lock lckCommands(rState.mtxCommands);
+			aCommands.swap(rState.aCommands);
+		}
+		for (const stPluginCommand& rCommand : aCommands)
+			RunCommand(rState, rCommand);
 		if (std::chrono::steady_clock::now() < rState.tpNextScan)
 			return;
 		rState.tpNextScan = std::chrono::steady_clock::now() + 1s;
@@ -981,6 +1158,51 @@ namespace OmegaWare::Plugins
 	void RequestReload()
 	{
 		State().bReloadRequested = true;
+	}
+
+	ECommandResult RequestUnload(std::string_view strName)
+	{
+		stState& rState = State();
+		const std::string strKey = NameKey(strName);
+		bool bKnown = false;
+		{
+			std::scoped_lock lckSnapshot(rState.mtxSnapshot);
+			for (const stPluginInfo& rInfo : rState.aSnapshot)
+			{
+				if (NameKey(rInfo.strName) != strKey)
+					continue;
+				if (rInfo.bLoaded)
+				{
+					bKnown = true;
+					break;
+				}
+				return ECommandResult::NoChange;
+			}
+		}
+		if (!bKnown)
+			return ECommandResult::NotFound;
+		std::scoped_lock lckCommands(rState.mtxCommands);
+		rState.aCommands.push_back({ ECommandKind::Unload, std::string(strName) });
+		return ECommandResult::Queued;
+	}
+
+	ECommandResult RequestLoad(std::string_view strName)
+	{
+		stState& rState = State();
+		if (!rState.bInitialized)
+			return ECommandResult::NotFound;
+		const std::string strKey = NameKey(strName);
+		{
+			std::scoped_lock lckSnapshot(rState.mtxSnapshot);
+			for (const stPluginInfo& rInfo : rState.aSnapshot)
+				if (rInfo.bLoaded && NameKey(rInfo.strName) == strKey)
+					return ECommandResult::NoChange;
+		}
+		if (FindPluginFile(rState, strName).empty())
+			return ECommandResult::NotFound;
+		std::scoped_lock lckCommands(rState.mtxCommands);
+		rState.aCommands.push_back({ ECommandKind::Load, std::string(strName) });
+		return ECommandResult::Queued;
 	}
 
 	void Shutdown()
@@ -1005,6 +1227,53 @@ namespace OmegaWare::Plugins
 	std::filesystem::path Directory()
 	{
 		return State().pathDirectory;
+	}
+
+	void DrawExtensions(std::string_view strSlot, void* pArgument)
+	{
+		stState& rState = State();
+		{
+			std::scoped_lock lckSlots(rState.mtxSlots);
+			if (!rState.setSlots.contains(strSlot))
+				rState.setSlots.emplace(strSlot);
+		}
+		for (std::size_t uEntry = 0; uEntry < rState.aExtensions.size(); ++uEntry)
+		{
+			stExtension& rEntry = rState.aExtensions[uEntry];
+			if (rEntry.bFaulted || rEntry.strSlot != strSlot)
+				continue;
+			stPlugin* pOwner = rEntry.pOwner;
+			const Plugin::stExtensionDesc stDesc = rEntry.stDesc;
+			if (!Guarded(*pOwner, "extension " + rEntry.strSlot, [&] { stDesc.pfnDraw(stDesc.pContext, pArgument); }) && uEntry < rState.aExtensions.size())
+				rState.aExtensions[uEntry].bFaulted = true;
+		}
+	}
+
+	std::size_t ExtensionCount(std::string_view strSlot)
+	{
+		std::size_t uCount = 0;
+		for (const stExtension& rEntry : State().aExtensions)
+			if (!rEntry.bFaulted && rEntry.strSlot == strSlot)
+				++uCount;
+		return uCount;
+	}
+
+	std::vector<stSlotInfo> Slots()
+	{
+		stState& rState = State();
+		std::map<std::string, std::size_t> mapSlots;
+		{
+			std::scoped_lock lckSlots(rState.mtxSlots);
+			for (const std::string& rSlot : rState.setSlots)
+				mapSlots[rSlot] = 0;
+		}
+		for (const stExtension& rEntry : rState.aExtensions)
+			if (!rEntry.bFaulted)
+				++mapSlots[rEntry.strSlot];
+		std::vector<stSlotInfo> aSlots;
+		for (const auto& [strSlot, uExtensions] : mapSlots)
+			aSlots.push_back({ strSlot, uExtensions });
+		return aSlots;
 	}
 
 	void SetImageBackend(OmegaGUI::clRenderBackend* pBackend)

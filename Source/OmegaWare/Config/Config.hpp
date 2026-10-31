@@ -28,6 +28,8 @@ namespace OmegaWare::Config
 		return std::get<T>(AddValue(strKey, Value_t(std::move(tDefault))));
 	}
 
+	// Optional: while the parent bool is off the keybind stays inactive and shows no toasts.
+	void SetParent(std::string_view strKey, std::string_view strParentKey);
 	void UpdateKeybinds();
 
 	bool Save(std::string_view strName);
