@@ -33,6 +33,10 @@ namespace OmegaWare::Menu
 		std::string s_strName;
 		std::string s_strPendingDelete;
 		std::deque<float> s_aFrameTimes;
+		float s_flBucketTime = 0.f;
+		int s_iBucketCount = 0;
+		constexpr float kMinFrameSample = .004f;
+		constexpr std::size_t kFrameLabelSamples = 30;
 		bool s_bOpenAbout = false;
 
 		struct stViewState
@@ -437,7 +441,11 @@ namespace OmegaWare::Menu
 				std::vector<float> aValues(s_aFrameTimes.begin(), s_aFrameTimes.end());
 				for (float& rValue : aValues)
 					rValue *= 1000.f;
-				OmegaGUI::LabelText("menu.perf_frame"_t, std::format("{:.2f} ms", aValues.empty() ? 0.f : aValues.back()));
+				const std::size_t uLabelSamples = std::min(aValues.size(), kFrameLabelSamples);
+				float flLabelTime = 0.f;
+				for (std::size_t uSample = aValues.size() - uLabelSamples; uSample < aValues.size(); ++uSample)
+					flLabelTime += aValues[uSample];
+				OmegaGUI::LabelText("menu.perf_frame"_t, std::format("{:.2f} ms", uLabelSamples ? flLabelTime / static_cast<float>(uLabelSamples) : 0.f));
 				OmegaGUI::LabelText("menu.perf_backend"_t, strBackend);
 				OmegaGUI::PlotLines("##frametimes", aValues, 0.f, 0.f, { 0.f, -1.f });
 			}
@@ -460,7 +468,14 @@ namespace OmegaWare::Menu
 		ApplyLanguage();
 		ApplyTheme();
 
-		s_aFrameTimes.push_back(OmegaGUI::GetDeltaTime());
+		s_flBucketTime += OmegaGUI::GetDeltaTime();
+		++s_iBucketCount;
+		if (s_flBucketTime >= kMinFrameSample)
+		{
+			s_aFrameTimes.push_back(s_flBucketTime / static_cast<float>(s_iBucketCount));
+			s_flBucketTime = 0.f;
+			s_iBucketCount = 0;
+		}
 		while (s_aFrameTimes.size() > 120)
 			s_aFrameTimes.pop_front();
 
