@@ -1,10 +1,12 @@
 #include "Plugins/Plugins.hpp"
 #include "Config/Config.hpp"
 #include "Core/Framework.hpp"
+#include "Core/Console.hpp"
 #include "Core/Log.hpp"
 #include "Engines/Engine.hpp"
 #include "Features/Feature.hpp"
 #include "Hooks/Hook.hpp"
+#include "Memory/Memory.hpp"
 #include "Memory/Safety.hpp"
 
 #include "Menu/Menu.hpp"
@@ -16,7 +18,13 @@
 #include "Engines/Unreal/Unreal.hpp"
 #endif
 
+#if OMEGAWARE_ENGINE_UNITY
+#include "Engines/Unity/Il2Cpp.hpp"
+#endif
+
 #include "OmegaWarePlugin.hpp"
+
+#include "OmegaLocalization/OmegaLocalization.hpp"
 
 #include "OmegaGUI/OmegaGUI.hpp"
 #include "OmegaRenderHook/Core/Guarded.hpp"
@@ -25,6 +33,7 @@
 #include <Windows.h>
 
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <cctype>
 #include <chrono>
@@ -32,8 +41,10 @@
 #include <cwctype>
 #include <initializer_list>
 #include <map>
+#include <optional>
 #include <memory>
 #include <set>
+#include <span>
 #include <thread>
 #include <utility>
 
@@ -73,6 +84,12 @@ namespace OmegaWare::Plugins
 			std::string m_strName;
 		};
 
+		struct stPatch
+		{
+			std::uintptr_t uAddress = 0;
+			std::vector<std::uint8_t> aOriginal;
+		};
+
 		struct stPlugin
 		{
 			fs::path pathFile;
@@ -86,6 +103,8 @@ namespace OmegaWare::Plugins
 			std::vector<std::unique_ptr<clPluginFeature>> aFeatures;
 			std::vector<std::unique_ptr<OmegaRenderHook::clInlineHook>> aHooks;
 			std::vector<std::uint32_t> aEvents;
+			std::vector<std::unique_ptr<stPatch>> aPatches;
+			std::vector<void*> aAllocations;
 			std::atomic<int> iCalls = 0;
 			std::shared_ptr<stTaskGate> pTasks = std::make_shared<stTaskGate>();
 		};
@@ -712,6 +731,588 @@ namespace OmegaWare::Plugins
 				OmegaGUI::PushToast(static_cast<OmegaGUI::EToastKind>(std::min<std::uint32_t>(uKind, 3)), szText);
 		}
 
+		[[nodiscard]] bool GameWindowFocused()
+		{
+			const HWND hForeground = GetForegroundWindow();
+			DWORD dwProcess = 0;
+			if (hForeground)
+				GetWindowThreadProcessId(hForeground, &dwProcess);
+			return dwProcess == GetCurrentProcessId();
+		}
+
+		[[nodiscard]] bool GuardedCopy(void* pDestination, const void* pSource, std::size_t uLength)
+		{
+			OmegaRenderHook::stFault stFault;
+			auto fnCopy = [&] { std::memcpy(pDestination, pSource, uLength); };
+			return OmegaRenderHook::InvokeGuarded(fnCopy, stFault);
+		}
+
+		[[nodiscard]] bool WriteBytes(std::uintptr_t uAddress, const void* pBytes, std::size_t uLength)
+		{
+			if (!uAddress || !pBytes || !uLength || uLength > (1u << 20))
+				return false;
+			void* pTarget = reinterpret_cast<void*>(uAddress);
+			DWORD dwOld = 0;
+			if (!VirtualProtect(pTarget, uLength, PAGE_EXECUTE_READWRITE, &dwOld))
+				return false;
+			const bool bWritten = GuardedCopy(pTarget, pBytes, uLength);
+			DWORD dwIgnored = 0;
+			VirtualProtect(pTarget, uLength, dwOld, &dwIgnored);
+			FlushInstructionCache(GetCurrentProcess(), pTarget, uLength);
+			return bWritten;
+		}
+
+		void CopyOut(std::string_view strText, char* szBuffer, std::uint32_t uSize)
+		{
+			if (!szBuffer || !uSize)
+				return;
+			const std::size_t uCopy = (std::min<std::size_t>)(strText.size(), uSize - 1);
+			std::memcpy(szBuffer, strText.data(), uCopy);
+			szBuffer[uCopy] = '\0';
+		}
+
+		[[nodiscard]] std::optional<Memory::stModule> ResolveModule(const char* szModule)
+		{
+			return Memory::GetModule(szModule ? std::string_view(szModule) : std::string_view());
+		}
+
+		bool ApiMemModule(const char* szName, std::uintptr_t* puBase, std::size_t* puSize)
+		{
+			const std::optional<Memory::stModule> optModule = ResolveModule(szName);
+			if (!optModule)
+				return false;
+			if (puBase)
+				*puBase = optModule->uBase;
+			if (puSize)
+				*puSize = optModule->uSize;
+			return true;
+		}
+
+		std::uint32_t ApiMemModuleCount() { return static_cast<std::uint32_t>(Memory::GetModules().size()); }
+
+		bool ApiMemModuleAt(std::uint32_t uIndex, char* szName, std::uint32_t uNameSize, std::uintptr_t* puBase, std::size_t* puSize)
+		{
+			const std::vector<Memory::stModule> aModules = Memory::GetModules();
+			if (uIndex >= aModules.size())
+				return false;
+			CopyOut(aModules[uIndex].strName, szName, uNameSize);
+			if (puBase)
+				*puBase = aModules[uIndex].uBase;
+			if (puSize)
+				*puSize = aModules[uIndex].uSize;
+			return true;
+		}
+
+		std::uintptr_t ApiMemFindPattern(const char* szModule, const char* szPattern)
+		{
+			const std::optional<std::vector<Memory::PatternByte>> optPattern = szPattern ? Memory::ParsePattern(szPattern) : std::nullopt;
+			const std::optional<Memory::stModule> optModule = ResolveModule(szModule);
+			return optPattern && optModule ? Memory::FindPattern(*optModule, *optPattern) : 0;
+		}
+
+		std::uint32_t ApiMemFindPatterns(const char* szModule, const char* szPattern, std::uintptr_t* puOut, std::uint32_t uCapacity)
+		{
+			const std::optional<std::vector<Memory::PatternByte>> optPattern = szPattern ? Memory::ParsePattern(szPattern) : std::nullopt;
+			const std::optional<Memory::stModule> optModule = ResolveModule(szModule);
+			if (!optPattern || !optModule)
+				return 0;
+			const std::vector<std::uintptr_t> aMatches = Memory::FindAllPatterns(optModule->uBase, optModule->uSize, *optPattern, uCapacity && puOut ? uCapacity : SIZE_MAX);
+			for (std::size_t uIndex = 0; puOut && uIndex < aMatches.size() && uIndex < uCapacity; ++uIndex)
+				puOut[uIndex] = aMatches[uIndex];
+			return static_cast<std::uint32_t>(aMatches.size());
+		}
+
+		std::uintptr_t ApiMemResolveRelative(std::uintptr_t uInstruction, std::size_t uDisplacementOffset, std::size_t uInstructionLength)
+		{
+			return uInstruction && Memory::IsReadable(reinterpret_cast<const void*>(uInstruction), uDisplacementOffset + sizeof(std::int32_t)) ? Memory::ResolveRelative(uInstruction, uDisplacementOffset, uInstructionLength) : 0;
+		}
+
+		std::uintptr_t ApiMemExport(const char* szModule, const char* szSymbol)
+		{
+			const HMODULE hModule = szModule && *szModule ? GetModuleHandleA(szModule) : GetModuleHandleA(nullptr);
+			return hModule && szSymbol ? reinterpret_cast<std::uintptr_t>(GetProcAddress(hModule, szSymbol)) : 0;
+		}
+
+		bool ApiMemRead(std::uintptr_t uAddress, void* pOut, std::size_t uLength)
+		{
+			return uAddress && pOut && uLength && Memory::IsReadable(reinterpret_cast<const void*>(uAddress), uLength) && GuardedCopy(pOut, reinterpret_cast<const void*>(uAddress), uLength);
+		}
+
+		bool ApiMemWrite(std::uintptr_t uAddress, const void* pBytes, std::size_t uLength) { return WriteBytes(uAddress, pBytes, uLength); }
+		bool ApiMemIsReadable(const void* pAddress, std::size_t uLength) { return Memory::IsReadable(pAddress, uLength); }
+		bool ApiMemIsWritable(const void* pAddress, std::size_t uLength) { return Memory::IsWritable(pAddress, uLength); }
+		bool ApiMemIsExecutable(const void* pAddress) { return Memory::IsExecutable(pAddress); }
+
+		void* ApiMemPatch(void* pHost, std::uintptr_t uAddress, const void* pBytes, std::size_t uLength)
+		{
+			if (!uAddress || !pBytes || !uLength || !Memory::IsReadable(reinterpret_cast<const void*>(uAddress), uLength))
+				return nullptr;
+			auto pPatch = std::make_unique<stPatch>();
+			pPatch->uAddress = uAddress;
+			pPatch->aOriginal.resize(uLength);
+			if (!GuardedCopy(pPatch->aOriginal.data(), reinterpret_cast<const void*>(uAddress), uLength) || !WriteBytes(uAddress, pBytes, uLength))
+				return nullptr;
+			void* pHandle = pPatch.get();
+			Owner(pHost).aPatches.push_back(std::move(pPatch));
+			return pHandle;
+		}
+
+		bool ApiMemUnpatch(void* pHost, void* pPatch)
+		{
+			auto& rPatches = Owner(pHost).aPatches;
+			const auto itPatch = std::ranges::find_if(rPatches, [&](const std::unique_ptr<stPatch>& pOwned) { return pOwned.get() == pPatch; });
+			if (itPatch == rPatches.end())
+				return false;
+			const bool bRestored = WriteBytes((*itPatch)->uAddress, (*itPatch)->aOriginal.data(), (*itPatch)->aOriginal.size());
+			rPatches.erase(itPatch);
+			return bRestored;
+		}
+
+		void* ApiMemAlloc(void* pHost, std::size_t uSize, bool bExecutable)
+		{
+			if (!uSize || uSize > (64u << 20))
+				return nullptr;
+			void* pBlock = VirtualAlloc(nullptr, uSize, MEM_COMMIT | MEM_RESERVE, bExecutable ? PAGE_EXECUTE_READWRITE : PAGE_READWRITE);
+			if (pBlock)
+				Owner(pHost).aAllocations.push_back(pBlock);
+			return pBlock;
+		}
+
+		bool ApiMemFree(void* pHost, void* pBlock)
+		{
+			auto& rBlocks = Owner(pHost).aAllocations;
+			const auto itBlock = std::ranges::find(rBlocks, pBlock);
+			if (itBlock == rBlocks.end())
+				return false;
+			rBlocks.erase(itBlock);
+			return VirtualFree(pBlock, 0, MEM_RELEASE) != FALSE;
+		}
+
+		void* ApiMemVirtualMethod(const void* pObject, std::size_t uIndex) { return pObject && Memory::IsValidPtr(pObject) ? Memory::GetVirtualMethod(pObject, uIndex) : nullptr; }
+
+		void* ApiHookVirtual(void* pHost, const void* pObject, std::size_t uIndex, void* pDetour, void** ppOriginal)
+		{
+			return ApiHookCreate(pHost, ApiMemVirtualMethod(pObject, uIndex), pDetour, ppOriginal);
+		}
+
+		bool ApiEngineReady() { return Engine::IsReady(); }
+
+#if OMEGAWARE_ENGINE_UNREAL
+		bool ApiUnrealIsGameThread() { return Unreal::IsGameThread(); }
+		void* ApiUnrealGameInstance() { return Unreal::GetGameInstance(); }
+		void* ApiUnrealGameState() { return Unreal::GetGameState(); }
+		void* ApiUnrealLocalPlayer() { return Unreal::GetLocalPlayer(); }
+		void* ApiUnrealViewport() { return Unreal::GetViewportClient(); }
+		void* ApiUnrealCameraManager() { return Unreal::GetCameraManager(); }
+
+		void* ApiUnrealFindClass(const char* szName)
+		{
+			if (!szName || !*szName || !Unreal::IsResolved())
+				return nullptr;
+			std::string strName(szName);
+			if (strName.find(' ') == std::string::npos)
+				strName.insert(0, "Class ");
+			return SDK::UObject::FindClass(strName);
+		}
+
+		void* ApiUnrealObjectClass(const void* pObject) { return pObject && Memory::IsValidObjectPtr(static_cast<const SDK::UObject*>(pObject)) ? static_cast<const SDK::UObject*>(pObject)->Class : nullptr; }
+		void* ApiUnrealObjectOuter(const void* pObject) { return pObject && Memory::IsValidObjectPtr(static_cast<const SDK::UObject*>(pObject)) ? static_cast<const SDK::UObject*>(pObject)->Outer : nullptr; }
+		bool ApiUnrealIsA(const void* pObject, const void* pClass) { return pObject && pClass && Memory::IsValidObjectPtr(static_cast<const SDK::UObject*>(pObject)) && static_cast<const SDK::UObject*>(pObject)->IsA(static_cast<const SDK::UClass*>(pClass)); }
+
+		std::uint32_t ApiUnrealObjectCount() { return Unreal::IsResolved() && SDK::UObject::GObjects.GetTypedPtr() ? static_cast<std::uint32_t>(SDK::UObject::GObjects->Num()) : 0; }
+		void* ApiUnrealObjectAt(std::uint32_t uIndex) { return Unreal::IsResolved() && SDK::UObject::GObjects.GetTypedPtr() ? SDK::UObject::GObjects->GetByIndex(static_cast<std::int32_t>(uIndex)) : nullptr; }
+
+		[[nodiscard]] const SDK::FProperty* FindProperty(const void* pStruct, const char* szMember)
+		{
+			if (!pStruct || !szMember || !Unreal::IsResolved())
+				return nullptr;
+			for (const SDK::UStruct* pCurrent = static_cast<const SDK::UStruct*>(pStruct); pCurrent && Memory::IsValidObjectPtr(pCurrent); pCurrent = pCurrent->SuperStruct)
+				for (const SDK::FField* pField = pCurrent->ChildProperties; pField && Memory::IsValidObjectPtr(pField); pField = pField->Next)
+					if (pField->Name.ToString() == szMember)
+						return static_cast<const SDK::FProperty*>(pField);
+			return nullptr;
+		}
+
+		std::size_t ApiUnrealPropertyOffset(void* pStruct, const char* szMember)
+		{
+			const SDK::FProperty* pProperty = FindProperty(pStruct, szMember);
+			return pProperty ? static_cast<std::size_t>(pProperty->Offset) : SIZE_MAX;
+		}
+
+		std::size_t ApiUnrealPropertySize(void* pStruct, const char* szMember)
+		{
+			const SDK::FProperty* pProperty = FindProperty(pStruct, szMember);
+			return pProperty ? static_cast<std::size_t>(pProperty->ElementSize) * static_cast<std::size_t>(std::max(pProperty->ArrayDim, 1)) : 0;
+		}
+
+		[[nodiscard]] bool ObjectProperty(const void* pObject, const char* szMember, std::size_t uSize, std::uint8_t*& rpAddress)
+		{
+			if (!pObject || !Memory::IsValidObjectPtr(static_cast<const SDK::UObject*>(pObject)))
+				return false;
+			const SDK::UClass* pClass = static_cast<const SDK::UObject*>(pObject)->Class;
+			const SDK::FProperty* pProperty = FindProperty(pClass, szMember);
+			if (!pProperty || uSize > static_cast<std::size_t>(pProperty->ElementSize) * static_cast<std::size_t>(std::max(pProperty->ArrayDim, 1)))
+				return false;
+			rpAddress = const_cast<std::uint8_t*>(static_cast<const std::uint8_t*>(pObject)) + pProperty->Offset;
+			return Memory::IsReadable(rpAddress, uSize);
+		}
+
+		bool ApiUnrealGetProperty(const void* pObject, const char* szMember, void* pOut, std::size_t uSize)
+		{
+			std::uint8_t* pAddress = nullptr;
+			return pOut && uSize && ObjectProperty(pObject, szMember, uSize, pAddress) && GuardedCopy(pOut, pAddress, uSize);
+		}
+
+		bool ApiUnrealSetProperty(void* pObject, const char* szMember, const void* pValue, std::size_t uSize)
+		{
+			std::uint8_t* pAddress = nullptr;
+			return pValue && uSize && ObjectProperty(pObject, szMember, uSize, pAddress) && Memory::IsWritable(pAddress, uSize) && GuardedCopy(pAddress, pValue, uSize);
+		}
+
+		void* ApiUnrealFindFunction(void* pClass, const char* szFunction)
+		{
+			if (!pClass || !szFunction || !Unreal::IsResolved())
+				return nullptr;
+			for (const SDK::UStruct* pCurrent = static_cast<const SDK::UStruct*>(pClass); pCurrent && Memory::IsValidObjectPtr(pCurrent); pCurrent = pCurrent->SuperStruct)
+				for (SDK::UField* pField = pCurrent->Children; pField && Memory::IsValidObjectPtr(pField); pField = pField->Next)
+					if (pField->IsA(SDK::UFunction::StaticClass()) && pField->GetName() == szFunction)
+						return pField;
+			return nullptr;
+		}
+
+		std::size_t ApiUnrealFunctionParamsSize(const void* pFunction) { return pFunction && Memory::IsValidObjectPtr(static_cast<const SDK::UStruct*>(pFunction)) ? static_cast<std::size_t>(static_cast<const SDK::UStruct*>(pFunction)->Size) : 0; }
+
+		std::size_t ApiUnrealFunctionParamOffset(void* pFunction, const char* szParam)
+		{
+			const SDK::FProperty* pProperty = FindProperty(pFunction, szParam);
+			return pProperty ? static_cast<std::size_t>(pProperty->Offset) : SIZE_MAX;
+		}
+
+		bool ApiUnrealCall(void* pObject, void* pFunction, void* pParams)
+		{
+			if (!pObject || !pFunction || !Unreal::IsResolved() || !Unreal::IsGameThread() || !Memory::IsValidObjectPtr(static_cast<const SDK::UObject*>(pObject)))
+				return false;
+			OmegaRenderHook::stFault stFault;
+			auto fnCall = [&] { static_cast<SDK::UObject*>(pObject)->ProcessEvent(static_cast<SDK::UFunction*>(pFunction), pParams); };
+			return OmegaRenderHook::InvokeGuarded(fnCall, stFault);
+		}
+#endif
+
+#if OMEGAWARE_ENGINE_UNITY
+		[[nodiscard]] std::string_view AssemblyName(const char* szAssembly) { return szAssembly && *szAssembly ? std::string_view(szAssembly) : Il2Cpp::kDefaultAssembly; }
+
+		bool ApiUnityAvailable() { return Il2Cpp::IsAvailable(); }
+		void* ApiUnityGetClass(const char* szNamespace, const char* szName, const char* szAssembly) { return szName ? Il2Cpp::GetClass(szNamespace ? szNamespace : "", szName, AssemblyName(szAssembly)) : nullptr; }
+		void* ApiUnityGetMethod(void* pClass, const char* szName, int iParameterCount) { return pClass && szName ? const_cast<MethodInfo*>(Il2Cpp::GetMethod(static_cast<Il2CppClass*>(pClass), szName, iParameterCount)) : nullptr; }
+		void* ApiUnityMethodPointer(const void* pMethod) { return pMethod ? Il2Cpp::GetMethodPointer(static_cast<const MethodInfo*>(pMethod)) : nullptr; }
+		void* ApiUnityCompiledMethod(const char* szNamespace, const char* szClass, const char* szMethod, int iParameterCount, const char* szAssembly) { return szClass && szMethod ? Il2Cpp::GetCompiledMethod(szNamespace ? szNamespace : "", szClass, szMethod, iParameterCount, AssemblyName(szAssembly)) : nullptr; }
+		void* ApiUnityGetField(void* pClass, const char* szName) { return pClass && szName ? Il2Cpp::GetField(static_cast<Il2CppClass*>(pClass), szName) : nullptr; }
+
+		std::size_t ApiUnityFieldOffset(void* pField)
+		{
+			const std::optional<std::size_t> optOffset = pField ? Il2Cpp::GetFieldOffset(static_cast<FieldInfo*>(pField)) : std::nullopt;
+			return optOffset ? *optOffset : SIZE_MAX;
+		}
+
+		bool ApiUnityStaticGet(void* pClass, void* pField, void* pOut) { return pClass && pField && pOut && Il2Cpp::GetStaticFieldValue(static_cast<Il2CppClass*>(pClass), static_cast<FieldInfo*>(pField), pOut); }
+		bool ApiUnityStaticSet(void* pClass, void* pField, void* pValue) { return pClass && pField && pValue && Il2Cpp::SetStaticFieldValue(static_cast<Il2CppClass*>(pClass), static_cast<FieldInfo*>(pField), pValue); }
+
+		bool ApiUnityFieldGet(void* pObject, void* pField, void* pOut)
+		{
+			if (!pObject || !pField || !pOut)
+				return false;
+			Il2Cpp::GetFieldValue(static_cast<Il2CppObject*>(pObject), static_cast<FieldInfo*>(pField), pOut);
+			return true;
+		}
+
+		bool ApiUnityFieldSet(void* pObject, void* pField, void* pValue)
+		{
+			if (!pObject || !pField || !pValue)
+				return false;
+			Il2Cpp::SetFieldValue(static_cast<Il2CppObject*>(pObject), static_cast<FieldInfo*>(pField), pValue);
+			return true;
+		}
+
+		void* ApiUnityInvoke(const void* pMethod, void* pInstance, void** ppArguments) { return pMethod ? Il2Cpp::Invoke(static_cast<const MethodInfo*>(pMethod), pInstance, ppArguments) : nullptr; }
+		void* ApiUnityNewString(const char* szText) { return Il2Cpp::NewString(szText ? szText : ""); }
+
+		bool ApiUnityToString(void* pString, char* szBuffer, std::uint32_t uSize)
+		{
+			if (!pString || !szBuffer || !uSize)
+				return false;
+			CopyOut(Il2Cpp::ToString(static_cast<Il2CppString*>(pString)), szBuffer, uSize);
+			return true;
+		}
+
+		bool ApiUnityAttachThread() { return Il2Cpp::AttachThread(); }
+#endif
+
+		bool ApiLocAddLocale(const char* szCode, const char* szName) { return szCode && szName && OmegaLocalization::AddLocale(szCode, szName); }
+
+		void ApiLocAddString(const char* szCode, const char* szKey, const char* szText)
+		{
+			if (szCode && szKey && szText)
+				OmegaLocalization::AddString(szCode, szKey, szText);
+		}
+
+		bool ApiLocLoad(const char* szContents)
+		{
+			std::string strError;
+			return szContents && OmegaLocalization::LoadFromMemory(szContents, &strError);
+		}
+
+		const char* ApiLocGet(const char* szKey) { return OmegaLocalization::GetCString(szKey ? szKey : ""); }
+
+		const char* ApiLocLabel(const char* szKey)
+		{
+			thread_local std::string s_strLabel;
+			s_strLabel = std::string(OmegaLocalization::Label(szKey ? szKey : ""));
+			return s_strLabel.c_str();
+		}
+
+		bool ApiLocHas(const char* szKey) { return szKey && OmegaLocalization::Has(szKey); }
+
+		const char* ApiLocLocale()
+		{
+			thread_local std::string s_strLocale;
+			s_strLocale = std::string(OmegaLocalization::GetLocale());
+			return s_strLocale.c_str();
+		}
+
+		bool ApiLocSetLocale(const char* szCode) { return szCode && OmegaLocalization::SetLocale(szCode); }
+
+		bool ApiConfigSave(const char* szProfile) { return szProfile && Config::Save(szProfile); }
+		bool ApiConfigLoad(const char* szProfile) { return szProfile && Config::Load(szProfile); }
+		bool ApiConfigDelete(const char* szProfile) { return szProfile && Config::Delete(szProfile); }
+		std::uint32_t ApiConfigProfileCount() { return static_cast<std::uint32_t>(Config::List().size()); }
+
+		bool ApiConfigProfileName(std::uint32_t uIndex, char* szName, std::uint32_t uSize)
+		{
+			const std::vector<std::string> aProfiles = Config::List();
+			if (uIndex >= aProfiles.size())
+				return false;
+			CopyOut(aProfiles[uIndex], szName, uSize);
+			return true;
+		}
+
+		bool ApiConfigCurrent(char* szName, std::uint32_t uSize)
+		{
+			CopyOut(Config::GetCurrent(), szName, uSize);
+			return szName && uSize;
+		}
+
+		void ApiConfigReset() { Config::ResetToDefaults(); }
+
+		void ApiConfigSetParent(const char* szKey, const char* szParentKey)
+		{
+			if (szKey && szParentKey)
+				Config::SetParent(szKey, szParentKey);
+		}
+
+		bool ApiKeyDown(int iVirtualKey) { return iVirtualKey > 0 && iVirtualKey < 256 && GameWindowFocused() && (GetAsyncKeyState(iVirtualKey) & 0x8000) != 0; }
+
+		bool ApiKeyPressed(int iVirtualKey)
+		{
+			if (iVirtualKey <= 0 || iVirtualKey >= 256)
+				return false;
+			static std::array<int, 256> s_aFrame{};
+			static std::array<bool, 256> s_aDown{};
+			static std::array<bool, 256> s_aPressed{};
+			const int iFrame = OmegaGUI::GetFrameCount() + 1;
+			if (s_aFrame[static_cast<std::size_t>(iVirtualKey)] != iFrame)
+			{
+				const bool bDown = ApiKeyDown(iVirtualKey);
+				s_aPressed[static_cast<std::size_t>(iVirtualKey)] = bDown && !s_aDown[static_cast<std::size_t>(iVirtualKey)];
+				s_aDown[static_cast<std::size_t>(iVirtualKey)] = bDown;
+				s_aFrame[static_cast<std::size_t>(iVirtualKey)] = iFrame;
+			}
+			return s_aPressed[static_cast<std::size_t>(iVirtualKey)];
+		}
+
+		bool ApiMouseDown(int iButton) { return ApiKeyDown(iButton == 1 ? VK_RBUTTON : iButton == 2 ? VK_MBUTTON : VK_LBUTTON); }
+
+		void ApiMousePosition(float* pflX, float* pflY)
+		{
+			POINT stPoint{};
+			GetCursorPos(&stPoint);
+			if (const HWND hForeground = GetForegroundWindow(); hForeground && GameWindowFocused())
+				ScreenToClient(hForeground, &stPoint);
+			if (pflX)
+				*pflX = static_cast<float>(stPoint.x);
+			if (pflY)
+				*pflY = static_cast<float>(stPoint.y);
+		}
+
+		bool ApiWantsMouse() { return OmegaGUI::WantsMouse(); }
+		bool ApiWantsKeyboard() { return OmegaGUI::WantsKeyboard(); }
+		bool ApiMenuVisible() { return OmegaGUI::IsVisible(); }
+		void ApiSetMenuVisible(bool bVisible) { OmegaGUI::SetVisible(bVisible); }
+		bool ApiConsoleVisible() { return Console::IsVisible(); }
+		void ApiSetConsoleVisible(bool bVisible) { Console::SetVisible(bVisible); }
+		double ApiGetTime() { return OmegaGUI::GetTime(); }
+		float ApiGetDeltaTime() { return OmegaGUI::GetDeltaTime(); }
+		int ApiGetFrameCount() { return OmegaGUI::GetFrameCount(); }
+
+		bool ApiFeatureDrawMenu(std::uint32_t uIndex)
+		{
+			const std::span<clFeature* const> aFeatures = Features::All();
+			if (uIndex >= aFeatures.size())
+				return false;
+			Features::DrawPage(*aFeatures[uIndex]);
+			return true;
+		}
+
+		std::uint32_t ApiPluginCount() { return static_cast<std::uint32_t>(List().size()); }
+
+		bool ApiPluginInfo(std::uint32_t uIndex, char* szName, std::uint32_t uSize, bool* pbLoaded)
+		{
+			const std::vector<stPluginInfo> aPlugins = List();
+			if (uIndex >= aPlugins.size())
+				return false;
+			CopyOut(aPlugins[uIndex].strName, szName, uSize);
+			if (pbLoaded)
+				*pbLoaded = aPlugins[uIndex].bLoaded;
+			return true;
+		}
+
+		bool ApiPluginRequestLoad(const char* szName) { return szName && RequestLoad(szName) != ECommandResult::NotFound; }
+		bool ApiPluginRequestUnload(const char* szName) { return szName && RequestUnload(szName) != ECommandResult::NotFound; }
+
+		void* ApiPluginExport(const char* szPlugin, const char* szSymbol)
+		{
+			if (!szPlugin || !szSymbol)
+				return nullptr;
+			const std::string strKey = NameKey(szPlugin);
+			for (const auto& [pathFile, pPlugin] : State().mapPlugins)
+				if (pPlugin && pPlugin->hModule && NameKey(pPlugin->strName) == strKey)
+					return reinterpret_cast<void*>(GetProcAddress(pPlugin->hModule, szSymbol));
+			return nullptr;
+		}
+
+		[[nodiscard]] OmegaGUI::vec2 Vec2(float flX, float flY) { return OmegaGUI::vec2{ flX, flY }; }
+
+		void StoreVec2(const OmegaGUI::vec2& vecValue, float* pflX, float* pflY)
+		{
+			if (pflX)
+				*pflX = vecValue.x;
+			if (pflY)
+				*pflY = vecValue.y;
+		}
+
+		bool ApiBeginTabBar(const char* szID) { return OmegaGUI::BeginTabBar(szID ? szID : ""); }
+		void ApiEndTabBar() { OmegaGUI::EndTabBar(); }
+		bool ApiBeginTabItem(const char* szLabel, bool* pOpen) { return OmegaGUI::BeginTabItem(szLabel ? szLabel : "", pOpen); }
+		void ApiEndTabItem() { OmegaGUI::EndTabItem(); }
+		void ApiSetTabItemSelected(const char* szTabBar, const char* szLabel) { OmegaGUI::SetTabItemSelected(szTabBar ? szTabBar : "", szLabel ? szLabel : ""); }
+		bool ApiBeginTable(const char* szID, int iColumns, std::uint32_t uFlags) { return OmegaGUI::BeginTable(szID ? szID : "", iColumns, static_cast<OmegaGUI::ETableFlags>(uFlags)); }
+		void ApiEndTable() { OmegaGUI::EndTable(); }
+		void ApiTableSetupColumn(const char* szLabel, std::uint32_t uFlags, float flWidthOrWeight) { OmegaGUI::TableSetupColumn(szLabel ? szLabel : "", static_cast<OmegaGUI::ETableColumnFlags>(uFlags), flWidthOrWeight); }
+		void ApiTableHeadersRow() { OmegaGUI::TableHeadersRow(); }
+		void ApiTableNextRow() { OmegaGUI::TableNextRow(); }
+		bool ApiTableNextColumn() { return OmegaGUI::TableNextColumn(); }
+		bool ApiTableSetColumnIndex(int iColumn) { return OmegaGUI::TableSetColumnIndex(iColumn); }
+		bool ApiTreeNode(const char* szLabel, bool bDefaultOpen) { return OmegaGUI::TreeNode(szLabel ? szLabel : "", bDefaultOpen); }
+		void ApiTreePop() { OmegaGUI::TreePop(); }
+		bool ApiCollapsingHeader(const char* szLabel, bool bDefaultOpen) { return OmegaGUI::CollapsingHeader(szLabel ? szLabel : "", bDefaultOpen); }
+		void ApiOpenPopup(const char* szID) { OmegaGUI::OpenPopup(szID ? szID : ""); }
+		bool ApiBeginPopup(const char* szID) { return OmegaGUI::BeginPopup(szID ? szID : ""); }
+		bool ApiBeginPopupModal(const char* szName, bool* pOpen) { return OmegaGUI::BeginPopupModal(szName ? szName : "", pOpen); }
+		bool ApiBeginPopupContextItem(const char* szID) { return OmegaGUI::BeginPopupContextItem(szID ? szID : ""); }
+		void ApiEndPopup() { OmegaGUI::EndPopup(); }
+		void ApiCloseCurrentPopup() { OmegaGUI::CloseCurrentPopup(); }
+		bool ApiBeginCombo(const char* szLabel, const char* szPreview) { return OmegaGUI::BeginCombo(szLabel ? szLabel : "", szPreview ? szPreview : ""); }
+		void ApiEndCombo() { OmegaGUI::EndCombo(); }
+		bool ApiBeginChild(const char* szID, float flWidth, float flHeight, bool bBorder) { return OmegaGUI::BeginChild(szID ? szID : "", Vec2(flWidth, flHeight), bBorder); }
+		void ApiEndChild() { OmegaGUI::EndChild(); }
+		bool ApiBeginMenuBar() { return OmegaGUI::BeginMenuBar(); }
+		void ApiEndMenuBar() { OmegaGUI::EndMenuBar(); }
+		bool ApiRadioButton(const char* szLabel, int* pValue, int iButtonValue) { return pValue && OmegaGUI::RadioButton(szLabel ? szLabel : "", pValue, iButtonValue); }
+		bool ApiInputInt(const char* szLabel, int* pValue, int iStep, int iMin, int iMax) { return pValue && OmegaGUI::InputInt(szLabel ? szLabel : "", pValue, iStep, iMin, iMax); }
+		bool ApiInputFloat(const char* szLabel, float* pValue, float flStep, const char* szFormat) { return pValue && OmegaGUI::InputFloat(szLabel ? szLabel : "", pValue, flStep, szFormat ? szFormat : "{:.2f}"); }
+
+		bool ApiInputTextHint(const char* szLabel, char* szBuffer, std::uint32_t uSize, const char* szHint)
+		{
+			if (!szBuffer || !uSize)
+				return false;
+			std::string strText(szBuffer, strnlen(szBuffer, uSize));
+			if (!OmegaGUI::InputText(szLabel ? szLabel : "", &strText, szHint ? szHint : ""))
+				return false;
+			CopyOut(strText, szBuffer, uSize);
+			return true;
+		}
+
+		void ApiPlotLines(const char* szLabel, const float* pValues, int iCount, float flMin, float flMax, float flWidth, float flHeight)
+		{
+			if (pValues && iCount > 0)
+				OmegaGUI::PlotLines(szLabel ? szLabel : "", std::span<const float>(pValues, static_cast<std::size_t>(iCount)), flMin, flMax, Vec2(flWidth, flHeight));
+		}
+
+		void ApiPlotHistogram(const char* szLabel, const float* pValues, int iCount, float flMin, float flMax, float flWidth, float flHeight)
+		{
+			if (pValues && iCount > 0)
+				OmegaGUI::PlotHistogram(szLabel ? szLabel : "", std::span<const float>(pValues, static_cast<std::size_t>(iCount)), flMin, flMax, Vec2(flWidth, flHeight));
+		}
+
+		void ApiLabelText(const char* szLabel, const char* szValue) { OmegaGUI::LabelText(szLabel ? szLabel : "", szValue ? szValue : ""); }
+		void ApiBulletText(const char* szText) { OmegaGUI::BulletText(szText ? szText : ""); }
+		void ApiTextDisabled(const char* szText) { OmegaGUI::TextDisabled(szText ? szText : ""); }
+		void ApiSeparatorText(const char* szLabel) { OmegaGUI::SeparatorText(szLabel ? szLabel : ""); }
+		void ApiTitle(const char* szText) { OmegaGUI::Title(szText ? szText : ""); }
+		void ApiHeader(const char* szText) { OmegaGUI::Header(szText ? szText : ""); }
+		void ApiSubHeader(const char* szText) { OmegaGUI::SubHeader(szText ? szText : ""); }
+		bool ApiTextLink(const char* szLabel) { return OmegaGUI::TextLink(szLabel ? szLabel : ""); }
+		bool ApiInvisibleButton(const char* szID, float flWidth, float flHeight) { return OmegaGUI::InvisibleButton(szID ? szID : "", Vec2(flWidth, flHeight)); }
+		void ApiNewLine() { OmegaGUI::NewLine(); }
+		void ApiPushItemWidth(float flWidth) { OmegaGUI::PushItemWidth(flWidth); }
+		void ApiPopItemWidth() { OmegaGUI::PopItemWidth(); }
+		void ApiSetNextItemWidth(float flWidth) { OmegaGUI::SetNextItemWidth(flWidth); }
+		void ApiGetCursorPos(float* pflX, float* pflY) { StoreVec2(OmegaGUI::GetCursorPos(), pflX, pflY); }
+		void ApiSetCursorPos(float flX, float flY) { OmegaGUI::SetCursorPos(Vec2(flX, flY)); }
+		void ApiGetCursorScreenPos(float* pflX, float* pflY) { StoreVec2(OmegaGUI::GetCursorScreenPos(), pflX, pflY); }
+		void ApiSetCursorScreenPos(float flX, float flY) { OmegaGUI::SetCursorScreenPos(Vec2(flX, flY)); }
+		float ApiGetScrollY() { return OmegaGUI::GetScrollY(); }
+		float ApiGetScrollMaxY() { return OmegaGUI::GetScrollMaxY(); }
+		void ApiSetScrollY(float flScroll) { OmegaGUI::SetScrollY(flScroll); }
+		bool ApiIsItemHovered() { return OmegaGUI::IsItemHovered(); }
+		bool ApiIsItemActive() { return OmegaGUI::IsItemActive(); }
+		bool ApiIsItemClicked() { return OmegaGUI::IsItemClicked(); }
+		bool ApiIsItemFocused() { return OmegaGUI::IsItemFocused(); }
+		bool ApiIsItemEdited() { return OmegaGUI::IsItemEdited(); }
+
+		void ApiGetItemRect(float* pflMinX, float* pflMinY, float* pflMaxX, float* pflMaxY)
+		{
+			StoreVec2(OmegaGUI::GetItemRectMin(), pflMinX, pflMinY);
+			StoreVec2(OmegaGUI::GetItemRectMax(), pflMaxX, pflMaxY);
+		}
+
+		void ApiGetWindowPos(float* pflX, float* pflY) { StoreVec2(OmegaGUI::GetWindowPos(), pflX, pflY); }
+		bool ApiIsWindowFocused() { return OmegaGUI::IsWindowFocused(); }
+		bool ApiIsWindowHovered() { return OmegaGUI::IsWindowHovered(); }
+		void ApiSetNextWindowFocus() { OmegaGUI::SetNextWindowFocus(); }
+		void ApiSetNextWindowCollapsed(bool bCollapsed) { OmegaGUI::SetNextWindowCollapsed(bCollapsed); }
+		void ApiSetNextWindowOpacity(float flOpacity) { OmegaGUI::SetNextWindowOpacity(std::clamp(flOpacity, 0.f, 1.f)); }
+		void ApiSetClipboardText(const char* szText) { OmegaGUI::SetClipboardText(szText ? szText : ""); }
+
+		const char* ApiGetClipboardText()
+		{
+			thread_local std::string s_strClipboard;
+			s_strClipboard = OmegaGUI::GetClipboardText();
+			return s_strClipboard.c_str();
+		}
+
+		void ApiSetKeyboardFocusHere() { OmegaGUI::SetKeyboardFocusHere(); }
+		void ApiSetTooltip(const char* szText) { OmegaGUI::SetTooltip(szText ? szText : ""); }
+		void ApiAlert(std::uint32_t uKind, const char* szText) { OmegaGUI::Alert(static_cast<OmegaGUI::EToastKind>(std::min<std::uint32_t>(uKind, 3)), szText ? szText : ""); }
+		void ApiDrawCircleFilled(float flX, float flY, float flRadius, std::uint32_t uColor) { OmegaGUI::GetBackgroundDrawList().AddCircleFilled({ flX, flY }, flRadius, OmegaGUI::color(uColor)); }
+
+		void ApiDrawTriangle(float flX1, float flY1, float flX2, float flY2, float flX3, float flY3, std::uint32_t uColor, float flThickness, bool bFilled)
+		{
+			if (bFilled)
+				OmegaGUI::GetBackgroundDrawList().AddTriangleFilled({ flX1, flY1 }, { flX2, flY2 }, { flX3, flY3 }, OmegaGUI::color(uColor));
+			else
+				OmegaGUI::GetBackgroundDrawList().AddTriangle({ flX1, flY1 }, { flX2, flY2 }, { flX3, flY3 }, OmegaGUI::color(uColor), flThickness);
+		}
+
 		void ApiGetWindowSize(float* pflWidth, float* pflHeight)
 		{
 			const OmegaGUI::vec2 vecSize = OmegaGUI::GetWindowSize();
@@ -875,6 +1476,171 @@ namespace OmegaWare::Plugins
 			r.SetStyleColor = &ApiSetStyleColor;
 			r.SetStyleAccent = &ApiSetStyleAccent;
 			r.PushToast = &ApiPushToast;
+			r.MemModule = &ApiMemModule;
+			r.MemModuleCount = &ApiMemModuleCount;
+			r.MemModuleAt = &ApiMemModuleAt;
+			r.MemFindPattern = &ApiMemFindPattern;
+			r.MemFindPatterns = &ApiMemFindPatterns;
+			r.MemResolveRelative = &ApiMemResolveRelative;
+			r.MemExport = &ApiMemExport;
+			r.MemRead = &ApiMemRead;
+			r.MemWrite = &ApiMemWrite;
+			r.MemIsReadable = &ApiMemIsReadable;
+			r.MemIsWritable = &ApiMemIsWritable;
+			r.MemIsExecutable = &ApiMemIsExecutable;
+			r.MemPatch = &ApiMemPatch;
+			r.MemUnpatch = &ApiMemUnpatch;
+			r.MemAlloc = &ApiMemAlloc;
+			r.MemFree = &ApiMemFree;
+			r.MemVirtualMethod = &ApiMemVirtualMethod;
+			r.HookVirtual = &ApiHookVirtual;
+			r.EngineReady = &ApiEngineReady;
+			r.LocAddLocale = &ApiLocAddLocale;
+			r.LocAddString = &ApiLocAddString;
+			r.LocLoad = &ApiLocLoad;
+			r.LocGet = &ApiLocGet;
+			r.LocLabel = &ApiLocLabel;
+			r.LocHas = &ApiLocHas;
+			r.LocLocale = &ApiLocLocale;
+			r.LocSetLocale = &ApiLocSetLocale;
+			r.ConfigSave = &ApiConfigSave;
+			r.ConfigLoad = &ApiConfigLoad;
+			r.ConfigDelete = &ApiConfigDelete;
+			r.ConfigProfileCount = &ApiConfigProfileCount;
+			r.ConfigProfileName = &ApiConfigProfileName;
+			r.ConfigCurrent = &ApiConfigCurrent;
+			r.ConfigReset = &ApiConfigReset;
+			r.ConfigSetParent = &ApiConfigSetParent;
+			r.KeyDown = &ApiKeyDown;
+			r.KeyPressed = &ApiKeyPressed;
+			r.MouseDown = &ApiMouseDown;
+			r.MousePosition = &ApiMousePosition;
+			r.WantsMouse = &ApiWantsMouse;
+			r.WantsKeyboard = &ApiWantsKeyboard;
+			r.MenuVisible = &ApiMenuVisible;
+			r.SetMenuVisible = &ApiSetMenuVisible;
+			r.ConsoleVisible = &ApiConsoleVisible;
+			r.SetConsoleVisible = &ApiSetConsoleVisible;
+			r.GetTime = &ApiGetTime;
+			r.GetDeltaTime = &ApiGetDeltaTime;
+			r.GetFrameCount = &ApiGetFrameCount;
+			r.FeatureDrawMenu = &ApiFeatureDrawMenu;
+			r.PluginCount = &ApiPluginCount;
+			r.PluginInfo = &ApiPluginInfo;
+			r.PluginRequestLoad = &ApiPluginRequestLoad;
+			r.PluginRequestUnload = &ApiPluginRequestUnload;
+			r.PluginExport = &ApiPluginExport;
+			r.BeginTabBar = &ApiBeginTabBar;
+			r.EndTabBar = &ApiEndTabBar;
+			r.BeginTabItem = &ApiBeginTabItem;
+			r.EndTabItem = &ApiEndTabItem;
+			r.SetTabItemSelected = &ApiSetTabItemSelected;
+			r.BeginTable = &ApiBeginTable;
+			r.EndTable = &ApiEndTable;
+			r.TableSetupColumn = &ApiTableSetupColumn;
+			r.TableHeadersRow = &ApiTableHeadersRow;
+			r.TableNextRow = &ApiTableNextRow;
+			r.TableNextColumn = &ApiTableNextColumn;
+			r.TableSetColumnIndex = &ApiTableSetColumnIndex;
+			r.TreeNode = &ApiTreeNode;
+			r.TreePop = &ApiTreePop;
+			r.CollapsingHeader = &ApiCollapsingHeader;
+			r.OpenPopup = &ApiOpenPopup;
+			r.BeginPopup = &ApiBeginPopup;
+			r.BeginPopupModal = &ApiBeginPopupModal;
+			r.BeginPopupContextItem = &ApiBeginPopupContextItem;
+			r.EndPopup = &ApiEndPopup;
+			r.CloseCurrentPopup = &ApiCloseCurrentPopup;
+			r.BeginCombo = &ApiBeginCombo;
+			r.EndCombo = &ApiEndCombo;
+			r.BeginChild = &ApiBeginChild;
+			r.EndChild = &ApiEndChild;
+			r.BeginMenuBar = &ApiBeginMenuBar;
+			r.EndMenuBar = &ApiEndMenuBar;
+			r.RadioButton = &ApiRadioButton;
+			r.InputInt = &ApiInputInt;
+			r.InputFloat = &ApiInputFloat;
+			r.InputTextHint = &ApiInputTextHint;
+			r.PlotLines = &ApiPlotLines;
+			r.PlotHistogram = &ApiPlotHistogram;
+			r.LabelText = &ApiLabelText;
+			r.BulletText = &ApiBulletText;
+			r.TextDisabled = &ApiTextDisabled;
+			r.SeparatorText = &ApiSeparatorText;
+			r.Title = &ApiTitle;
+			r.Header = &ApiHeader;
+			r.SubHeader = &ApiSubHeader;
+			r.TextLink = &ApiTextLink;
+			r.InvisibleButton = &ApiInvisibleButton;
+			r.NewLine = &ApiNewLine;
+			r.PushItemWidth = &ApiPushItemWidth;
+			r.PopItemWidth = &ApiPopItemWidth;
+			r.SetNextItemWidth = &ApiSetNextItemWidth;
+			r.GetCursorPos = &ApiGetCursorPos;
+			r.SetCursorPos = &ApiSetCursorPos;
+			r.GetCursorScreenPos = &ApiGetCursorScreenPos;
+			r.SetCursorScreenPos = &ApiSetCursorScreenPos;
+			r.GetScrollY = &ApiGetScrollY;
+			r.GetScrollMaxY = &ApiGetScrollMaxY;
+			r.SetScrollY = &ApiSetScrollY;
+			r.IsItemHovered = &ApiIsItemHovered;
+			r.IsItemActive = &ApiIsItemActive;
+			r.IsItemClicked = &ApiIsItemClicked;
+			r.IsItemFocused = &ApiIsItemFocused;
+			r.IsItemEdited = &ApiIsItemEdited;
+			r.GetItemRect = &ApiGetItemRect;
+			r.GetWindowPos = &ApiGetWindowPos;
+			r.IsWindowFocused = &ApiIsWindowFocused;
+			r.IsWindowHovered = &ApiIsWindowHovered;
+			r.SetNextWindowFocus = &ApiSetNextWindowFocus;
+			r.SetNextWindowCollapsed = &ApiSetNextWindowCollapsed;
+			r.SetNextWindowOpacity = &ApiSetNextWindowOpacity;
+			r.SetClipboardText = &ApiSetClipboardText;
+			r.GetClipboardText = &ApiGetClipboardText;
+			r.SetKeyboardFocusHere = &ApiSetKeyboardFocusHere;
+			r.SetTooltip = &ApiSetTooltip;
+			r.Alert = &ApiAlert;
+			r.DrawCircleFilled = &ApiDrawCircleFilled;
+			r.DrawTriangle = &ApiDrawTriangle;
+#if OMEGAWARE_ENGINE_UNREAL
+			r.UnrealIsGameThread = &ApiUnrealIsGameThread;
+			r.UnrealGameInstance = &ApiUnrealGameInstance;
+			r.UnrealGameState = &ApiUnrealGameState;
+			r.UnrealLocalPlayer = &ApiUnrealLocalPlayer;
+			r.UnrealViewport = &ApiUnrealViewport;
+			r.UnrealCameraManager = &ApiUnrealCameraManager;
+			r.UnrealFindClass = &ApiUnrealFindClass;
+			r.UnrealObjectClass = &ApiUnrealObjectClass;
+			r.UnrealObjectOuter = &ApiUnrealObjectOuter;
+			r.UnrealIsA = &ApiUnrealIsA;
+			r.UnrealObjectCount = &ApiUnrealObjectCount;
+			r.UnrealObjectAt = &ApiUnrealObjectAt;
+			r.UnrealPropertyOffset = &ApiUnrealPropertyOffset;
+			r.UnrealPropertySize = &ApiUnrealPropertySize;
+			r.UnrealGetProperty = &ApiUnrealGetProperty;
+			r.UnrealSetProperty = &ApiUnrealSetProperty;
+			r.UnrealFindFunction = &ApiUnrealFindFunction;
+			r.UnrealFunctionParamsSize = &ApiUnrealFunctionParamsSize;
+			r.UnrealFunctionParamOffset = &ApiUnrealFunctionParamOffset;
+			r.UnrealCall = &ApiUnrealCall;
+#endif
+#if OMEGAWARE_ENGINE_UNITY
+			r.UnityAvailable = &ApiUnityAvailable;
+			r.UnityGetClass = &ApiUnityGetClass;
+			r.UnityGetMethod = &ApiUnityGetMethod;
+			r.UnityMethodPointer = &ApiUnityMethodPointer;
+			r.UnityCompiledMethod = &ApiUnityCompiledMethod;
+			r.UnityGetField = &ApiUnityGetField;
+			r.UnityFieldOffset = &ApiUnityFieldOffset;
+			r.UnityStaticGet = &ApiUnityStaticGet;
+			r.UnityStaticSet = &ApiUnityStaticSet;
+			r.UnityFieldGet = &ApiUnityFieldGet;
+			r.UnityFieldSet = &ApiUnityFieldSet;
+			r.UnityInvoke = &ApiUnityInvoke;
+			r.UnityNewString = &ApiUnityNewString;
+			r.UnityToString = &ApiUnityToString;
+			r.UnityAttachThread = &ApiUnityAttachThread;
+#endif
 			r.GetWindowSize = &ApiGetWindowSize;
 			r.GetContentRegionAvail = &ApiGetContentRegionAvail;
 			r.CalcTextSize = &ApiCalcTextSize;
@@ -941,6 +1707,9 @@ namespace OmegaWare::Plugins
 				if (bCallUnload && rPlugin.pfnUnload)
 					static_cast<void>(Guarded(rPlugin, "unload", [&] { rPlugin.pfnUnload(); }));
 				rPlugin.aFeatures.clear();
+				for (auto itPatch = rPlugin.aPatches.rbegin(); itPatch != rPlugin.aPatches.rend(); ++itPatch)
+					static_cast<void>(WriteBytes((*itPatch)->uAddress, (*itPatch)->aOriginal.data(), (*itPatch)->aOriginal.size()));
+				rPlugin.aPatches.clear();
 				ReleaseImages(rState, &rPlugin);
 			}
 
@@ -960,6 +1729,9 @@ namespace OmegaWare::Plugins
 			for (const auto& pHook : rPlugin.aHooks)
 				pHook->Uninstall();
 			rPlugin.aHooks.clear();
+			for (void* pBlock : rPlugin.aAllocations)
+				VirtualFree(pBlock, 0, MEM_RELEASE);
+			rPlugin.aAllocations.clear();
 			if (rPlugin.hModule)
 				FreeLibrary(rPlugin.hModule);
 			RemoveShadow(rPlugin.pathShadow);
