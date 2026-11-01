@@ -15,6 +15,7 @@
 #include <TlHelp32.h>
 
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <chrono>
 #include <functional>
@@ -44,6 +45,16 @@ namespace OmegaWare::Unreal
 		};
 
 		using EntryList = std::vector<std::shared_ptr<stEntry>>;
+
+		constexpr std::size_t kFilterSize = 4096;
+
+		std::array<std::atomic<std::uint16_t>, kFilterSize> g_aFilter{};
+
+		[[nodiscard]] std::size_t FilterSlot(const SDK::UFunction* pFunction)
+		{
+			const auto uAddress = reinterpret_cast<std::uintptr_t>(pFunction);
+			return ((uAddress >> 4) ^ (uAddress >> 16)) & (kFilterSize - 1);
+		}
 
 		std::shared_mutex g_mtxEntries;
 		std::unordered_map<SDK::UFunction*, EntryList> g_mapResolved;
@@ -125,6 +136,7 @@ namespace OmegaWare::Unreal
 			for (stTask& rTask : aTasks)
 			{
 				Hooks::clCallGuard clGuard;
+				Memory::InvalidateCache();
 				OmegaRenderHook::stFault stFault;
 				auto fnInvoke = [&] { rTask.fnTask(); };
 				if (!OmegaRenderHook::InvokeGuarded(fnInvoke, stFault))
@@ -180,7 +192,7 @@ namespace OmegaWare::Unreal
 					LogInfo("unreal: game thread tasks running on thread {}", GetCurrentThreadId());
 				RunTasks();
 			}
-			if (!pFunction || g_uResolved.load(std::memory_order_acquire) == 0)
+			if (!pFunction || g_uResolved.load(std::memory_order_acquire) == 0 || g_aFilter[FilterSlot(pFunction)].load(std::memory_order_acquire) == 0)
 				return CallOriginal(pObject, pFunction, pParams);
 
 			EntryList aEntries;
@@ -224,6 +236,7 @@ namespace OmegaWare::Unreal
 		{
 			pEntry->pFunction = pFunction;
 			g_mapResolved[pFunction].push_back(pEntry);
+			g_aFilter[FilterSlot(pFunction)].fetch_add(1, std::memory_order_acq_rel);
 			g_uResolved.fetch_add(1, std::memory_order_acq_rel);
 		}
 	}
@@ -263,8 +276,10 @@ namespace OmegaWare::Unreal
 			return true;
 		for (auto itEntries = g_mapResolved.begin(); itEntries != g_mapResolved.end(); ++itEntries)
 		{
-			if (!std::erase_if(itEntries->second, fnMatch))
+			const std::size_t uRemoved = std::erase_if(itEntries->second, fnMatch);
+			if (!uRemoved)
 				continue;
+			g_aFilter[FilterSlot(itEntries->first)].fetch_sub(static_cast<std::uint16_t>(uRemoved), std::memory_order_acq_rel);
 			if (itEntries->second.empty())
 				g_mapResolved.erase(itEntries);
 			g_uResolved.fetch_sub(1, std::memory_order_acq_rel);
@@ -355,6 +370,8 @@ namespace OmegaWare::Unreal
 			g_mapResolved.clear();
 			g_aPending.clear();
 			g_uResolved = 0;
+			for (auto& rSlot : g_aFilter)
+				rSlot.store(0, std::memory_order_release);
 		}
 		std::scoped_lock lckInstall(g_mtxInstall);
 		if (!g_bInstalled)

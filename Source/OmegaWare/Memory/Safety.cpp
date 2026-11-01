@@ -2,6 +2,9 @@
 
 #include <Windows.h>
 
+#include <array>
+#include <atomic>
+
 namespace OmegaWare::Memory
 {
 	namespace
@@ -9,6 +12,40 @@ namespace OmegaWare::Memory
 		constexpr DWORD kReadable = PAGE_READONLY | PAGE_READWRITE | PAGE_WRITECOPY | PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE | PAGE_EXECUTE_WRITECOPY;
 		constexpr DWORD kWritable = PAGE_READWRITE | PAGE_WRITECOPY | PAGE_EXECUTE_READWRITE | PAGE_EXECUTE_WRITECOPY;
 		constexpr DWORD kExecutable = PAGE_EXECUTE | PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE | PAGE_EXECUTE_WRITECOPY;
+		constexpr ULONGLONG kCacheLifetimeMs = 16;
+
+		struct stRegion
+		{
+			std::uintptr_t uBase = 0;
+			std::uintptr_t uEnd = 0;
+			ULONGLONG uStamp = 0;
+			std::uint32_t uEpoch = 0;
+		};
+
+		struct stReadCache
+		{
+			std::array<stRegion, 8> aRegions{};
+			std::size_t uNext = 0;
+		};
+
+		thread_local stReadCache t_stReadCache;
+		std::atomic<std::uint32_t> g_uEpoch{ 1 };
+
+		bool CachedReadable(std::uintptr_t uStart, std::uintptr_t uEnd)
+		{
+			const std::uint32_t uEpoch = g_uEpoch.load(std::memory_order_relaxed);
+			for (const stRegion& rRegion : t_stReadCache.aRegions)
+				if (rRegion.uEpoch == uEpoch && uStart >= rRegion.uBase && uEnd <= rRegion.uEnd)
+					return GetTickCount64() - rRegion.uStamp <= kCacheLifetimeMs;
+			return false;
+		}
+
+		void RememberReadable(std::uintptr_t uBase, std::uintptr_t uEnd)
+		{
+			stReadCache& rCache = t_stReadCache;
+			rCache.aRegions[rCache.uNext] = { uBase, uEnd, GetTickCount64(), g_uEpoch.load(std::memory_order_relaxed) };
+			rCache.uNext = (rCache.uNext + 1) % rCache.aRegions.size();
+		}
 
 		bool HasAccess(const void* pAddress, std::size_t uLength, DWORD uAllowed)
 		{
@@ -18,6 +55,9 @@ namespace OmegaWare::Memory
 			const std::uintptr_t uEnd = uCursor + uLength;
 			if (uEnd < uCursor)
 				return false;
+			const bool bCacheable = uAllowed == kReadable;
+			if (bCacheable && CachedReadable(uCursor, uEnd))
+				return true;
 			while (uCursor < uEnd)
 			{
 				MEMORY_BASIC_INFORMATION stInfo{};
@@ -25,7 +65,10 @@ namespace OmegaWare::Memory
 					return false;
 				if (stInfo.State != MEM_COMMIT || (stInfo.Protect & (PAGE_GUARD | PAGE_NOACCESS)) || !(stInfo.Protect & uAllowed))
 					return false;
-				uCursor = reinterpret_cast<std::uintptr_t>(stInfo.BaseAddress) + stInfo.RegionSize;
+				const std::uintptr_t uRegionBase = reinterpret_cast<std::uintptr_t>(stInfo.BaseAddress);
+				uCursor = uRegionBase + stInfo.RegionSize;
+				if (bCacheable)
+					RememberReadable(uRegionBase, uCursor);
 			}
 			return true;
 		}
@@ -45,6 +88,11 @@ namespace OmegaWare::Memory
 			}
 			return uMaxLength;
 		}
+	}
+
+	void InvalidateCache()
+	{
+		g_uEpoch.fetch_add(1, std::memory_order_relaxed);
 	}
 
 	bool IsReadable(const void* pAddress, std::size_t uLength)

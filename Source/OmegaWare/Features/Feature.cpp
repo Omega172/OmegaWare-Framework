@@ -1,5 +1,6 @@
 #include "Features/Feature.hpp"
 #include "Core/Log.hpp"
+#include "Memory/Safety.hpp"
 #include "Plugins/Plugins.hpp"
 
 #include "OmegaGUI/OmegaGUI.hpp"
@@ -23,6 +24,7 @@ namespace OmegaWare
 		template <typename F>
 		static bool Invoke(clFeature& rFeature, std::string_view strStage, F&& fnCall)
 		{
+			Memory::InvalidateCache();
 			OmegaRenderHook::stFault stFault;
 			auto fnGuarded = [&] { fnCall(); };
 			if (OmegaRenderHook::InvokeGuarded(fnGuarded, stFault))

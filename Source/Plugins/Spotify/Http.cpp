@@ -43,6 +43,11 @@ namespace Spotify::Http
 
 	stResponse clClient::Get(std::wstring_view strUrl, std::wstring_view strHeaders, std::size_t uMaxBody)
 	{
+		return Request(L"GET", strUrl, strHeaders, {}, uMaxBody);
+	}
+
+	stResponse clClient::Request(std::wstring_view strMethod, std::wstring_view strUrl, std::wstring_view strHeaders, std::string_view strBody, std::size_t uMaxBody)
+	{
 		stResponse stResult;
 		const std::wstring strFullUrl(strUrl);
 		URL_COMPONENTS stParts{};
@@ -72,7 +77,7 @@ namespace Spotify::Http
 			}
 			hConnect = WinHttpConnect(m_hSession, strHost.c_str(), stParts.nPort, 0);
 			if (hConnect)
-				hRequest = WinHttpOpenRequest(hConnect, L"GET", strPath.c_str(), nullptr, WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES, stParts.nScheme == INTERNET_SCHEME_HTTPS ? WINHTTP_FLAG_SECURE : 0);
+				hRequest = WinHttpOpenRequest(hConnect, std::wstring(strMethod).c_str(), strPath.c_str(), nullptr, WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES, stParts.nScheme == INTERNET_SCHEME_HTTPS ? WINHTTP_FLAG_SECURE : 0);
 			m_hRequest = hRequest;
 		}
 
@@ -95,7 +100,7 @@ namespace Spotify::Http
 		}
 
 		const std::wstring strHeaderText(strHeaders);
-		const bool bSent = WinHttpSendRequest(hRequest, strHeaderText.empty() ? WINHTTP_NO_ADDITIONAL_HEADERS : strHeaderText.c_str(), strHeaderText.empty() ? 0 : static_cast<DWORD>(-1L), WINHTTP_NO_REQUEST_DATA, 0, 0, 0) && WinHttpReceiveResponse(hRequest, nullptr);
+		const bool bSent = WinHttpSendRequest(hRequest, strHeaderText.empty() ? WINHTTP_NO_ADDITIONAL_HEADERS : strHeaderText.c_str(), strHeaderText.empty() ? 0 : static_cast<DWORD>(-1L), strBody.empty() ? WINHTTP_NO_REQUEST_DATA : const_cast<char*>(strBody.data()), static_cast<DWORD>(strBody.size()), static_cast<DWORD>(strBody.size()), 0) && WinHttpReceiveResponse(hRequest, nullptr);
 		if (!bSent)
 		{
 			stResult.uError = GetLastError();

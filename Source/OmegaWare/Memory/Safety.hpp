@@ -10,6 +10,7 @@
 
 namespace OmegaWare::Memory
 {
+	void InvalidateCache();
 	[[nodiscard]] bool IsReadable(const void* pAddress, std::size_t uLength);
 	[[nodiscard]] bool IsWritable(const void* pAddress, std::size_t uLength);
 	[[nodiscard]] bool IsExecutable(const void* pAddress);

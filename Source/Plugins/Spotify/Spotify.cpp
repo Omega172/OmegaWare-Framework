@@ -3,6 +3,7 @@
 #include "Artwork.hpp"
 #include "Http.hpp"
 #include "Json.hpp"
+#include "Library.hpp"
 #include "Media.hpp"
 
 #include <Windows.h>
@@ -38,6 +39,8 @@ namespace
 	constexpr const char* kKeyConfig = "spotify.key";
 	constexpr const char* kIntervalConfig = "spotify.interval";
 	constexpr const char* kWindowConfig = "spotify.window";
+	constexpr const char* kClientIdConfig = "spotify.client_id";
+	constexpr const char* kLibraryTokenConfig = "spotify.library_token";
 	constexpr const char* kPinnedConfig = "spotify.window_pinned";
 	constexpr const char* kOpacityConfig = "spotify.window_opacity";
 	constexpr const char* kThemeName = "spotify";
@@ -635,7 +638,9 @@ namespace
 			m_pbPinned = Plugin::Api().ConfigBool(kPinnedConfig, false);
 			m_pflOpacity = Plugin::Api().ConfigFloat(kOpacityConfig, 100.f);
 			LoadStoredKey();
+			LoadLibraryAuth();
 			m_clClient.Start();
+			m_clLibrary.Start();
 			g_stTheme.aTarget = { static_cast<float>(kThemeDefault & 0xFF), static_cast<float>((kThemeDefault >> 8) & 0xFF), static_cast<float>((kThemeDefault >> 16) & 0xFF) };
 			if (Plugin::Api().RegisterTheme)
 				Plugin::Api().RegisterTheme(kThemeName, &ApplySpotifyTheme);
@@ -645,6 +650,7 @@ namespace
 		void Destroy() override
 		{
 			m_clClient.Stop();
+			m_clLibrary.Stop();
 			ClearArt();
 			if (Plugin::Api().UnregisterTheme)
 				Plugin::Api().UnregisterTheme(kThemeName);
@@ -667,6 +673,11 @@ namespace
 			else
 				DrawPlayer();
 			Plugin::Api().EndSection();
+			if (Plugin::Api().BeginSection("library"))
+			{
+				DrawLibrary();
+				Plugin::Api().EndSection();
+			}
 			if (Plugin::Api().BeginSection("window"))
 			{
 				Plugin::Api().Toggle("player window", m_pbWindow);
@@ -680,6 +691,14 @@ namespace
 		void Update()
 		{
 			LoadStoredKey();
+			LoadLibraryAuth();
+			if (std::optional<std::string> optToken = m_clLibrary.TakeToken())
+			{
+				m_strStoredLibraryToken = optToken->empty() ? std::string{} : Protect(*optToken);
+				Plugin::Api().SetConfigString(kLibraryTokenConfig, m_strStoredLibraryToken.c_str());
+				SecureZeroMemory(optToken->data(), optToken->size());
+			}
+			m_stLibrary = m_clLibrary.Snapshot();
 			if (std::optional<std::string> optRotated = m_clClient.TakeRotatedKey())
 			{
 				StoreKey(*optRotated);
@@ -941,7 +960,328 @@ namespace
 			}
 		}
 
+		void LoadLibraryAuth()
+		{
+			const char* szClient = Plugin::Api().ConfigString(kClientIdConfig, "");
+			const std::string strClient = szClient ? szClient : "";
+			if (!m_bLibraryLoaded || strClient != m_strClientId)
+			{
+				m_strClientId = strClient;
+				m_clLibrary.SetClientId(strClient);
+			}
+			const char* szToken = Plugin::Api().ConfigString(kLibraryTokenConfig, "");
+			const std::string_view strToken = szToken ? szToken : "";
+			if (!m_bLibraryLoaded || strToken != m_strStoredLibraryToken)
+			{
+				m_strStoredLibraryToken = std::string(strToken);
+				m_clLibrary.SetToken(Unprotect(strToken));
+			}
+			m_bLibraryLoaded = true;
+		}
+
+		void DrawClientSetup()
+		{
+			Plugin::Api().TextWrapped("browsing your library and starting songs needs your own free Spotify app. Spotify requires Premium on the account that owns the app and for starting playback");
+			Plugin::Api().TextMuted("1. create an app at developer.spotify.com/dashboard");
+			if (Plugin::Api().Button("open the dashboard"))
+				ShellExecuteW(nullptr, L"open", L"https://developer.spotify.com/dashboard", nullptr, nullptr, SW_SHOWNORMAL);
+			Plugin::Api().TextMuted("2. add this redirect URI to the app and tick Web API");
+			const std::string strRedirect = Spotify::Library::clLibrary::RedirectUri();
+			Plugin::Api().Text(strRedirect.c_str());
+			Plugin::Api().SameLine();
+			if (Plugin::Api().SmallButton("copy"))
+				Plugin::Api().SetClipboardText(strRedirect.c_str());
+			Plugin::Api().TextMuted("3. paste the app's client ID here (it is not a secret)");
+			Plugin::Api().InputText("client id", m_aClientInput.data(), static_cast<std::uint32_t>(m_aClientInput.size()));
+			if (Plugin::Api().Button("save client id"))
+			{
+				const std::string strClient = Trim(m_aClientInput.data());
+				if (strClient.size() >= 16)
+				{
+					Plugin::Api().SetConfigString(kClientIdConfig, strClient.c_str());
+					m_aClientInput.fill('\0');
+				}
+			}
+		}
+
+		void DrawTrackMenu(const Spotify::Library::stTrack& rTrack, Spotify::Library::ESource eSource)
+		{
+			if (!Plugin::Api().BeginPopupContextItem("##menu"))
+				return;
+			if (Plugin::Api().Selectable("add to queue", false))
+				m_clLibrary.Queue(rTrack.strUri);
+			if (eSource == Spotify::Library::ESource::Playlist && Plugin::Api().Selectable("remove from this playlist", false))
+				m_clLibrary.RemoveFromPlaylist(rTrack.strUri);
+			const std::size_t uColon = rTrack.strUri.rfind(':');
+			if (uColon != std::string::npos && Plugin::Api().Selectable("copy link", false))
+				Plugin::Api().SetClipboardText(("https://open.spotify.com/track/" + rTrack.strUri.substr(uColon + 1)).c_str());
+			Plugin::Api().EndPopup();
+		}
+
+		void DrawTrackList(const std::vector<Spotify::Library::stTrack>& aTracks, Spotify::Library::ESource eSource, const char* szId, const Spotify::Library::stData& rData)
+		{
+			float flAvailWidth = 0.f;
+			float flAvailHeight = 0.f;
+			if (Plugin::Api().BeginChild(szId, 0.f, kListHeight, true))
+			{
+				Plugin::Api().GetContentRegionAvail(&flAvailWidth, &flAvailHeight);
+				for (std::size_t uTrack = 0; uTrack < aTracks.size(); ++uTrack)
+				{
+					const Spotify::Library::stTrack& rTrack = aTracks[uTrack];
+					const auto itLiked = rData.mapLiked.find(rTrack.strUri);
+					const bool bLiked = itLiked != rData.mapLiked.end() && itLiked->second;
+					const std::string strRow = FitText(rTrack.strArtists.empty() ? rTrack.strTitle : rTrack.strTitle + " - " + rTrack.strArtists, std::max(40.f, flAvailWidth - 40.f));
+					const std::string strLabel = std::format("{}{}###row", bLiked ? "* " : "", strRow);
+					Plugin::Api().PushID(std::to_string(uTrack).c_str());
+					if (Plugin::Api().Selectable(strLabel.c_str(), false))
+						m_clLibrary.Play(eSource, static_cast<int>(uTrack));
+					if (Plugin::Api().IsItemHovered())
+						Plugin::Api().Tooltip(std::format("{} - {} ({}){}\nclick to play, right click for more", rTrack.strTitle, rTrack.strArtists, FormatTime(rTrack.iDurationMs), bLiked ? "\n* liked" : "").c_str());
+					DrawTrackMenu(rTrack, eSource);
+					Plugin::Api().PopID();
+				}
+			}
+			Plugin::Api().EndChild();
+		}
+
+		void DrawPlayerControls(const Spotify::Library::stData& rData)
+		{
+			const stTrack& rCurrent = m_stState.stCurrent;
+			if (rCurrent.bValid && !rCurrent.strId.empty())
+			{
+				const std::string strUri = "spotify:track:" + rCurrent.strId;
+				if (m_strLikeChecked != rCurrent.strId)
+				{
+					m_strLikeChecked = rCurrent.strId;
+					m_clLibrary.CheckLiked(strUri);
+				}
+				const auto itLiked = rData.mapLiked.find(strUri);
+				const bool bLiked = itLiked != rData.mapLiked.end() && itLiked->second;
+				if (Plugin::Api().Button(bLiked ? "unlike current song###likecurrent" : "like current song###likecurrent"))
+					m_clLibrary.ToggleLike(strUri);
+				Plugin::Api().SameLine();
+				if (Plugin::Api().Button("add current song to playlist###addcurrent"))
+				{
+					if (!rData.bPlaylistsLoaded && !m_bPlaylistsRequested)
+					{
+						m_bPlaylistsRequested = true;
+						m_clLibrary.LoadPlaylists();
+					}
+					Plugin::Api().OpenPopup("##addcurrent");
+				}
+				if (Plugin::Api().BeginPopup("##addcurrent"))
+				{
+					if (rData.aPlaylists.empty())
+						Plugin::Api().TextMuted("no playlists loaded yet");
+					for (std::size_t uList = 0; uList < rData.aPlaylists.size(); ++uList)
+					{
+						const std::string strLabel = std::format("{}###addcurrent{}", rData.aPlaylists[uList].strName, uList);
+						if (Plugin::Api().Selectable(strLabel.c_str(), false))
+							m_clLibrary.AddToPlaylist(rData.aPlaylists[uList].strId, strUri);
+					}
+					Plugin::Api().EndPopup();
+				}
+				Plugin::Api().SameLine();
+				if (Plugin::Api().Button("queue current song###queuecurrent"))
+					m_clLibrary.Queue(strUri);
+			}
+
+			if (m_stLibrary.iVolume >= 0 && !m_bVolumeActive)
+				m_flVolume = static_cast<float>(m_stLibrary.iVolume);
+			const bool bChanged = Plugin::Api().SliderFloat("volume###libvolume", &m_flVolume, 0.f, 100.f, "{:.0f}%");
+			m_bVolumeActive = Plugin::Api().IsItemActive();
+			if (bChanged)
+				m_bVolumePending = true;
+			if (m_bVolumePending && !m_bVolumeActive)
+			{
+				m_bVolumePending = false;
+				m_clLibrary.SetVolume(static_cast<int>(std::lround(m_flVolume)));
+			}
+
+			if (!rData.aDevices.empty())
+			{
+				std::vector<const char*> aNames;
+				int iCurrent = 0;
+				for (std::size_t uDevice = 0; uDevice < rData.aDevices.size(); ++uDevice)
+				{
+					aNames.push_back(rData.aDevices[uDevice].strName.c_str());
+					if (rData.aDevices[uDevice].bActive)
+						iCurrent = static_cast<int>(uDevice);
+				}
+				const int iActive = iCurrent;
+				if (Plugin::Api().Combo("device###libdevice", &iCurrent, aNames.data(), static_cast<int>(aNames.size())) && iCurrent != iActive)
+					m_clLibrary.Transfer(rData.aDevices[static_cast<std::size_t>(iCurrent)].strId);
+				Plugin::Api().SameLine();
+				if (Plugin::Api().SmallButton("refresh###libdevices"))
+					m_clLibrary.RefreshDevices();
+			}
+		}
+
+		void DrawLibrary()
+		{
+			if (m_strClientId.empty())
+			{
+				DrawClientSetup();
+				return;
+			}
+			if (!m_stLibrary.bLoggedIn)
+			{
+				Plugin::Api().TextMuted("log in to search songs and browse your liked songs and playlists");
+				if (m_stLibrary.bLoggingIn)
+				{
+					Plugin::Api().TextMuted("waiting for the browser login");
+					if (Plugin::Api().Button("cancel login"))
+						m_clLibrary.CancelLogin();
+				}
+				else
+				{
+					if (Plugin::Api().Button("log in with spotify"))
+						m_clLibrary.Login();
+					Plugin::Api().SameLine();
+					if (Plugin::Api().Button("change client id"))
+						Plugin::Api().SetConfigString(kClientIdConfig, "");
+				}
+				if (!m_stLibrary.strStatus.empty())
+					Plugin::Api().TextMuted(m_stLibrary.strStatus.c_str());
+				return;
+			}
+
+			const Spotify::Library::stData& rData = *m_stLibrary.pData;
+			if (!rData.strUser.empty())
+				Plugin::Api().TextMuted(std::format("logged in as {}", rData.strUser).c_str());
+			if (!m_bPlayerRequested)
+			{
+				m_bPlayerRequested = true;
+				m_clLibrary.RefreshPlayer();
+			}
+			if (Plugin::Api().Button(m_stLibrary.bShuffle ? "shuffle: on###shuffle" : "shuffle: off###shuffle"))
+				m_clLibrary.SetShuffle(!m_stLibrary.bShuffle);
+			Plugin::Api().SameLine();
+			constexpr std::array<const char*, 3> aRepeat = { "repeat: off###repeat", "repeat: playlist###repeat", "repeat: song###repeat" };
+			if (Plugin::Api().Button(aRepeat[static_cast<std::size_t>(std::clamp(m_stLibrary.iRepeat, 0, 2))]))
+				m_clLibrary.CycleRepeat();
+			Plugin::Api().SameLine();
+			Plugin::Api().TextMuted("smart shuffle is not available through Spotify's API");
+			DrawPlayerControls(rData);
+			if (Plugin::Api().BeginTabBar("##spotify.library"))
+			{
+				if (Plugin::Api().BeginTabItem("search", nullptr))
+				{
+					Plugin::Api().InputTextHint("##spotify.query", m_aSearchInput.data(), static_cast<std::uint32_t>(m_aSearchInput.size()), "search songs");
+					Plugin::Api().SameLine();
+					if (Plugin::Api().Button("search") && m_aSearchInput[0])
+						m_clLibrary.Search(m_aSearchInput.data());
+					DrawTrackList(rData.aSearch, Spotify::Library::ESource::Search, "##spotify.list.search", rData);
+					Plugin::Api().EndTabItem();
+				}
+				if (Plugin::Api().BeginTabItem("liked songs", nullptr))
+				{
+					if (!rData.bLikedLoaded && !m_bLikedRequested)
+					{
+						m_bLikedRequested = true;
+						m_clLibrary.LoadLiked(false);
+					}
+					if (Plugin::Api().Button("refresh###liked"))
+						m_clLibrary.LoadLiked(false);
+					Plugin::Api().SameLine();
+					Plugin::Api().TextMuted(std::format("{} of {}", rData.aLiked.size(), rData.iLikedTotal).c_str());
+					if (Plugin::Api().Button("play all###liked"))
+						m_clLibrary.PlayAll(Spotify::Library::ESource::Liked, m_stLibrary.bShuffle);
+					Plugin::Api().SameLine();
+					if (Plugin::Api().Button("shuffle play###liked"))
+						m_clLibrary.PlayAll(Spotify::Library::ESource::Liked, true);
+					DrawTrackList(rData.aLiked, Spotify::Library::ESource::Liked, "##spotify.list.liked", rData);
+					if (static_cast<int>(rData.aLiked.size()) < rData.iLikedTotal && Plugin::Api().Button("load more###liked"))
+						m_clLibrary.LoadLiked(true);
+					Plugin::Api().EndTabItem();
+				}
+				if (Plugin::Api().BeginTabItem("playlists", nullptr))
+				{
+					if (!rData.bPlaylistsLoaded && !m_bPlaylistsRequested)
+					{
+						m_bPlaylistsRequested = true;
+						m_clLibrary.LoadPlaylists();
+					}
+					if (!rData.stOpenPlaylist.strId.empty() && m_bPlaylistOpen)
+					{
+						if (Plugin::Api().Button("back###playlist"))
+							m_bPlaylistOpen = false;
+						Plugin::Api().SameLine();
+						Plugin::Api().TextColored(Plugin::Api().AccentColor(), rData.stOpenPlaylist.strName.c_str());
+						Plugin::Api().TextMuted(std::format("{} of {}", rData.aPlaylistTracks.size(), rData.iPlaylistTotal).c_str());
+						if (Plugin::Api().Button("play playlist###playlist"))
+							m_clLibrary.PlayAll(Spotify::Library::ESource::Playlist, m_stLibrary.bShuffle);
+						Plugin::Api().SameLine();
+						if (Plugin::Api().Button("shuffle play###playlist"))
+							m_clLibrary.PlayAll(Spotify::Library::ESource::Playlist, true);
+						DrawTrackList(rData.aPlaylistTracks, Spotify::Library::ESource::Playlist, "##spotify.list.playlist", rData);
+						if (static_cast<int>(rData.aPlaylistTracks.size()) < rData.iPlaylistTotal && Plugin::Api().Button("load more###playlist"))
+							m_clLibrary.LoadMorePlaylist();
+					}
+					else
+					{
+						if (Plugin::Api().Button("refresh###playlists"))
+							m_clLibrary.LoadPlaylists();
+						Plugin::Api().SameLine();
+						Plugin::Api().TextMuted("playlists you created");
+						Plugin::Api().InputTextHint("##spotify.newlist", m_aNewListInput.data(), static_cast<std::uint32_t>(m_aNewListInput.size()), "new playlist name");
+						Plugin::Api().SameLine();
+						if (Plugin::Api().Button("create###newlist") && m_aNewListInput[0])
+						{
+							m_clLibrary.CreatePlaylist(m_aNewListInput.data());
+							m_aNewListInput.fill('\0');
+						}
+						if (Plugin::Api().BeginChild("##spotify.list.playlists", 0.f, kListHeight, true))
+						{
+							for (std::size_t uList = 0; uList < rData.aPlaylists.size(); ++uList)
+							{
+								const Spotify::Library::stPlaylist& rList = rData.aPlaylists[uList];
+								const std::string strLabel = std::format("{} ({})###list{}", rList.strName, rList.iTracks, uList);
+								if (Plugin::Api().Selectable(strLabel.c_str(), false))
+								{
+									m_bPlaylistOpen = true;
+									m_clLibrary.OpenPlaylist(rList);
+								}
+							}
+						}
+						Plugin::Api().EndChild();
+					}
+					Plugin::Api().EndTabItem();
+				}
+				Plugin::Api().EndTabBar();
+			}
+			if (!m_stLibrary.strStatus.empty())
+				Plugin::Api().TextMuted(m_stLibrary.strStatus.c_str());
+			else if (m_stLibrary.bBusy)
+				Plugin::Api().TextMuted("working");
+			if (Plugin::Api().Button("log out of the library"))
+			{
+				m_clLibrary.Logout();
+				m_bLikedRequested = false;
+				m_bPlaylistsRequested = false;
+				m_bPlaylistOpen = false;
+				m_bPlayerRequested = false;
+			}
+		}
+
 		clClient m_clClient;
+		Spotify::Library::clLibrary m_clLibrary;
+		Spotify::Library::stSnapshot m_stLibrary;
+		std::array<char, 128> m_aClientInput{};
+		std::array<char, 160> m_aSearchInput{};
+		std::string m_strClientId;
+		std::string m_strStoredLibraryToken;
+		bool m_bLibraryLoaded = false;
+		bool m_bLikedRequested = false;
+		bool m_bPlaylistsRequested = false;
+		bool m_bPlaylistOpen = false;
+		bool m_bPlayerRequested = false;
+		bool m_bVolumeActive = false;
+		bool m_bVolumePending = false;
+		float m_flVolume = 50.f;
+		std::string m_strLikeChecked;
+		std::array<char, 128> m_aNewListInput{};
+		static constexpr float kListHeight = 240.f;
 		float* m_pflInterval = nullptr;
 		bool* m_pbWindow = nullptr;
 		bool* m_pbPinned = nullptr;

@@ -24,6 +24,7 @@ namespace Spotify::Http
 		clClient& operator=(const clClient&) = delete;
 
 		[[nodiscard]] stResponse Get(std::wstring_view strUrl, std::wstring_view strHeaders = {}, std::size_t uMaxBody = 4 * 1024 * 1024);
+		[[nodiscard]] stResponse Request(std::wstring_view strMethod, std::wstring_view strUrl, std::wstring_view strHeaders, std::string_view strBody, std::size_t uMaxBody = 4 * 1024 * 1024);
 		void Cancel();
 
 	private:

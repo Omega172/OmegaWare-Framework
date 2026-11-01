@@ -95,6 +95,27 @@ namespace
 		Check("runtime pattern rejects bad tokens", !OmegaWare::Memory::ParsePattern("48 8G") && !OmegaWare::Memory::ParsePattern("488B") && !OmegaWare::Memory::ParsePattern(""));
 	}
 
+	void TestReadableCache()
+	{
+		SYSTEM_INFO stSystem{};
+		GetSystemInfo(&stSystem);
+		const std::size_t uPage = stSystem.dwPageSize;
+		auto* pPages = static_cast<unsigned char*>(VirtualAlloc(nullptr, uPage * 2, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE));
+		Check("a committed page reads as valid", OmegaWare::Memory::IsReadable(pPages, 8));
+		Check("a repeat query of the same page is valid", OmegaWare::Memory::IsReadable(pPages + 16, 8) && OmegaWare::Memory::IsReadable(pPages, 8));
+		DWORD uOld = 0;
+		VirtualProtect(pPages, uPage, PAGE_NOACCESS, &uOld);
+		OmegaWare::Memory::InvalidateCache();
+		Check("a page turned no-access is rejected after the cache is invalidated", !OmegaWare::Memory::IsReadable(pPages, 8));
+		VirtualProtect(pPages, uPage, PAGE_READWRITE, &uOld);
+		OmegaWare::Memory::InvalidateCache();
+		Check("a page that becomes readable again is accepted", OmegaWare::Memory::IsReadable(pPages, 8));
+		VirtualFree(pPages, 0, MEM_RELEASE);
+		OmegaWare::Memory::InvalidateCache();
+		Check("a released page is rejected after the cache is invalidated", !OmegaWare::Memory::IsReadable(pPages, 8));
+		Check("a null pointer is rejected", !OmegaWare::Memory::IsReadable(nullptr, 8));
+	}
+
 	void TestScanning()
 	{
 		std::puts("scanning");
@@ -1356,6 +1377,7 @@ int main()
 	std::puts("omegaware framework tests");
 	TestPatterns();
 	TestScanning();
+	TestReadableCache();
 	TestSafety();
 	TestNamePool();
 	TestValidateThunk();
