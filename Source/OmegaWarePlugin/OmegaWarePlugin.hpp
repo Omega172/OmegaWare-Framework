@@ -81,6 +81,40 @@ namespace OmegaWare::Plugin
 		std::int32_t iOrder = 0;
 	};
 
+	enum class EStyleColor : std::uint32_t
+	{
+		Background,
+		Surface,
+		Surface2,
+		Hover,
+		Text,
+		TextMuted,
+		TextDisabled,
+		TextHeading,
+		Border,
+		BorderHover,
+		Accent,
+		AccentActive,
+		AccentText,
+		AccentSoft,
+		AccentGlow,
+		Danger,
+		DangerSoft,
+		Success,
+		SuccessSoft,
+		Warning,
+		DotGrid,
+		Shadow,
+		ModalDim,
+		Selection,
+		ControlClose,
+		ControlMinimize,
+		ControlMaximize,
+		Count,
+	};
+
+	using FnThemeApply = void (*)(float flDeltaTime);
+
 	struct stApi
 	{
 		std::uint32_t uVersion = kApiVersion;
@@ -205,6 +239,12 @@ namespace OmegaWare::Plugin
 		bool (*BeginMenu)(const char* szLabel, bool bEnabled) = nullptr;
 		void (*EndMenu)() = nullptr;
 		bool (*MenuItem)(const char* szLabel, const char* szShortcut, bool* pSelected, bool bEnabled) = nullptr;
+		void (*RegisterTheme)(const char* szName, FnThemeApply pfnApply) = nullptr;
+		void (*UnregisterTheme)(const char* szName) = nullptr;
+		std::uint32_t (*GetStyleColor)(EStyleColor eColor) = nullptr;
+		void (*SetStyleColor)(EStyleColor eColor, std::uint32_t uRgba) = nullptr;
+		void (*SetStyleAccent)(std::uint32_t uRgba) = nullptr;
+		void (*PushToast)(std::uint32_t uKind, const char* szText) = nullptr;
 	};
 
 	using FnPluginLoad = bool (*)(const stApi* pApi);

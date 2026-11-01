@@ -84,7 +84,7 @@ inline const OmegaLocalization::stLocaleData g_stLocaleGerman{
 		{ "menu.keys_hint", "esc löscht eine taste, die menütaste kann nicht gelöscht werden" },
 		{ "menu.key_none", "keine" },
 		{ "menu.theme", "design" },
-		{ "menu.theme_console", "konsole" },
+		{ "menu.theme_console", "OmegaWare" },
 		{ "menu.theme_amber", "bernstein" },
 		{ "menu.theme_phosphor", "phosphor" },
 		{ "menu.perf_frame", "frame" },

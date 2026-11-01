@@ -7,6 +7,7 @@
 #include "Hooks/Hook.hpp"
 #include "Memory/Safety.hpp"
 
+#include "Menu/Menu.hpp"
 #include "Menu/Widgets.hpp"
 
 #if OMEGAWARE_ENGINE_UNREAL
@@ -672,6 +673,44 @@ namespace OmegaWare::Plugins
 
 		void ApiSetNextWindowSizeConstraints(float flMinWidth, float flMinHeight, float flMaxWidth, float flMaxHeight) { OmegaGUI::SetNextWindowSizeConstraints({ flMinWidth, flMinHeight }, { flMaxWidth, flMaxHeight }); }
 		void ApiSetNextWindowBgAlpha(float flAlpha) { State().flNextBgAlpha = std::clamp(flAlpha, 0.f, 1.f); }
+		void ApiRegisterTheme(const char* szName, Plugin::FnThemeApply pfnApply)
+		{
+			if (szName && *szName && pfnApply)
+				Menu::RegisterPluginTheme(szName, pfnApply);
+		}
+
+		void ApiUnregisterTheme(const char* szName)
+		{
+			if (szName && *szName)
+				Menu::UnregisterPluginTheme(szName);
+		}
+
+		std::uint32_t ApiGetStyleColor(Plugin::EStyleColor eColor)
+		{
+			const auto uIndex = static_cast<std::size_t>(eColor);
+			if (uIndex >= static_cast<std::size_t>(OmegaGUI::EColor::Count))
+				return 0;
+			const OmegaGUI::color col = OmegaGUI::GetStyle().Get(static_cast<OmegaGUI::EColor>(uIndex));
+			return Plugin::Rgba(col.R(), col.G(), col.B(), col.A());
+		}
+
+		void ApiSetStyleColor(Plugin::EStyleColor eColor, std::uint32_t uRgba)
+		{
+			const auto uIndex = static_cast<std::size_t>(eColor);
+			if (uIndex < static_cast<std::size_t>(OmegaGUI::EColor::Count))
+				OmegaGUI::GetStyle().Set(static_cast<OmegaGUI::EColor>(uIndex), OmegaGUI::color(static_cast<std::uint8_t>(uRgba & 0xFF), static_cast<std::uint8_t>((uRgba >> 8) & 0xFF), static_cast<std::uint8_t>((uRgba >> 16) & 0xFF), static_cast<std::uint8_t>((uRgba >> 24) & 0xFF)));
+		}
+
+		void ApiSetStyleAccent(std::uint32_t uRgba)
+		{
+			OmegaGUI::GetStyle().SetAccent(OmegaGUI::color(static_cast<std::uint8_t>(uRgba & 0xFF), static_cast<std::uint8_t>((uRgba >> 8) & 0xFF), static_cast<std::uint8_t>((uRgba >> 16) & 0xFF), 255));
+		}
+
+		void ApiPushToast(std::uint32_t uKind, const char* szText)
+		{
+			if (szText && *szText)
+				OmegaGUI::PushToast(static_cast<OmegaGUI::EToastKind>(std::min<std::uint32_t>(uKind, 3)), szText);
+		}
 
 		void ApiGetWindowSize(float* pflWidth, float* pflHeight)
 		{
@@ -830,6 +869,12 @@ namespace OmegaWare::Plugins
 			r.SetNextWindowSize = &ApiSetNextWindowSize;
 			r.SetNextWindowSizeConstraints = &ApiSetNextWindowSizeConstraints;
 			r.SetNextWindowBgAlpha = &ApiSetNextWindowBgAlpha;
+			r.RegisterTheme = &ApiRegisterTheme;
+			r.UnregisterTheme = &ApiUnregisterTheme;
+			r.GetStyleColor = &ApiGetStyleColor;
+			r.SetStyleColor = &ApiSetStyleColor;
+			r.SetStyleAccent = &ApiSetStyleAccent;
+			r.PushToast = &ApiPushToast;
 			r.GetWindowSize = &ApiGetWindowSize;
 			r.GetContentRegionAvail = &ApiGetContentRegionAvail;
 			r.CalcTextSize = &ApiCalcTextSize;

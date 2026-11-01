@@ -85,7 +85,7 @@ inline const OmegaLocalization::stLocaleData g_stLocalePolish{
 		{ "menu.keys_hint", "esc czyści klawisz, klawisza menu nie można wyczyścić" },
 		{ "menu.key_none", "brak" },
 		{ "menu.theme", "motyw" },
-		{ "menu.theme_console", "konsola" },
+		{ "menu.theme_console", "OmegaWare" },
 		{ "menu.theme_amber", "bursztyn" },
 		{ "menu.theme_phosphor", "fosfor" },
 		{ "menu.perf_frame", "klatka" },

@@ -16,6 +16,7 @@
 #include <array>
 #include <cmath>
 #include <deque>
+#include <mutex>
 #include <format>
 #include <span>
 #include <utility>
@@ -129,11 +130,47 @@ namespace OmegaWare::Menu
 			OmegaGUI::Spacing();
 		}
 
+		struct stPluginTheme
+		{
+			std::string strName;
+			FnPluginThemeApply pfnApply = nullptr;
+		};
+
+		std::mutex s_mtxPluginThemes;
+		std::vector<stPluginTheme> s_aPluginThemes;
+
+		std::string& PluginThemeName()
+		{
+			static std::string& s_rName = Config::Add("menu.theme_plugin", std::string());
+			return s_rName;
+		}
+
+		bool ApplyPluginTheme()
+		{
+			FnPluginThemeApply pfnApply = nullptr;
+			{
+				std::scoped_lock lckThemes(s_mtxPluginThemes);
+				const std::string& rName = PluginThemeName();
+				const auto itTheme = rName.empty() ? s_aPluginThemes.end() : std::ranges::find(s_aPluginThemes, rName, &stPluginTheme::strName);
+				if (itTheme == s_aPluginThemes.end())
+					return false;
+				pfnApply = itTheme->pfnApply;
+			}
+			OmegaGUI::GetStyle().aColors = OmegaGUI::stStyle::Console().aColors;
+			pfnApply(OmegaGUI::GetDeltaTime());
+			return true;
+		}
+
 		void ApplyTheme()
 		{
 			static int s_iApplied = -1;
 			int& rTheme = *View().pTheme;
 			rTheme = std::clamp(rTheme, 0, 2);
+			if (ApplyPluginTheme())
+			{
+				s_iApplied = -2;
+				return;
+			}
 			if (rTheme == s_iApplied)
 				return;
 			s_iApplied = rTheme;
@@ -164,8 +201,28 @@ namespace OmegaWare::Menu
 				s_rScale = std::clamp(s_rScale, 0, static_cast<int>(kScales.size()) - 1);
 				OmegaGUI::Combo("menu.ui_scale"_l, &s_rScale, aScaleNames);
 
-				const std::array<std::string_view, 3> aThemes = { "menu.theme_console"_t, "menu.theme_amber"_t, "menu.theme_phosphor"_t };
-				OmegaGUI::Combo("menu.theme"_l, View().pTheme, aThemes);
+				std::vector<std::string> aPluginThemeNames;
+				{
+					std::scoped_lock lckThemes(s_mtxPluginThemes);
+					for (const stPluginTheme& rTheme : s_aPluginThemes)
+						aPluginThemeNames.push_back(rTheme.strName);
+				}
+				std::vector<std::string_view> aThemes = { "menu.theme_console"_t, "menu.theme_amber"_t, "menu.theme_phosphor"_t };
+				for (const std::string& rName : aPluginThemeNames)
+					aThemes.push_back(rName);
+				int iTheme = *View().pTheme;
+				if (const auto itName = std::ranges::find(aPluginThemeNames, PluginThemeName()); itName != aPluginThemeNames.end())
+					iTheme = 3 + static_cast<int>(itName - aPluginThemeNames.begin());
+				if (OmegaGUI::Combo("menu.theme"_l, &iTheme, aThemes))
+				{
+					if (iTheme < 3)
+					{
+						*View().pTheme = iTheme;
+						PluginThemeName().clear();
+					}
+					else
+						PluginThemeName() = aPluginThemeNames[static_cast<std::size_t>(iTheme - 3)];
+				}
 				OmegaGUI::EndSection();
 			}
 			if (OmegaGUI::BeginSection("menu.section_keys"_l))
@@ -451,6 +508,22 @@ namespace OmegaWare::Menu
 			}
 			OmegaGUI::End();
 		}
+	}
+
+	void RegisterPluginTheme(std::string_view strName, FnPluginThemeApply pfnApply)
+	{
+		std::scoped_lock lckThemes(s_mtxPluginThemes);
+		auto itTheme = std::ranges::find(s_aPluginThemes, strName, &stPluginTheme::strName);
+		if (itTheme == s_aPluginThemes.end())
+			s_aPluginThemes.push_back({ std::string(strName), pfnApply });
+		else
+			itTheme->pfnApply = pfnApply;
+	}
+
+	void UnregisterPluginTheme(std::string_view strName)
+	{
+		std::scoped_lock lckThemes(s_mtxPluginThemes);
+		std::erase_if(s_aPluginThemes, [&](const stPluginTheme& rTheme) { return rTheme.strName == strName; });
 	}
 
 	void Initialize()

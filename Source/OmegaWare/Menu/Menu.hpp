@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <string_view>
 
@@ -10,6 +11,9 @@ namespace OmegaWare::Menu
 	void Draw(std::string_view strBackend);
 	void ToggleConsole();
 	[[nodiscard]] float ResolveScale(float flDisplayHeight);
+	using FnPluginThemeApply = void (*)(float flDeltaTime);
+	void RegisterPluginTheme(std::string_view strName, FnPluginThemeApply pfnApply);
+	void UnregisterPluginTheme(std::string_view strName);
 
 	struct stHotkeys
 	{

@@ -40,6 +40,8 @@ namespace
 	constexpr const char* kWindowConfig = "spotify.window";
 	constexpr const char* kPinnedConfig = "spotify.window_pinned";
 	constexpr const char* kOpacityConfig = "spotify.window_opacity";
+	constexpr const char* kThemeName = "spotify";
+	constexpr std::uint32_t kThemeDefault = Plugin::Rgba(0x1D, 0xB9, 0x54);
 	constexpr std::string_view kProtectedPrefix = "dpapi:";
 	constexpr std::size_t kMinKeyLength = 120;
 	constexpr int kArtSize = 256;
@@ -557,6 +559,70 @@ namespace
 		std::jthread m_thWorker;
 	};
 
+	[[nodiscard]] std::uint32_t ThemeColor(std::uint32_t uPrimary)
+	{
+		const float flRed = static_cast<float>(uPrimary & 0xFF) / 255.f;
+		const float flGreen = static_cast<float>((uPrimary >> 8) & 0xFF) / 255.f;
+		const float flBlue = static_cast<float>((uPrimary >> 16) & 0xFF) / 255.f;
+		const float flMax = std::max({ flRed, flGreen, flBlue });
+		const float flMin = std::min({ flRed, flGreen, flBlue });
+		const float flDelta = flMax - flMin;
+		float flHue = 0.f;
+		if (flDelta > 0.f)
+		{
+			if (flMax == flRed)
+				flHue = std::fmod((flGreen - flBlue) / flDelta, 6.f);
+			else if (flMax == flGreen)
+				flHue = (flBlue - flRed) / flDelta + 2.f;
+			else
+				flHue = (flRed - flGreen) / flDelta + 4.f;
+			if (flHue < 0.f)
+				flHue += 6.f;
+		}
+		const float flSaturation = flMax > 0.f ? flDelta / flMax : 0.f;
+		if (flSaturation < .12f)
+			return kThemeDefault;
+		const float flValue = std::max(flMax, .8f);
+		const float flChroma = flValue * std::max(flSaturation, .45f);
+		const float flX = flChroma * (1.f - std::abs(std::fmod(flHue, 2.f) - 1.f));
+		const float flBase = flValue - flChroma;
+		float flR = 0.f;
+		float flG = 0.f;
+		float flB = 0.f;
+		switch (static_cast<int>(flHue))
+		{
+		case 0: flR = flChroma; flG = flX; break;
+		case 1: flR = flX; flG = flChroma; break;
+		case 2: flG = flChroma; flB = flX; break;
+		case 3: flG = flX; flB = flChroma; break;
+		case 4: flR = flX; flB = flChroma; break;
+		default: flR = flChroma; flB = flX; break;
+		}
+		return Plugin::Rgba(static_cast<std::uint8_t>(std::lround((flR + flBase) * 255.f)), static_cast<std::uint8_t>(std::lround((flG + flBase) * 255.f)), static_cast<std::uint8_t>(std::lround((flB + flBase) * 255.f)));
+	}
+
+	struct stThemeState
+	{
+		std::array<float, 3> aCurrent{};
+		std::array<float, 3> aTarget{};
+		bool bInitialized = false;
+	};
+
+	stThemeState g_stTheme;
+
+	void ApplySpotifyTheme(float flDeltaTime)
+	{
+		if (!g_stTheme.bInitialized)
+		{
+			g_stTheme.aCurrent = g_stTheme.aTarget;
+			g_stTheme.bInitialized = true;
+		}
+		const float flStep = 1.f - std::exp(-flDeltaTime * 3.f);
+		for (std::size_t uChannel = 0; uChannel < 3; ++uChannel)
+			g_stTheme.aCurrent[uChannel] += (g_stTheme.aTarget[uChannel] - g_stTheme.aCurrent[uChannel]) * flStep;
+		Plugin::Api().SetStyleAccent(Plugin::Rgba(static_cast<std::uint8_t>(std::lround(g_stTheme.aCurrent[0])), static_cast<std::uint8_t>(std::lround(g_stTheme.aCurrent[1])), static_cast<std::uint8_t>(std::lround(g_stTheme.aCurrent[2]))));
+	}
+
 	class clSpotifyFeature final : public Plugin::clFeature
 	{
 	public:
@@ -570,6 +636,9 @@ namespace
 			m_pflOpacity = Plugin::Api().ConfigFloat(kOpacityConfig, 100.f);
 			LoadStoredKey();
 			m_clClient.Start();
+			g_stTheme.aTarget = { static_cast<float>(kThemeDefault & 0xFF), static_cast<float>((kThemeDefault >> 8) & 0xFF), static_cast<float>((kThemeDefault >> 16) & 0xFF) };
+			if (Plugin::Api().RegisterTheme)
+				Plugin::Api().RegisterTheme(kThemeName, &ApplySpotifyTheme);
 			return true;
 		}
 
@@ -577,6 +646,8 @@ namespace
 		{
 			m_clClient.Stop();
 			ClearArt();
+			if (Plugin::Api().UnregisterTheme)
+				Plugin::Api().UnregisterTheme(kThemeName);
 			SecureZeroMemory(m_aKeyInput.data(), m_aKeyInput.size());
 		}
 
@@ -624,6 +695,13 @@ namespace
 			m_stState = m_clClient.Snapshot();
 			if (!m_stState.stCurrent.bValid)
 				ClearArt();
+			SyncTheme();
+		}
+
+		void SyncTheme()
+		{
+			const std::uint32_t uColor = m_pArt && m_uPrimary ? ThemeColor(m_uPrimary) : kThemeDefault;
+			g_stTheme.aTarget = { static_cast<float>(uColor & 0xFF), static_cast<float>((uColor >> 8) & 0xFF), static_cast<float>((uColor >> 16) & 0xFF) };
 		}
 
 		void DrawWindow()

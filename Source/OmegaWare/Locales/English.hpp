@@ -84,7 +84,7 @@ inline const OmegaLocalization::stLocaleData g_stLocaleEnglish{
 		{ "menu.keys_hint", "esc clears a key, the menu key cannot be cleared" },
 		{ "menu.key_none", "none" },
 		{ "menu.theme", "theme" },
-		{ "menu.theme_console", "console" },
+		{ "menu.theme_console", "OmegaWare" },
 		{ "menu.theme_amber", "amber" },
 		{ "menu.theme_phosphor", "phosphor" },
 		{ "menu.perf_frame", "frame" },
