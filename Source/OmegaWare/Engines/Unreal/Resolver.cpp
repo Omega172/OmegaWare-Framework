@@ -16,6 +16,7 @@
 #include <mutex>
 #include <optional>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 namespace OmegaWare::Unreal::Resolver
@@ -370,25 +371,42 @@ namespace OmegaWare::Unreal::Resolver
 			SDK::TUObjectArray stArray{};
 			if (!Probe(uGObjects, stArray))
 				return 0;
-			std::vector<std::uintptr_t> aWorlds;
-			for (std::int32_t i = 0; i < stArray.NumElements && aWorlds.size() < 16; ++i)
+			std::unordered_set<std::uintptr_t> setWorlds;
+			for (std::int32_t i = 0; i < stArray.NumElements && setWorlds.size() < 4096; ++i)
 			{
 				std::uintptr_t uObject = 0;
 				if (ReadObject(stArray, i, uObject) && IsLiveWorld(uObject))
-					aWorlds.push_back(uObject);
+					setWorlds.insert(uObject);
 			}
-			if (aWorlds.empty())
+			if (setWorlds.empty())
+			{
+				static std::chrono::steady_clock::time_point s_tpNextLog{};
+				if (const auto tpNow = std::chrono::steady_clock::now(); tpNow >= s_tpNextLog)
+				{
+					s_tpNextLog = tpNow + std::chrono::seconds(10);
+					LogInfo("unreal: no live world among {} objects yet", stArray.NumElements);
+				}
 				return 0;
+			}
 			std::uintptr_t uFound = 0;
 			ForEachSlot(rState.aData, [&](std::uintptr_t uSlot, std::uintptr_t uValue)
 			{
-				if (std::ranges::find(aWorlds, uValue) == aWorlds.end())
+				if (!setWorlds.contains(uValue))
 					return true;
 				++rSlots;
 				if (!uFound || uSlot == uSdk)
 					uFound = uSlot;
 				return true;
 			});
+			if (!uFound)
+			{
+				static std::chrono::steady_clock::time_point s_tpNextLog{};
+				if (const auto tpNow = std::chrono::steady_clock::now(); tpNow >= s_tpNextLog)
+				{
+					s_tpNextLog = tpNow + std::chrono::seconds(10);
+					LogInfo("unreal: {} live worlds but no global slot holds one yet", setWorlds.size());
+				}
+			}
 			rSource = uFound ? ESource::Scan : ESource::Missing;
 			return uFound;
 		}
