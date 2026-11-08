@@ -1,6 +1,7 @@
 #pragma once
 
 #include <atomic>
+#include <functional>
 #include <span>
 #include <string>
 #include <string_view>
@@ -53,6 +54,7 @@ namespace OmegaWare
 		void Remove(clFeature& rFeature);
 		void RunAll();
 		void RenderAll();
+		bool Guard(clFeature& rFeature, std::string_view strStage, const std::function<void()>& fnCall);
 		[[nodiscard]] std::string DisplayName(const clFeature& rFeature);
 		void DrawPage(clFeature& rFeature, std::string_view strPage = {});
 		void DestroyAll();

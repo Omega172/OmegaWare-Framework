@@ -79,6 +79,37 @@ namespace OmegaWare::Unreal
 		std::atomic<DWORD> g_uGameThread = 0;
 		std::atomic<bool> g_bLoggedGameThread = false;
 		thread_local bool t_bRunningTasks = false;
+		thread_local int t_iNesting = 0;
+		std::atomic<std::int64_t> g_iTasksPendingSince = 0;
+		constexpr std::int64_t kTaskStarvationMs = 250;
+
+		std::atomic<std::uint32_t> g_uDyingSkips = 0;
+
+		[[nodiscard]] bool IsDying(const SDK::UObject* pObject)
+		{
+			constexpr std::uint32_t uDying = static_cast<std::uint32_t>(SDK::EObjectFlags::BeginDestroyed) | static_cast<std::uint32_t>(SDK::EObjectFlags::FinishDestroyed) | static_cast<std::uint32_t>(SDK::EObjectFlags::MirroredGarbage);
+			return (static_cast<std::uint32_t>(pObject->Flags) & uDying) != 0;
+		}
+
+		struct clNesting
+		{
+			clNesting() { ++t_iNesting; }
+			~clNesting() { --t_iNesting; }
+			clNesting(const clNesting&) = delete;
+			clNesting& operator=(const clNesting&) = delete;
+		};
+
+		[[nodiscard]] std::int64_t NowMs()
+		{
+			return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+		}
+
+		[[nodiscard]] bool ShouldRunTasks()
+		{
+			if (!g_bTasksPending.load(std::memory_order_acquire) || t_bRunningTasks || GetCurrentThreadId() != g_uGameThread.load(std::memory_order_relaxed))
+				return false;
+			return t_iNesting == 0 || NowMs() - g_iTasksPendingSince.load(std::memory_order_relaxed) > kTaskStarvationMs;
+		}
 
 		[[nodiscard]] DWORD FindMainThread()
 		{
@@ -186,11 +217,19 @@ namespace OmegaWare::Unreal
 		void DetourProcessEvent(const SDK::UObject* pObject, SDK::UFunction* pFunction, void* pParams)
 		{
 			clEngineScope clScope;
-			if (g_bTasksPending.load(std::memory_order_acquire) && !t_bRunningTasks && GetCurrentThreadId() == g_uGameThread.load(std::memory_order_relaxed))
+			if (ShouldRunTasks())
 			{
 				if (!g_bLoggedGameThread.exchange(true))
 					LogInfo("unreal: game thread tasks running on thread {}", GetCurrentThreadId());
 				RunTasks();
+			}
+			const clNesting clDepth;
+			if (pObject && pFunction && IsDying(pObject))
+			{
+				const std::uint32_t uSkips = g_uDyingSkips.fetch_add(1, std::memory_order_relaxed) + 1;
+				if (uSkips <= 5 || uSkips % 1000 == 0)
+					LogWarning("process event: skipped {} on an object that is being destroyed ({} so far)", pFunction->GetName(), uSkips);
+				return;
 			}
 			if (!pFunction || g_uResolved.load(std::memory_order_acquire) == 0 || g_aFilter[FilterSlot(pFunction)].load(std::memory_order_acquire) == 0)
 				return CallOriginal(pObject, pFunction, pParams);
@@ -322,6 +361,8 @@ namespace OmegaWare::Unreal
 		if (!fnTask || !g_bAcceptTasks.load(std::memory_order_acquire) || !EnsureInstalled() || !GameThreadId())
 			return false;
 		std::scoped_lock lckTasks(g_mtxTasks);
+		if (!g_bTasksPending.load(std::memory_order_relaxed))
+			g_iTasksPendingSince.store(NowMs(), std::memory_order_relaxed);
 		g_aTasks.push_back({ std::move(fnTask), nullptr });
 		g_bTasksPending.store(true, std::memory_order_release);
 		return true;
@@ -341,6 +382,8 @@ namespace OmegaWare::Unreal
 		auto pDone = std::make_shared<std::atomic<bool>>(false);
 		{
 			std::scoped_lock lckTasks(g_mtxTasks);
+			if (!g_bTasksPending.load(std::memory_order_relaxed))
+				g_iTasksPendingSince.store(NowMs(), std::memory_order_relaxed);
 			g_aTasks.push_back({ std::move(fnTask), pDone });
 			g_bTasksPending.store(true, std::memory_order_release);
 		}

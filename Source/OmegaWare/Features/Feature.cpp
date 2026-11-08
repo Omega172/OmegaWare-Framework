@@ -110,6 +110,11 @@ namespace OmegaWare
 					stFeatureAccess::Invoke(*pFeature, "Render", [&] { pFeature->Render(); });
 		}
 
+		bool Guard(clFeature& rFeature, std::string_view strStage, const std::function<void()>& fnCall)
+		{
+			return rFeature.IsActive() && stFeatureAccess::Invoke(rFeature, strStage, fnCall);
+		}
+
 		std::string DisplayName(const clFeature& rFeature)
 		{
 			return rFeature.GetDisplayName();

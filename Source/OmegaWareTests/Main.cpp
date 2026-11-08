@@ -116,6 +116,28 @@ namespace
 		Check("a null pointer is rejected", !OmegaWare::Memory::IsReadable(nullptr, 8));
 	}
 
+	int g_iPureCallDetours = 0;
+
+	int PureCallDetour()
+	{
+		++g_iPureCallDetours;
+		return 0;
+	}
+
+	void TestPureCallGuard()
+	{
+		const HMODULE hRuntime = LoadLibraryW(L"vcruntime140.dll");
+		void* pPureCall = hRuntime ? reinterpret_cast<void*>(GetProcAddress(hRuntime, "_purecall")) : nullptr;
+		Check("vcruntime140 exports _purecall", pPureCall != nullptr);
+		if (!pPureCall)
+			return;
+		OmegaRenderHook::clInlineHook clPureCall;
+		Check("the _purecall hook installs", clPureCall.Install(pPureCall, reinterpret_cast<void*>(&PureCallDetour)));
+		const int iResult = reinterpret_cast<int (*)()>(pPureCall)();
+		Check("a pure virtual call returns instead of aborting", iResult == 0 && g_iPureCallDetours == 1);
+		Check("the _purecall hook uninstalls", clPureCall.Uninstall());
+	}
+
 	void TestScanning()
 	{
 		std::puts("scanning");
@@ -1378,6 +1400,7 @@ int main()
 	TestPatterns();
 	TestScanning();
 	TestReadableCache();
+	TestPureCallGuard();
 	TestSafety();
 	TestNamePool();
 	TestValidateThunk();
