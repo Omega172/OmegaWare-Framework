@@ -14,6 +14,7 @@
 #include "Memory/Safety.hpp"
 
 #include <thread>
+#include <unordered_map>
 
 namespace OmegaWare::Unreal
 {
@@ -128,6 +129,30 @@ namespace OmegaWare::Unreal
 	SDK::UKismetStringLibrary* StringLibrary()
 	{
 		return SDK::UKismetStringLibrary::GetDefaultObj();
+	}
+
+	SDK::FName MakeName(const wchar_t* wszName)
+	{
+		return SDK::UKismetStringLibrary::Conv_StringToName(SDK::FString(wszName));
+	}
+
+	SDK::FName CachedLiteralName(const wchar_t* wszLiteral)
+	{
+		thread_local std::unordered_map<const wchar_t*, SDK::FName> t_mapNames;
+		auto itName = t_mapNames.find(wszLiteral);
+		if (itName == t_mapNames.end())
+			itName = t_mapNames.emplace(wszLiteral, MakeName(wszLiteral)).first;
+		return itName->second;
+	}
+
+	SDK::FVector GetActorLocation(SDK::AActor* pActor)
+	{
+		if (!Memory::IsValidObjectPtr(pActor))
+			return {};
+		SDK::USceneComponent* pRoot = pActor->RootComponent;
+		if (Memory::IsValidObjectPtr(pRoot) && !pRoot->AttachParent)
+			return pRoot->RelativeLocation;
+		return pActor->K2_GetActorLocation();
 	}
 
 	std::optional<SDK::FVector2D> WorldToScreen(const SDK::FVector& vecWorld, bool bRelativeToViewport)

@@ -32,6 +32,10 @@ namespace OmegaWare::Unreal
 	[[nodiscard]] SDK::UGameplayStatics* GameplayStatics();
 	[[nodiscard]] SDK::UKismetStringLibrary* StringLibrary();
 
+	[[nodiscard]] SDK::FName MakeName(const wchar_t* wszName);
+	[[nodiscard]] SDK::FName CachedLiteralName(const wchar_t* wszLiteral);
+	[[nodiscard]] SDK::FVector GetActorLocation(SDK::AActor* pActor);
+
 	[[nodiscard]] std::optional<SDK::FVector2D> WorldToScreen(const SDK::FVector& vecWorld, bool bRelativeToViewport = false);
 	bool LogDiagnostics();
 }
