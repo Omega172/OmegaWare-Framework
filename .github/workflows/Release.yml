@@ -30,14 +30,14 @@ jobs:
 
     steps:
     - name: Checkout Repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         path: OmegaWare-Framework
         submodules: recursive
         token: ${{ secrets.OMEGAWARE_REPOSITORIES_TOKEN || github.token }}
 
     - name: Checkout Vulkan Headers
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         repository: KhronosGroup/Vulkan-Headers
         ref: vulkan-sdk-1.4.350.0
@@ -67,7 +67,7 @@ jobs:
         Compress-Archive -Path "$env:PACKAGE_NAME/*" -DestinationPath "$env:PACKAGE_NAME.zip"
 
     - name: Upload Build Artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: ${{ env.PACKAGE_NAME }}
         path: OmegaWare-Framework/${{ env.PACKAGE_NAME }}
@@ -75,7 +75,7 @@ jobs:
 
     - name: Upload Release Asset
       if: github.event_name == 'release'
-      uses: softprops/action-gh-release@v2
+      uses: softprops/action-gh-release@v3
       with:
         files: OmegaWare-Framework/${{ env.PACKAGE_NAME }}.zip
       env:

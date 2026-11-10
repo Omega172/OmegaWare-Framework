@@ -28,14 +28,14 @@ jobs:
 
     steps:
     - name: Checkout Repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         path: OmegaWare-Framework
         submodules: recursive
         token: ${{ secrets.OMEGAWARE_REPOSITORIES_TOKEN || github.token }}
 
     - name: Checkout Vulkan Headers
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         repository: KhronosGroup/Vulkan-Headers
         ref: vulkan-sdk-1.4.350.0
@@ -73,7 +73,7 @@ jobs:
         }
 
     - name: Upload Build Artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: OmegaWare-${{ matrix.build_configuration }}-${{ matrix.architecture }}
         path: |
